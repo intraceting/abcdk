@@ -1,28 +1,30 @@
 /*
- * Copyright (c) 2016-2022, NVIDIA CORPORATION. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2016-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *  * Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *  * Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *  * Neither the name of NVIDIA CORPORATION nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
+ * modification, are permitted provided that the following conditions are met:
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
- * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
@@ -34,6 +36,8 @@
 #include <libv4l2.h>
 
 #define ENCODER_DEV "/dev/nvhost-msenc"
+#define ENCODER_DEV_ALT "/dev/v4l2-nvenc"
+
 #define ENCODER_COMP_NAME "NVENC"
 
 #define CHECK_V4L2_RETURN(ret, str)              \
@@ -71,15 +75,29 @@
 
 using namespace std;
 
-NvVideoEncoder::NvVideoEncoder(const char *name, int flags)
-    :NvV4l2Element(name, ENCODER_DEV, flags, valid_fields)
+NvVideoEncoder::NvVideoEncoder(const char *name, const char *dev_node, int flags)
+    : NvV4l2Element(name, dev_node, flags, valid_fields)
 {
 }
 
 NvVideoEncoder *
 NvVideoEncoder::createVideoEncoder(const char *name, int flags)
 {
-    NvVideoEncoder *enc = new NvVideoEncoder(name, flags);
+    NvVideoEncoder *enc;
+
+    if (access (ENCODER_DEV, F_OK) == 0)
+    {
+        enc = new NvVideoEncoder(name, ENCODER_DEV, flags);
+    }
+    else if (access(ENCODER_DEV_ALT, F_OK) == 0)
+    {
+        enc = new NvVideoEncoder(name, ENCODER_DEV_ALT, flags);
+    }
+    else
+    {
+        return NULL;
+    }
+
     if (enc->isInError())
     {
         delete enc;
@@ -94,7 +112,7 @@ NvVideoEncoder::~NvVideoEncoder()
 
 int
 NvVideoEncoder::setOutputPlaneFormat(uint32_t pixfmt, uint32_t width,
-        uint32_t height)
+        uint32_t height, enum v4l2_colorspace cs)
 {
     struct v4l2_format format;
     uint32_t num_bufferplanes;
@@ -120,6 +138,7 @@ NvVideoEncoder::setOutputPlaneFormat(uint32_t pixfmt, uint32_t width,
     format.fmt.pix_mp.height = height;
     format.fmt.pix_mp.pixelformat = pixfmt;
     format.fmt.pix_mp.num_planes = num_bufferplanes;
+    format.fmt.pix_mp.colorspace = cs;
 
     return output_plane.setFormat(format);
 }
@@ -743,6 +762,73 @@ NvVideoEncoder::setAV1DisableCDFUpdate(bool disabled)
             "Setting encoder CDF update to " << !disabled);
 }
 
+int NvVideoEncoder::enableAV1TileGroups(bool enabled)
+{
+    struct v4l2_ext_control control;
+    struct v4l2_ext_controls ctrls;
+
+    RETURN_ERROR_IF_FORMATS_NOT_SET();
+    RETURN_ERROR_IF_BUFFERS_REQUESTED();
+
+    memset(&control, 0, sizeof(control));
+    memset(&ctrls, 0, sizeof(ctrls));
+
+    ctrls.count = 1;
+    ctrls.controls = &control;
+    ctrls.ctrl_class = V4L2_CTRL_CLASS_MPEG;
+
+    control.id = V4L2_CID_MPEG_VIDEOENC_AV1_ENABLE_TILE_GROUPS;
+    control.value = enabled;
+
+    CHECK_V4L2_RETURN(setExtControls(ctrls),
+                      "Setting encoder tile groups present flag to " << enabled);
+}
+
+int NvVideoEncoder::setAV1FrameIDPresentFlag(bool enabled)
+{
+    struct v4l2_ext_control control;
+    struct v4l2_ext_controls ctrls;
+
+    RETURN_ERROR_IF_FORMATS_NOT_SET();
+    RETURN_ERROR_IF_BUFFERS_REQUESTED();
+
+    memset(&control, 0, sizeof(control));
+    memset(&ctrls, 0, sizeof(ctrls));
+
+    ctrls.count = 1;
+    ctrls.controls = &control;
+    ctrls.ctrl_class = V4L2_CTRL_CLASS_MPEG;
+
+    control.id = V4L2_CID_MPEG_VIDEOENC_AV1_ENABLE_FRAMEID_NUMBERS;
+    control.value = enabled;
+
+    CHECK_V4L2_RETURN(setExtControls(ctrls),
+                      "Setting encoder frameID present flag to " << enabled);
+}
+
+int
+NvVideoEncoder::setAV1ErrResilienceMode(bool enabled)
+{
+    struct v4l2_ext_control control;
+    struct v4l2_ext_controls ctrls;
+
+    RETURN_ERROR_IF_FORMATS_NOT_SET();
+    RETURN_ERROR_IF_BUFFERS_REQUESTED();
+
+    memset(&control, 0, sizeof(control));
+    memset(&ctrls, 0, sizeof(ctrls));
+
+    ctrls.count = 1;
+    ctrls.controls = &control;
+    ctrls.ctrl_class = V4L2_CTRL_CLASS_MPEG;
+
+    control.id = V4L2_CID_MPEG_VIDEOENC_AV1_ERR_RESILIENT_MODE;
+    control.value = enabled;
+
+    CHECK_V4L2_RETURN(setExtControls(ctrls),
+                      "Setting encoder Error Resilient Mode to " << enabled);
+}
+
 int
 NvVideoEncoder::setVirtualBufferSize(uint32_t size)
 {
@@ -1351,4 +1437,48 @@ NvVideoEncoder::setLossless(bool enabled)
 
     CHECK_V4L2_RETURN(setExtControls(ctrls),
             "Setting lossless encoding to " << enabled);
+}
+
+int NvVideoEncoder::setDisableAMP(bool enabled)
+{
+    struct v4l2_ext_control control;
+    struct v4l2_ext_controls ctrls;
+
+    RETURN_ERROR_IF_FORMATS_NOT_SET();
+    RETURN_ERROR_IF_BUFFERS_REQUESTED();
+
+    memset(&control, 0, sizeof(control));
+    memset(&ctrls, 0, sizeof(ctrls));
+
+    ctrls.count = 1;
+    ctrls.controls = &control;
+    ctrls.ctrl_class = V4L2_CTRL_CLASS_MPEG;
+
+    control.id = V4L2_CID_MPEG_VIDEOENC_H265_DISABLE_AMP;
+    control.value = enabled;
+
+    CHECK_V4L2_RETURN(setExtControls(ctrls),
+                      "Setting disable AMP types to " << enabled);
+}
+
+int NvVideoEncoder::enableTwoPassCBR()
+{
+    struct v4l2_ext_control control;
+    struct v4l2_ext_controls ctrls;
+
+    RETURN_ERROR_IF_FORMATS_NOT_SET();
+    RETURN_ERROR_IF_BUFFERS_REQUESTED();
+
+    memset(&control, 0, sizeof(control));
+    memset(&ctrls, 0, sizeof(ctrls));
+
+    ctrls.count = 1;
+    ctrls.controls = &control;
+    ctrls.ctrl_class = V4L2_CTRL_CLASS_MPEG;
+
+    control.id = V4L2_CID_MPEG_VIDEOENC_TWO_PASS_CBR;
+    control.value = 1;
+
+    CHECK_V4L2_RETURN(setExtControls(ctrls),
+            "Setting two pass CBR to 1");
 }

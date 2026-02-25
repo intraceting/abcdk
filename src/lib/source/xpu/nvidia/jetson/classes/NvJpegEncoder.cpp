@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022, NVIDIA CORPORATION. All rights reserved.
+ * Copyright (c) 2016-2023, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -84,7 +84,6 @@ NvJPEGEncoder::encodeFromFd(int fd, J_COLOR_SPACE color_space,
 
     cinfo.fd = fd;
     cinfo.IsVendorbuf = TRUE;
-    cinfo.is_deepstream = TRUE;
 
     cinfo.raw_data_in = TRUE;
     cinfo.in_color_space = JCS_YCbCr;

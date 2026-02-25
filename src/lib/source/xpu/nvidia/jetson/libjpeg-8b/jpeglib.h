@@ -4,7 +4,7 @@
  * Copyright (C) 1991-1998, Thomas G. Lane.
  * Copyright (c) 2016,  NVIDIA CORPORATION. All rights reserved.
  * Modified 2002-2009 by Guido Vollbeding.
- * Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2016-2024, NVIDIA CORPORATION.  All rights reserved.
  * This file is part of the Independent JPEG Group's software.
  * For conditions of distribution and use, see the accompanying README file.
  *
@@ -35,7 +35,6 @@ using namespace std;
 #include <sstream>
 #include <vector>
 #include <cstdlib>
-#include <npp.h>
 #include <cuda.h>
 #include <jerror.h>
 #include <glib.h>
@@ -50,14 +49,7 @@ inline bool CHECK_(cudaError_t e, int iLine, const char *szFile) {
     }
     return true;
   }
-inline bool CHECK_(NppStatus status, int iLine, const char *szFile) {
-    if (!(status == NPP_SUCCESS)) {
-      std::cout << "NPP runtime error " << status << " at line " << iLine << " in file " << szFile << std::endl;
-      abort ();
-      return false;
-    }
-    return true;
-  }
+
 #define ck(call) CHECK_((call), __LINE__, __FILE__)
 #define cudaCheckError() {                                              \
   cudaError_t e=cudaGetLastError();                                     \
@@ -318,6 +310,18 @@ typedef struct jpeg_tegra_mgr j_tegra_mgr;
 typedef struct jpeg_tegra_mgr * j_tegra_mgr_ptr;
 #endif
 
+#ifdef GPU_ACCELERATE
+struct encode_params_t {
+  std::string input_dir;
+  std::string output_dir;
+  std::string format;
+  std::string subsampling;
+  int quality;
+  int huf;
+  int dev;
+};
+#endif
+
 /* Common fields between JPEG compression and decompression master structs. */
 
 #ifdef TEGRA_ACCELERATE
@@ -329,10 +333,10 @@ typedef struct jpeg_tegra_mgr * j_tegra_mgr_ptr;
   void * client_data;		/* Available for use by application */\
   boolean is_decompressor;	/* So common code can tell which is which */\
   boolean tegra_acceleration;	/* Enable Tegra based hardware acceleration*/\
-  boolean is_deepstream; /* Check if pipeline running in deepstream or legacy*/\
+  boolean mjpeg_decode; /* Enable MJPEG decoding in hardware acceleration*/\
   boolean buffer_in_use;       /* Buffer provided to the caller is still in use*/\
   unsigned int initWidth;	/* Initial width for hardware acceleration */ \
-  void *nvbufsurfptr; /*  */\ 
+  void *nvbufsurfptr; /*  */\
   unsigned int initHeight;	/* Initial height for hardware acceleration */ \
   unsigned int initBitstreamBuffer;	/* Initial bitstream buffer size */ \
   unsigned int inputBuffSize;	/* Maximum input buffer size */ \
@@ -357,12 +361,18 @@ typedef struct jpeg_tegra_mgr * j_tegra_mgr_ptr;
   boolean IsVendorbuf; /* check if input buffer is vendor specific buffer */ \
   unsigned char *pVendor_buf; /* pointer to vendor specific buffer */ \
   unsigned int Vendorbuf_Size; /* size of vendor buffer */ \
+  unsigned int outputBuffSize;	/* Maximum output buffer size */ \
   void *surf_ptr; \
   int batch_size; \
   int gpu_id; \
   unsigned char *alpha; \
+  unsigned int quality; \
+  boolean grayscale; \
   nvjpegJpegState_t nvjpeg_state; \
+  nvjpegJpegState_t nvjpegenc_state; \
+  nvjpegEncoderState_t encoder_state; \
   nvjpegHandle_t nvjpeg_handle; \
+  nvjpegHandle_t nvjpegenc_handle; \
   cudaStream_t stream; \
   nvjpegOutputFormat_t fmt; \
   bool write_decoded; \
@@ -375,8 +385,11 @@ typedef struct jpeg_tegra_mgr * j_tegra_mgr_ptr;
   vector<nvjpegImage_t> iout; \
   vector<nvjpegImage_t> isz; \
   GQueue *buf_q;\
+  GMutex q_lck;\
   cudaStream_t cuda_stream; \
-  unsigned int nvjpegdec_init;
+  NvBufSurface *surf1; \
+  unsigned int nvjpegdec_init; \
+  boolean nvjpegenc_init;
 #else
 #define jpeg_common_fields \
   struct jpeg_error_mgr * err;	/* Error handler module */\

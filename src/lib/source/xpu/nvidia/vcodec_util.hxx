@@ -15,10 +15,6 @@
 #include "ffnvcodec/dynlink_nvcuvid.h"
 #endif // #ifdef __x86_64__
 
-#ifdef __aarch64__
-#include "jetson/nvmpi.h"
-#endif // #ifdef __aarch64__
-
 namespace abcdk_xpu
 {
 
@@ -56,24 +52,24 @@ namespace abcdk_xpu
 #endif // #ifdef __x86_64__
 
 #ifdef __aarch64__
-            static inline nvCodingType local_to_nvcodec(abcdk_xpu_vcodec_id_t id)
+            static inline int local_to_nvcodec(abcdk_xpu_vcodec_id_t id)
             {
                 switch (id)
                 {
                 case ABCDK_XPU_VCODEC_ID_MPEG2VIDEO:
-                    return NV_VIDEO_CodingMPEG2;
+                    return 1;
                 case ABCDK_XPU_VCODEC_ID_MPEG4:
-                    return NV_VIDEO_CodingMPEG4;
+                    return 2;
                 case ABCDK_XPU_VCODEC_ID_H264:
-                    return NV_VIDEO_CodingH264;
+                    return 3;
                 case ABCDK_XPU_VCODEC_ID_HEVC:
-                    return NV_VIDEO_CodingHEVC;
+                    return 4;
                 case ABCDK_XPU_VCODEC_ID_VP8:
-                    return NV_VIDEO_CodingVP8;
+                    return 5;
                 case ABCDK_XPU_VCODEC_ID_VP9:
-                    return NV_VIDEO_CodingVP9;
+                    return 6;
                 default:
-                    return NV_VIDEO_CodingUnused;
+                    return -1;
                 }
             }
 #endif // #ifdef __aarch64__

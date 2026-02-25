@@ -8,6 +8,8 @@
 
 #ifdef __aarch64__
 
+#include "jetson/NvJpegEncoder.h"
+
 namespace abcdk_xpu
 {
 

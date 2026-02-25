@@ -33,6 +33,13 @@ ifeq (${HAVE_CUDA},yes)
 ifeq (${HAVE_TENSORRT},yes)
 LIB_SRC_CXX_FILES += $(wildcard $(SRC_DIR)/lib/source/xpu/nvidia/*.cpp)
 LIB_SRC_CU_FILES += $(wildcard $(SRC_DIR)/lib/source/xpu/nvidia/*.cu)
+ifeq (${TARGET_PLATFORM},aarch64)
+LIB_SRC_CXX_FILES += $(wildcard $(SRC_DIR)/lib/source/xpu/nvidia/jetson/classes/*.cpp)
+#增加头文件搜索路径.
+CXX_FLAGS += -I$(SRC_DIR)/lib/source/xpu/nvidia/jetson/
+CXX_FLAGS += -I$(SRC_DIR)/lib/source/xpu/nvidia/jetson/drm
+CXX_FLAGS += -I$(SRC_DIR)/lib/source/xpu/nvidia/jetson/libjpeg-8b
+endif
 endif
 endif
 
@@ -54,6 +61,8 @@ TOOL_OBJ_DEPS += $(TOOL_OBJ_FILES:.o=.d)
 TEST_OBJ_FILES := $(patsubst $(SRC_DIR)/test/%, $(OBJ_PATH)/test/%, $(TEST_SRC_FILES:.c=.o))
 TEST_OBJ_DEPS += $(TEST_OBJ_FILES:.o=.d)
 
+#C++编译选项绑定到CUDA编译选项.
+NVCC_FLAGS += $(addprefix -Xcompiler ,${CXX_FLAGS})
 
 #伪目标，告诉make这些都是标志，而不是实体目录。
 #因为如果标签和目录同名，而目录内的文件没有更新的情况下，编译和链接会跳过。如："XXX is up to date"。

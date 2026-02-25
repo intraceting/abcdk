@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022, NVIDIA CORPORATION. All rights reserved.
+ * Copyright (c) 2016-2024, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,6 +33,7 @@
 #include "unistd.h"
 #include "stdlib.h"
 #include "nvbufsurface.h"
+#include "jpegint.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define ROUND_UP_4(num)  (((num) + 3) & ~3)
@@ -47,6 +48,9 @@ NvJPEGDecoder::NvJPEGDecoder(const char *comp_name)
     cinfo.err = jpeg_std_error(&jerr);
 
     jpeg_create_decompress(&cinfo);
+
+    // Enable MJPEG decode
+    cinfo.mjpeg_decode = TRUE;
 }
 
 NvJPEGDecoder *
@@ -65,6 +69,12 @@ NvJPEGDecoder::~NvJPEGDecoder()
 {
     jpeg_destroy_decompress(&cinfo);
     CAT_DEBUG_MSG(comp_name << " (" << this << ") destroyed");
+}
+
+void
+NvJPEGDecoder::disableMjpegDecode()
+{
+    cinfo.mjpeg_decode = FALSE;
 }
 
 int
@@ -95,7 +105,6 @@ NvJPEGDecoder::decodeToFd(int &fd, unsigned char * in_buf,
 
     cinfo.out_color_space = JCS_YCbCr;
     cinfo.IsVendorbuf = TRUE;
-    cinfo.is_deepstream = TRUE;
     cinfo.pVendor_buf = (unsigned char*)&surface;
 
     if (cinfo.comp_info[0].h_samp_factor == 2)
@@ -122,23 +131,18 @@ NvJPEGDecoder::decodeToFd(int &fd, unsigned char * in_buf,
     }
 
     jpeg_start_decompress (&cinfo);
-    if ((cinfo.output_width % (cinfo.max_h_samp_factor * DCTSIZE))
-        && pixel_format == V4L2_PIX_FMT_YUV420M)
-    {
-        COMP_ERROR_MSG("decodeToFd() failed, please run decodeToBuffer()");
-        jpeg_finish_decompress(&cinfo);
-        profiler.finishProcessing(buffer_id, false);
+
+    if (cinfo.global_state != DSTATE_READY) {
+        COMP_ERROR_MSG("JPEG format is not supported by libnvjpeg");
         return -1;
     }
-    else
-    {
-        jpeg_read_raw_data (&cinfo, NULL, cinfo.comp_info[0].v_samp_factor * DCTSIZE);
-    }
 
+    jpeg_read_raw_data (&cinfo, NULL, cinfo.comp_info[0].v_samp_factor * DCTSIZE);
     jpeg_finish_decompress(&cinfo);
 
-    width = cinfo.image_width;
-    height = cinfo.image_height;
+    // Image width and height should be even
+    width = (cinfo.image_width % 2 == 1) ? cinfo.image_width + 1 : cinfo.image_width;
+    height = (cinfo.image_height % 2 == 1) ? cinfo.image_height + 1 : cinfo.image_height;
     pixfmt = pixel_format;
     fd = cinfo.fd;
 

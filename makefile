@@ -106,8 +106,6 @@ C_FLAGS += ${EXTRA_C_FLAGS}
 #
 CXX_FLAGS += -I$(MAKEFILE_DIR)/src/lib/include/ 
 CXX_FLAGS += ${EXTRA_C_FLAGS} ${EXTRA_CXX_FLAGS}
-#C++编译选项绑定到CUDA编译选项.
-NVCC_FLAGS += $(addprefix -Xcompiler ,${CXX_FLAGS})
 
 #
 LD_FLAGS += -L${BUILD_PATH}

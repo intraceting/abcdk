@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022, NVIDIA CORPORATION. All rights reserved.
+ * Copyright (c) 2016-2024, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -542,13 +542,14 @@ NvV4l2ElementPlane::setStreamStatus(bool status)
 {
     int ret;
 
+    pthread_mutex_lock(&plane_lock);
     if (status == streamon)
     {
         PLANE_DEBUG_MSG("Already in " << ((status) ? "STREAMON" : "STREAMOFF"));
+        pthread_mutex_unlock(&plane_lock);
         return 0;
     }
 
-    pthread_mutex_lock(&plane_lock);
     if (status)
     {
         ret = v4l2_ioctl(fd, VIDIOC_STREAMON, &buf_type);

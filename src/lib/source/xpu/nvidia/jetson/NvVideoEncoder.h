@@ -1,28 +1,30 @@
 /*
- * Copyright (c) 2016-2022, NVIDIA CORPORATION. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2016-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *  * Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *  * Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *  * Neither the name of NVIDIA CORPORATION nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
+ * modification, are permitted provided that the following conditions are met:
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
- * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
@@ -89,7 +91,8 @@ public:
      * @param[in] height Height of the input buffers in pixels.
      * @return 0 for success, -1 otherwise.
      */
-    int setOutputPlaneFormat(uint32_t pixfmt, uint32_t width, uint32_t height);
+    int setOutputPlaneFormat(uint32_t pixfmt, uint32_t width, uint32_t height,
+                             enum v4l2_colorspace cs = V4L2_COLORSPACE_SMPTE170M);
     /**
      * Sets the format on the converter capture plane.
      *
@@ -426,6 +429,46 @@ public:
     int setAV1DisableCDFUpdate(bool disabled);
 
     /**
+     * Enable Error Resilient Mode for AV1.
+     *
+     * Calls the VIDIOC_S_EXT_CTRLS IOCTL internally with Control ID
+     * #V4L2_CID_MPEG_VIDEOENC_AV1_ERR_RESILIENT_MODE. The value true
+     * disables the control. Must be called after setFormat on both
+     * the planes.
+     *
+     * @param[in] enabled Boolean value indicating whether to enable/disable
+     *                    the control.
+     * @return 0 for success, -1 otherwise.
+     */
+    int setAV1ErrResilienceMode(bool enabled);
+
+    /**
+     * Enable AV1 frame_id_numbers_present_flag.
+     *
+     * Calls the VIDIOC_S_EXT_CTRLS IOCTL internally with Control ID
+     * #V4L2_CID_MPEG_VIDEOENC_AV1_ENABLE_FRAMEID_NUMBERS. Must be called after
+     * setFormat on both the planes.
+     *
+     * @param[in] enabled Boolean value indicating whether to enable/disable
+     *                    the control.
+     * @return 0 for success, -1 otherwise.
+     */
+    int setAV1FrameIDPresentFlag(bool enabled);
+
+    /**
+     * Enable AV1 frame_id_numbers_present_flag.
+     *
+     * Calls the VIDIOC_S_EXT_CTRLS IOCTL internally with Control ID
+     * #V4L2_CID_MPEG_VIDEOENC_AV1_ENABLE_TILE_GROUPS. Must be called after
+     * setFormat on both the planes.
+     *
+     * @param[in] enabled Boolean value indicating whether to enable/disable
+     *                    the control.
+     * @return 0 for success, -1 otherwise.
+     */
+    int enableAV1TileGroups(bool enabled);
+
+    /**
      * Set input Metadata parameters for the next buffer which will
      * be queued on output plane with index \a buffer_index
      *
@@ -704,7 +747,7 @@ public:
      * Sets the number of frames to encode.
      *
      * Calls the VIDIOC_S_EXT_CTRLS IOCTL internally with Control ID
-     * #V4L2_CID_MPEG_VIDEO_FRAMES_TO_ENCODE. Must be called after
+     * #V4L2_CID_MPEG_VIDEOENC_FRAMES_TO_ENCODE. Must be called after
      * setFormat on both the planes.
      *
      * @param[in] framesToEncode Set the number of frames to encode.
@@ -740,6 +783,30 @@ public:
     int setLossless(bool enabled);
 
     /**
+     * Sets the Disable AMP types to true for H.265.
+     *
+     * Calls the VIDIOC_S_EXT_CTRLS IOCTL internally with Control ID
+     * #V4L2_CID_MPEG_VIDEOENC_H265_DISABLE_AMP. Must be called after setFormat on both
+     * the planes and before \c requestBuffers on any of the planes.
+     *
+     * @param[in]  enabled      Indicates whether to enable or disable
+     *                           the control.
+     * @return 0 for success, -1 otherwise.
+     */
+    int setDisableAMP(bool enabled);
+
+    /**
+     * Sets whether to enable two pass CBR for H.264/H.265.
+     *
+     * Calls the VIDIOC_S_EXT_CTRLS IOCTL internally with Control ID
+     * #V4L2_CID_MPEG_VIDEOENC_TWO_PASS_CBR. Must be called after setFormat on both
+     * the planes and before \c requestBuffers on any of the planes.
+     *
+     * @return 0 for success, -1 otherwise.
+     */
+    int enableTwoPassCBR();
+
+    /**
      * Issues Poll on the device which blocks until :
      * a) Either there is something to dequeue from capture or output plane or any events.
      * b) Poll was interrupted by a call to the device using V4L2_CID_SET_POLL_INTERRUPT
@@ -763,7 +830,7 @@ private:
     /**
      * Constructor used by #createVideoEncoder.
      */
-    NvVideoEncoder(const char *name, int flags);
+    NvVideoEncoder(const char *name, const char* dev_node, int flags);
 
     static const NvElementProfiler::ProfilerField valid_fields =
             NvElementProfiler::PROFILER_FIELD_TOTAL_UNITS |

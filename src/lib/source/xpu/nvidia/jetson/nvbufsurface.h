@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2019-2022, NVIDIA CORPORATION.  All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2019-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: LicenseRef-NvidiaProprietary
  *
- * NVIDIA Corporation and its licensors retain all intellectual property
+ * NVIDIA CORPORATION and its licensors retain all intellectual property
  * and proprietary rights in and to this software, related documentation
  * and any modifications thereto.  Any use, reproduction, disclosure or
  * distribution of this software and related documentation without an express
- * license agreement from NVIDIA Corporation is strictly prohibited.
+ * license agreement from NVIDIA CORPORATION is strictly prohibited.
  */
 
 /**
@@ -30,6 +31,9 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#ifdef  __ANDROID__
+#include <cutils/native_handle.h>
+#endif
 
 #ifdef __cplusplus
 extern "C"
@@ -244,7 +248,50 @@ typedef enum
   NVBUF_COLOR_FORMAT_UYVP,
   /** Specifies BT.601 colorspace - 10 bit YUV ER 4:2:2 interleaved. */
   NVBUF_COLOR_FORMAT_UYVP_ER,
-
+  /** Specifies BT.601 colorspace - Y/CbCr ER 4:4:4 multi-planar. */
+  NVBUF_COLOR_FORMAT_YUV444_ER,
+  /** Specifies BT.709 colorspace - Y/CbCr 4:4:4 multi-planar. */
+  NVBUF_COLOR_FORMAT_YUV444_709,
+  /** Specifies BT.709 colorspace - Y/CbCr ER 4:4:4 multi-planar. */
+  NVBUF_COLOR_FORMAT_YUV444_709_ER,
+  /** Specifies BT.2020 colorspace - Y/CbCr 4:4:4 multi-planar. */
+  NVBUF_COLOR_FORMAT_YUV444_2020,
+  /** Specifies BT.601 colorspace - Y/CbCr 4:4:4 10-bit multi-planar. */
+  NVBUF_COLOR_FORMAT_YUV444_10LE,
+  /** Specifies BT.601 colorspace - Y/CbCr ER 4:4:4 10-bit multi-planar. */
+  NVBUF_COLOR_FORMAT_YUV444_10LE_ER,
+  /** Specifies BT.709 colorspace - Y/CbCr 4:4:4 10-bit multi-planar. */
+  NVBUF_COLOR_FORMAT_YUV444_10LE_709,
+  /** Specifies BT.709 colorspace - Y/CbCr ER 4:4:4 10-bit multi-planar. */
+  NVBUF_COLOR_FORMAT_YUV444_10LE_709_ER,
+  /** Specifies BT.2020 colorspace - Y/CbCr 4:4:4 10-bit multi-planar. */
+  NVBUF_COLOR_FORMAT_YUV444_10LE_2020,
+  /** Specifies BT.601 colorspace - Y/CbCr 4:4:4 12-bit multi-planar. */
+  NVBUF_COLOR_FORMAT_YUV444_12LE,
+  /** Specifies BT.601 colorspace - Y/CbCr ER 4:4:4 12-bit multi-planar. */
+  NVBUF_COLOR_FORMAT_YUV444_12LE_ER,
+  /** Specifies BT.709 colorspace - Y/CbCr 4:4:4 12-bit multi-planar. */
+  NVBUF_COLOR_FORMAT_YUV444_12LE_709,
+  /** Specifies BT.709 colorspace - Y/CbCr ER 4:4:4 12-bit multi-planar. */
+  NVBUF_COLOR_FORMAT_YUV444_12LE_709_ER,
+  /** Specifies BT.2020 colorspace - Y/CbCr 4:4:4 12-bit multi-planar. */
+  NVBUF_COLOR_FORMAT_YUV444_12LE_2020,
+  /** Specifies BT.601 colorspace - Y/CbCr ER 4:2:0 12-bit multi-planar. */
+  NVBUF_COLOR_FORMAT_NV12_12LE_ER,
+  /** Specifies BT.709 colorspace - Y/CbCr 4:2:0 12-bit multi-planar. */
+  NVBUF_COLOR_FORMAT_NV12_12LE_709,
+  /** Specifies BT.709 colorspace - Y/CbCr ER 4:2:0 12-bit multi-planar. */
+  NVBUF_COLOR_FORMAT_NV12_12LE_709_ER,
+  /** Specifies 8 bit GRAY scale ER - single plane */
+  NVBUF_COLOR_FORMAT_GRAY8_ER,
+  /** Specifies BT.709 colorspace - Y/CbCr 4:2:2 planar */
+  NVBUF_COLOR_FORMAT_UYVY_709,
+  /** Specifies BT.709 colorspace - Y/CbCr ER 4:2:2 planar */
+  NVBUF_COLOR_FORMAT_UYVY_709_ER,
+  /** Specifies BT.2020 colorspace - Y/CbCr 4:2:2 planar */
+  NVBUF_COLOR_FORMAT_UYVY_2020,
+  /** Specifies 16 bit GRAY scale - single plane */
+  NVBUF_COLOR_FORMAT_GRAY16_LE,
   NVBUF_COLOR_FORMAT_LAST
 } NvBufSurfaceColorFormat;
 
@@ -308,8 +355,9 @@ typedef struct NvBufSurfacePlaneParamsEx
   uint32_t physicaladdress[NVBUF_MAX_PLANES];
   /** flags associated with planes */
   uint64_t flags[NVBUF_MAX_PLANES];
-
-  void * _reserved[STRUCTURE_PADDING * NVBUF_MAX_PLANES];
+  /** DRM modifier for plane */
+  uint64_t drmModifier[NVBUF_MAX_PLANES];
+  void * _reserved[(STRUCTURE_PADDING - 1) * NVBUF_MAX_PLANES];
 } NvBufSurfacePlaneParamsEx;
 
 /**
@@ -338,6 +386,10 @@ typedef struct NvBufSurfacePlaneParams
 
 /**
   * Holds Chroma Subsampling parameters for NvBufSurface allocation.
+  * The members chromaLocHoriz and chromaLocVert accept these values:
+  * 0: Left horizontal or top vertical position
+  * 1: Center horizontal or center vertical position
+  * 2: Right horizontal or bottom vertical position
   */
 typedef struct NvBufSurfaceChromaSubsamplingParams
 {
@@ -384,8 +436,16 @@ typedef struct NvBufSurfaceAllocateParams {
   NvBufSurfaceChromaSubsamplingParams chromaSubsampling;
  /** components tag to be used for memory allocation */
   NvBufSurfaceTag memtag;
+ /** disable pitch padding allocation only applicable for cuda and system memory allocation  
+     pitch would be width times bytes per pixel for the plane, for odd width it would be 
+     multiple of 2, also note for some non standard video resolution cuda kernels may fail 
+     due to unaligned pitch
+     */
+  bool disablePitchPadding;
+ /** Used void* from custom param for 64 bit machine, using other uint32_t param */
+  uint32_t _reservedParam;
 
-  void * _reserved[STRUCTURE_PADDING];
+  void * _reserved[STRUCTURE_PADDING-1];
 } NvBufSurfaceAllocateParams;
 
 /**
@@ -475,6 +535,59 @@ typedef struct NvBufSurface {
 
   void * _reserved[STRUCTURE_PADDING];
 } NvBufSurface;
+
+/**
+ * Holds plane parameters to map the buffer received from another process.
+ */
+typedef struct NvBufSurfaceMapPlaneParams
+{
+  /** Holds the widths of planes */
+  uint32_t width;
+  /** Holds the heights of planes */
+  uint32_t height;
+  /** Holds the pitches of planes in bytes */
+  uint32_t pitch;
+  /** Holds the offsets of planes in bytes */
+  uint32_t offset;
+  /** Holds the sizes of planes in bytes */
+  uint32_t psize;
+  /** Holds offset of the second field for interlaced buffer */
+  uint32_t secondfieldoffset;
+  /** Holds block height of the planes for blockLinear layout buffer */
+  uint32_t blockheightlog2;
+  /** Holds flags associated with the planes */
+  uint64_t flags;
+  /** Reserved */
+  uint8_t reserved[64];
+} NvBufSurfaceMapPlaneParams;
+
+/**
+ * Holds buffer parameters to map the buffer received from another process.
+ */
+typedef struct NvBufSurfaceMapParams {
+  /** Holds the number of planes. */
+  uint32_t num_planes;
+  /** Holds a GPU ID */
+  uint32_t gpuId;
+  /** Holds a DMABUF FD */
+  uint64_t fd;
+  /** Holds the total size of allocated memory */
+  uint32_t totalSize;
+  /** Holds type of memory */
+  NvBufSurfaceMemType memType;
+  /** Holds BL or PL layout */
+  NvBufSurfaceLayout layout;
+  /** Holds display scan format */
+  NvBufSurfaceDisplayScanFormat scanformat;
+  /** Holds the color format */
+  NvBufSurfaceColorFormat colorFormat;
+  /** Holds chroma subsampling parameters */
+  NvBufSurfaceChromaSubsamplingParams chromaSubsampling;
+  /** Holds plane parameters */
+  NvBufSurfaceMapPlaneParams planes[NVBUF_MAX_PLANES];
+  /** Reserved */
+  uint8_t reserved[64];
+} NvBufSurfaceMapParams;
 
 /**
  * \brief  Allocates a batch of buffers.
@@ -731,6 +844,45 @@ int NvBufSurfaceMapEglImage (NvBufSurface *surf, int index);
  * @return 0 if successful, or -1 otherwise.
  */
 int NvBufSurfaceUnMapEglImage (NvBufSurface *surf, int index);
+
+/**
+ * \brief Import parameters received from another process and create hardware buffer.
+ *
+ * Calling process must need to call NvBufferDestroy() to remove reference count for
+ * hardware buffer handle of the imported DMA buffer.
+ *
+ * @param[out] out_nvbuf_surf  Pointer to hardware buffer.
+ * @param[in]  in_params       Parameters to create hardware buffer.
+ *
+ * @return 0 for success, -1 for failure.
+ */
+int NvBufSurfaceImport (NvBufSurface **out_nvbuf_surf, const NvBufSurfaceMapParams *in_params);
+
+/**
+ * \brief Get buffer information to map the buffer in another process.
+ *
+ * @param[in]  surf     Pointer to NvBufSurface structure.
+ * @param[in]  index    Index of a buffer in the batch.
+ * @param[out] params   Pointer to NvBufSurfaceMapParams information of the buffer.
+ *
+ * @return 0 for success, -1 for failure.
+ */
+
+#ifdef __ANDROID__
+/**
+ * Extracts the surface from android native buffer handle. Returns the DMA buffer FD for the surface.
+ * Fills the extended parameters which are extracted from surface.
+ *
+ * @param[out]  out_dmabuf_fd  Returns the Output hardware DMABUF FD.
+ * @param[in]   handle         Android native buffer handle.
+ * @param[out]  exparams       A pointer to the structure to fill with extended parameters.
+ *
+ * @returns 0 for success, -1 for failure
+ */
+int NvBufSurfaceImportGraphicBufferFd(int *out_dmabuf_fd, buffer_handle_t *handle, NvBufSurfaceMapParams *exparams);
+#endif
+
+int NvBufSurfaceGetMapParams (const NvBufSurface *surf, int index, NvBufSurfaceMapParams *params);
 
 /** @} */
 

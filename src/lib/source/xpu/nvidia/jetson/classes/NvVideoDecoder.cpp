@@ -1,28 +1,30 @@
 /*
- * Copyright (c) 2016-2021, NVIDIA CORPORATION. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2016-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *  * Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *  * Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *  * Neither the name of NVIDIA CORPORATION nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
+ * modification, are permitted provided that the following conditions are met:
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
- * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
@@ -34,6 +36,7 @@
 #include <libv4l2.h>
 
 #define DECODER_DEV "/dev/nvhost-nvdec"
+#define DECODER_DEV_ALT "/dev/v4l2-nvdec"
 #define CAT_NAME "NVDEC"
 
 #define CHECK_V4L2_RETURN(ret, str)              \
@@ -65,15 +68,29 @@
 
 using namespace std;
 
-NvVideoDecoder::NvVideoDecoder(const char *name, int flags)
-    :NvV4l2Element(name, DECODER_DEV, flags, valid_fields)
+NvVideoDecoder::NvVideoDecoder(const char *name, const char *dev_node, int flags)
+    : NvV4l2Element(name, dev_node, flags, valid_fields)
 {
 }
 
 NvVideoDecoder *
 NvVideoDecoder::createVideoDecoder(const char *name, int flags)
 {
-    NvVideoDecoder *dec = new NvVideoDecoder(name, flags);
+    NvVideoDecoder *dec;
+
+    if (access(DECODER_DEV, F_OK) == 0)
+    {
+        dec = new NvVideoDecoder(name, DECODER_DEV, flags);
+    }
+    else if (access(DECODER_DEV_ALT, F_OK) == 0)
+    {
+        dec = new NvVideoDecoder(name, DECODER_DEV_ALT, flags);
+    }
+    else
+    {
+        return NULL;
+    }
+
     if (dec->isInError())
     {
         delete dec;
@@ -95,9 +112,9 @@ NvVideoDecoder::setCapturePlaneFormat(uint32_t pixfmt, uint32_t width,
     NvBuffer::NvBufferPlaneFormat planefmts[MAX_PLANES];
 
     if (! ((pixfmt == V4L2_PIX_FMT_NV12M) || (pixfmt == V4L2_PIX_FMT_P010M) || (pixfmt == V4L2_PIX_FMT_YUV422M) ||
-           (pixfmt == V4L2_PIX_FMT_NV24M) || (pixfmt == V4L2_PIX_FMT_NV24_10LE)))
+           (pixfmt == V4L2_PIX_FMT_NV24M) || (pixfmt == V4L2_PIX_FMT_NV24_10LE) || (pixfmt == V4L2_PIX_FMT_YUV420M)))
     {
-        COMP_ERROR_MSG("Only NV12M, P010M, YUV422M, NV24M and NV24_10LE is supported");
+        COMP_ERROR_MSG("Only NV12M, P010M, YUV420M, YUV422M, NV24M and NV24_10LE is supported");
         return -1;
     }
 
@@ -210,6 +227,26 @@ NvVideoDecoder::setFrameInputMode(unsigned int ctrl_value)
             "Setting decoder frame input mode to " << ctrl_value);
 }
 
+int
+NvVideoDecoder::setSliceMode(unsigned int ctrl_value)
+{
+    struct v4l2_ext_control control;
+    struct v4l2_ext_controls ctrls;
+
+    RETURN_ERROR_IF_FORMATS_NOT_SET();
+
+    memset(&control, 0, sizeof(control));
+    memset(&ctrls, 0, sizeof(ctrls));
+
+    ctrls.count = 1;
+    ctrls.controls = &control;
+
+    control.id = V4L2_CID_MPEG_VIDEO_DECODER_SLICE_INTERFACE;
+    control.value = ctrl_value;
+
+    CHECK_V4L2_RETURN(setExtControls(ctrls),
+            "Setting decoder slice mode to " << ctrl_value);
+}
 
 int
 NvVideoDecoder::getMinimumCapturePlaneBuffers(int &num)
@@ -441,3 +478,82 @@ NvVideoDecoder::ClearPollInterrupt()
             "Setting decoder poll interrupt to 0 ");
 }
 
+int
+NvVideoDecoder::enableGDRStream()
+{
+    struct v4l2_ext_control control;
+    struct v4l2_ext_controls ctrls;
+
+    RETURN_ERROR_IF_FORMATS_NOT_SET();
+
+    memset(&control, 0, sizeof(control));
+    memset(&ctrls, 0, sizeof(ctrls));
+
+    ctrls.count = 1;
+    ctrls.controls = &control;
+
+    control.id = V4L2_CID_MPEG_VIDEODEC_GDR_STREAM;
+
+    CHECK_V4L2_RETURN(setExtControls(ctrls),
+            "Setting decoder to decode GDR stream ");
+}
+
+int
+NvVideoDecoder::setAV1OperatingPoint(int ctrl_value)
+{
+    struct v4l2_ext_control control;
+    struct v4l2_ext_controls ctrls;
+
+    RETURN_ERROR_IF_FORMATS_NOT_SET();
+
+    memset(&control, 0, sizeof(control));
+    memset(&ctrls, 0, sizeof(ctrls));
+
+    ctrls.count = 1;
+    ctrls.controls = &control;
+
+    control.id = V4L2_CID_MPEG_VIDEODEC_OPERATING_POINT;
+    control.value = ctrl_value;
+
+    CHECK_V4L2_RETURN(setExtControls(ctrls),
+            "Set the operating point for AV1 decoder");
+}
+
+int
+NvVideoDecoder::enableAV1MVC()
+{
+    struct v4l2_ext_control control;
+    struct v4l2_ext_controls ctrls;
+
+    RETURN_ERROR_IF_FORMATS_NOT_SET();
+
+    memset(&control, 0, sizeof(control));
+    memset(&ctrls, 0, sizeof(ctrls));
+
+    ctrls.count = 1;
+    ctrls.controls = &control;
+
+    control.id = V4L2_CID_MPEG_VIDEODEC_ENABLE_MVC;
+
+    CHECK_V4L2_RETURN(setExtControls(ctrls),
+            "Setting decoder to enable AV1 MVC");
+}
+
+int
+NvVideoDecoder::getAV1NumOperatingPoints(uint8_t &num_operating_points)
+{
+    struct v4l2_ext_control control;
+    struct v4l2_ext_controls ctrls;
+
+    memset(&control, 0, sizeof(control));
+    memset(&ctrls, 0, sizeof(ctrls));
+
+    ctrls.count = 1;
+    ctrls.controls = &control;
+
+    control.id = V4L2_CID_MPEG_VIDEODEC_NUM_OPERATING_POINTS;
+    control.string = (char *)&num_operating_points;
+
+    CHECK_V4L2_RETURN(getExtControls(ctrls),
+            "Getting AV1 decoder number of operating points");
+}
