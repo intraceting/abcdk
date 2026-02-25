@@ -9,8 +9,13 @@
 
 #include "abcdk/xpu/context.h"
 #include "runtime.in.h"
+
+#if defined(__XPU_GENERAL__)
 #include "general/context.hxx"
+#if defined(__XPU_NVIDIA__)
 #include "nvidia/context.hxx"
+#endif //#if defined(__XPU_NVIDIA__)
+#endif //#if defined(__XPU_GENERAL__)
 
 namespace abcdk_xpu
 {
@@ -24,7 +29,7 @@ namespace abcdk_xpu
         public:
             guard(abcdk_xpu_context_t *ctx)
             {
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
 
                 if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NONE)
                 {
@@ -33,21 +38,21 @@ namespace abcdk_xpu
                 }
                 else if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NVIDIA)
                 {
-#ifndef HAVE_CUDA
+#if !defined(__XPU_NVIDIA__)
                     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含NVIDIA工具."));
                     assert(0);
-#else  // #ifndef HAVE_CUDA
+#else  // #if !defined(__XPU_NVIDIA__)
                     int chk = abcdk_xpu::nvidia::context::current_push((abcdk_xpu::nvidia::context::metadata_t *)(m_ctx = ctx));
                     assert(chk == 0);
-#endif // #ifndef HAVE_CUDA
+#endif // #if !defined(__XPU_NVIDIA__)
                 }
 
-#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif //#if defined(__XPU_GENERAL__)
             }
 
             virtual ~guard()
             {
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
 
                 if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NONE)
                 {
@@ -57,17 +62,17 @@ namespace abcdk_xpu
                 }
                 else if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NVIDIA)
                 {
-#ifndef HAVE_CUDA
+#if !defined(__XPU_NVIDIA__)
                     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含NVIDIA工具."));
                     assert(0);
-#else  // #ifndef HAVE_CUDA
+#else  // #if !defined(__XPU_NVIDIA__)
                     int chk = abcdk_xpu::nvidia::context::current_pop((abcdk_xpu::nvidia::context::metadata_t *)m_ctx);
                     assert(chk == 0);
                     abcdk_xpu::nvidia::context::unref((abcdk_xpu::nvidia::context::metadata_t **)&m_ctx);
-#endif // #ifndef HAVE_CUDA
+#endif // #if !defined(__XPU_NVIDIA__)
                 }
 
-#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif //#if defined(__XPU_GENERAL__)
             }
         };
 

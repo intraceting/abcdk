@@ -6,20 +6,23 @@
  */
 #include "abcdk/xpu/dnn_track.h"
 #include "runtime.in.h"
+
+#if defined(__XPU_GENERAL__)
 #include "common/dnn_mot_bytetrack.hxx"
+#endif //#if defined(__XPU_GENERAL__)
 
 typedef struct _abcdk_xpu_dnn_track
 {
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
     abcdk_xpu::common::dnn::mot *mot_ctx;
-#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif //#if defined(__XPU_GENERAL__)
 } abcdk_xpu_dnn_track_t;
 
 void abcdk_xpu_dnn_track_free(abcdk_xpu_dnn_track_t **ctx)
 {
     abcdk_xpu_dnn_track_t *ctx_p;
 
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
 
     if (!ctx || !*ctx)
         return;
@@ -37,14 +40,14 @@ void abcdk_xpu_dnn_track_free(abcdk_xpu_dnn_track_t **ctx)
 
     abcdk_xpu::common::util::delete_object(&ctx_p);
 
-#endif // #if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif // #if defined(__XPU_GENERAL__)
 }
 
 abcdk_xpu_dnn_track_t *abcdk_xpu_dnn_track_alloc()
 {
     abcdk_xpu_dnn_track_t *ctx = NULL;
 
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
 
     ctx = new abcdk_xpu_dnn_track_t;
     if (!ctx)
@@ -53,7 +56,7 @@ abcdk_xpu_dnn_track_t *abcdk_xpu_dnn_track_alloc()
     ctx->mot_ctx = NULL;
 
 
-#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif //#if defined(__XPU_GENERAL__)
 
     return ctx;
 }
@@ -62,7 +65,7 @@ int abcdk_xpu_dnn_track_init(abcdk_xpu_dnn_track_t *ctx, const char *name, abcdk
 {
     assert(ctx != NULL && name != NULL && opt != NULL);
 
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
 
     ABCDK_TRACE_ASSERT(ctx->mot_ctx == NULL, ABCDK_GETTEXT("仅允许初始化一次."));
 
@@ -80,22 +83,22 @@ int abcdk_xpu_dnn_track_init(abcdk_xpu_dnn_track_t *ctx, const char *name, abcdk
 
     ctx->mot_ctx->prepare(opt);
     return 0;
-#else //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#else //#if defined(__XPU_GENERAL__)
     return -1;
-#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif //#if defined(__XPU_GENERAL__)
 }
 
 int abcdk_xpu_dnn_track_update(abcdk_xpu_dnn_track_t *ctx, int count, abcdk_xpu_dnn_object_t object[])
 {
     assert(ctx != NULL && count > 0 && object != NULL);
 
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
 
     ABCDK_TRACE_ASSERT(ctx->mot_ctx != NULL,ABCDK_GETTEXT("未初始化, 不能执行此操作."));
 
     ctx->mot_ctx->update(count,object);
     return 0;
-#else //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#else //#if defined(__XPU_GENERAL__)
     return -1;
-#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif //#if defined(__XPU_GENERAL__)
 }

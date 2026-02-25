@@ -10,28 +10,6 @@
 #include "abcdk/xpu/runtime.h"
 #include "abcdk/ffmpeg/ffmpeg.h"
 
-/*CUDA interface.*/
-#ifdef HAVE_CUDA
-#include <cuda.h>
-#include <cuda_runtime.h>
-#include <cuda_runtime_api.h>
-#include <device_launch_parameters.h>
-#include <cublas_v2.h>
-#include <npp.h>
-#ifdef __x86_64__
-#include <nvjpeg.h>
-#endif //__x86_64__
-/*TensorRT interface.*/
-#ifdef HAVE_TENSORRT
-#include "NvInfer.h"
-#include "NvInferPlugin.h"
-#include "NvOnnxParser.h"
-#endif //HAVE_TENSORRT
-#else //#ifdef HAVE_CUDA
-/*Cancel TensorRT interface.*/
-#undef HAVE_TENSORRT
-#endif //HAVE_CUDA
-
 #ifdef HAVE_OPENCV
 #include "opencv2/opencv.hpp"
 #include "opencv2/dnn.hpp"
@@ -49,6 +27,32 @@
 #endif // ONNX_ML
 #include "onnx/onnx_pb.h"
 #endif //#ifdef HAVE_ONNX
+
+#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG) && defined(HAVE_ONNX) && defined(HAVE_EIGEN3)
+#define __XPU_GENERAL__
+#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG) && defined(HAVE_ONNX) && defined(HAVE_EIGEN)
+
+#ifdef HAVE_CUDA
+#include <cuda.h>
+#include <cuda_runtime.h>
+#include <cuda_runtime_api.h>
+#include <device_launch_parameters.h>
+#include <cublas_v2.h>
+#include <npp.h>
+#ifdef __x86_64__
+#include <nvjpeg.h>
+#endif //__x86_64__
+#endif //HAVE_CUDA
+
+#ifdef HAVE_TENSORRT
+#include "NvInfer.h"
+#include "NvInferPlugin.h"
+#include "NvOnnxParser.h"
+#endif //HAVE_TENSORRT
+
+#if defined(HAVE_CUDA) && defined(HAVE_TENSORRT)
+#define __XPU_NVIDIA__
+#endif //#if defined(HAVE_CUDA) && defined(HAVE_TENSORRT)
 
 
 #ifdef __NVCC__

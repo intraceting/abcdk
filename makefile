@@ -73,7 +73,9 @@ NVCC_FLAGS += -ccbin ${CXX}
 NVCC_FLAGS += -Xcudafe --diag_suppress=unrecognized_attribute -Xcudafe --diag_suppress=611 -Xcudafe --diag_suppress=68
 
 #在GCC中, 链接器按照从左到右的顺序解析库, 因此想让这个生效, 必须写在链接参数的第一个.
-LD_FLAGS += -Wl,--as-needed
+LD_FLAGS += -Wl,--as-needed 
+#静态链接这两个库.
+#LD_FLAGS += -static-libstdc++ -static-libgcc
 
 #
 ifeq (${BUILD_TYPE},debug)

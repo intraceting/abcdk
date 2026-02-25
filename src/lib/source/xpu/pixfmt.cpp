@@ -6,12 +6,17 @@
  */
 #include "abcdk/xpu/pixfmt.h"
 #include "runtime.in.h"
+
+#if defined(__XPU_GENERAL__)
 #include "general/pixfmt.hxx"
+#if defined(__XPU_NVIDIA__)
 #include "nvidia/pixfmt.hxx"
+#endif //#if defined(__XPU_NVIDIA__)
+#endif //#if defined(__XPU_GENERAL__)
 
 int abcdk_xpu_pixfmt_get_bit(abcdk_xpu_pixfmt_t pixfmt, int have_pad)
 {
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
 
     if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NONE)
     {
@@ -19,22 +24,22 @@ int abcdk_xpu_pixfmt_get_bit(abcdk_xpu_pixfmt_t pixfmt, int have_pad)
     }
     else if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NVIDIA)
     {
-#ifndef HAVE_CUDA
+#if !defined(__XPU_NVIDIA__)
         abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含NVIDIA工具."));
         return -1;
-#else  // #ifndef HAVE_CUDA
+#else  // #if !defined(__XPU_NVIDIA__)
         return abcdk_xpu::nvidia::pixfmt::get_bit(pixfmt, have_pad);
-#endif // #ifndef HAVE_CUDA
+#endif // #if !defined(__XPU_NVIDIA__)
     }
 
-#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif //#if defined(__XPU_GENERAL__)
 
     return -1;
 }
 
 const char *abcdk_xpu_pixfmt_get_name(abcdk_xpu_pixfmt_t pixfmt)
 {
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
 
     if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NONE)
     {
@@ -42,22 +47,22 @@ const char *abcdk_xpu_pixfmt_get_name(abcdk_xpu_pixfmt_t pixfmt)
     }
     else if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NVIDIA)
     {
-#ifndef HAVE_CUDA
+#if !defined(__XPU_NVIDIA__)
         abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含NVIDIA工具."));
         return "";
-#else  // #ifndef HAVE_CUDA
+#else  // #if !defined(__XPU_NVIDIA__)
         return abcdk_xpu::nvidia::pixfmt::get_name(pixfmt);
-#endif // #ifndef HAVE_CUDA
+#endif // #if !defined(__XPU_NVIDIA__)
     }
 
-#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif //#if defined(__XPU_GENERAL__)
 
     return "";
 }
 
 int abcdk_xpu_pixfmt_get_channel(abcdk_xpu_pixfmt_t pixfmt)
 {
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
 
     if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NONE)
     {
@@ -65,15 +70,15 @@ int abcdk_xpu_pixfmt_get_channel(abcdk_xpu_pixfmt_t pixfmt)
     }
     else if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NVIDIA)
     {
-#ifndef HAVE_CUDA
+#if !defined(__XPU_NVIDIA__)
         abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含NVIDIA工具."));
         return -1;
-#else  // #ifndef HAVE_CUDA
+#else  // #if !defined(__XPU_NVIDIA__)
         return abcdk_xpu::nvidia::pixfmt::get_channel(pixfmt);
-#endif // #ifndef HAVE_CUDA
+#endif // #if !defined(__XPU_NVIDIA__)
     }
 
-#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif //#if defined(__XPU_GENERAL__)
 
     return -1;
 }

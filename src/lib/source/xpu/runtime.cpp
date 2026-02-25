@@ -6,7 +6,12 @@
  */
 #include "abcdk/xpu/runtime.h"
 #include "runtime.in.h"
+
+#if defined(__XPU_GENERAL__)
+#if defined(__XPU_NVIDIA__)
 #include "nvidia/runtime.hxx"
+#endif //#if defined(__XPU_NVIDIA__)
+#endif //#if defined(__XPU_GENERAL__)
 
 static int _abcdk_xpu_hwaccel_current = ABCDK_XPU_HWACCEL_NONE;
 
@@ -22,7 +27,7 @@ int _abcdk_xpu_hwaccel_get()
 
 int abcdk_xpu_runtime_deinit()
 {
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
 
     if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NONE)
     {
@@ -31,15 +36,15 @@ int abcdk_xpu_runtime_deinit()
     else 
     if(_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NVIDIA)
     {
-#ifndef HAVE_CUDA
+#if !defined(__XPU_NVIDIA__)
         abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含NVIDIA工具."));
         return -1;
-#else  // #ifndef HAVE_CUDA
+#else  // #if !defined(__XPU_NVIDIA__)
         return abcdk_xpu::nvidia::runtime::deinit();
-#endif // #ifndef HAVE_CUDA
+#endif // #if !defined(__XPU_NVIDIA__)
     }
 
-#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif //#if defined(__XPU_GENERAL__)
 
     return -1;
 }
@@ -54,7 +59,7 @@ int abcdk_xpu_runtime_init(int hwaccel, ...)
            hwaccel == ABCDK_XPU_HWACCEL_ROCKCHIP ||
            hwaccel == ABCDK_XPU_HWACCEL_AXERA);
 
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
 
     _abcdk_xpu_hwaccel_set(hwaccel);
 
@@ -64,15 +69,15 @@ int abcdk_xpu_runtime_init(int hwaccel, ...)
     }
     else if (hwaccel == ABCDK_XPU_HWACCEL_NVIDIA)
     {
-#ifndef HAVE_CUDA
+#if !defined(__XPU_NVIDIA__)
         abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含NVIDIA工具."));
         return -1;
-#else  // #ifndef HAVE_CUDA
+#else  // #if !defined(__XPU_NVIDIA__)
         return abcdk_xpu::nvidia::runtime::init();
-#endif // #ifndef HAVE_CUDA
+#endif // #if !defined(__XPU_NVIDIA__)
     }
 
-#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif //#if defined(__XPU_GENERAL__)
 
     return 1;
 }

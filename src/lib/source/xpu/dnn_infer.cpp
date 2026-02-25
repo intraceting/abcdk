@@ -7,12 +7,17 @@
 #include "abcdk/xpu/dnn_infer.h"
 #include "runtime.in.h"
 #include "context.in.h"
+
+#if defined(__XPU_GENERAL__)
 #include "general/dnn_infer.hxx"
+#if defined(__XPU_NVIDIA__)
 #include "nvidia/dnn_infer.hxx"
+#endif //#if defined(__XPU_NVIDIA__)
+#endif //#if defined(__XPU_GENERAL__)
 
 void abcdk_xpu_dnn_infer_free(abcdk_xpu_dnn_infer_t **ctx)
 {
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
 
     abcdk_xpu::context::guard context_push_pop(_abcdk_xpu_context_current_get());
 
@@ -22,21 +27,21 @@ void abcdk_xpu_dnn_infer_free(abcdk_xpu_dnn_infer_t **ctx)
     }
     else if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NVIDIA)
     {
-#ifndef HAVE_CUDA
+#if !defined(__XPU_NVIDIA__)
         abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含NVIDIA工具."));
-#else  // #ifndef HAVE_CUDA
+#else  // #if !defined(__XPU_NVIDIA__)
         abcdk_xpu::nvidia::dnn::infer::free((abcdk_xpu::nvidia::dnn::infer::metadata_t **)ctx);
-#endif // #ifndef HAVE_CUDA
+#endif // #if !defined(__XPU_NVIDIA__)
     }
 
-#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif //#if defined(__XPU_GENERAL__)
 
     return;
 }
 
 abcdk_xpu_dnn_infer_t *abcdk_xpu_dnn_infer_alloc()
 {
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
 
     abcdk_xpu::context::guard context_push_pop(_abcdk_xpu_context_current_get());
 
@@ -46,15 +51,15 @@ abcdk_xpu_dnn_infer_t *abcdk_xpu_dnn_infer_alloc()
     }
     else if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NVIDIA)
     {
-#ifndef HAVE_CUDA
+#if !defined(__XPU_NVIDIA__)
         abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含NVIDIA工具."));
         return NULL;
-#else  // #ifndef HAVE_CUDA
+#else  // #if !defined(__XPU_NVIDIA__)
         return (abcdk_xpu_dnn_infer_t *)abcdk_xpu::nvidia::dnn::infer::alloc();
-#endif // #ifndef HAVE_CUDA
+#endif // #if !defined(__XPU_NVIDIA__)
     }
 
-#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif //#if defined(__XPU_GENERAL__)
 
     return NULL;
 }
@@ -63,7 +68,7 @@ int abcdk_xpu_dnn_infer_load_model(abcdk_xpu_dnn_infer_t *ctx, const char *file,
 {
     assert(ctx != NULL && file != NULL && opt != NULL);
 
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
 
     abcdk_xpu::context::guard context_push_pop(_abcdk_xpu_context_current_get());
 
@@ -73,15 +78,15 @@ int abcdk_xpu_dnn_infer_load_model(abcdk_xpu_dnn_infer_t *ctx, const char *file,
     }
     else if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NVIDIA)
     {
-#ifndef HAVE_CUDA
+#if !defined(__XPU_NVIDIA__)
         abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含NVIDIA工具."));
         return -1;
-#else  // #ifndef HAVE_CUDA
+#else  // #if !defined(__XPU_NVIDIA__)
         return abcdk_xpu::nvidia::dnn::infer::load_model((abcdk_xpu::nvidia::dnn::infer::metadata_t *)ctx, file, opt);
-#endif // #ifndef HAVE_CUDA
+#endif // #if !defined(__XPU_NVIDIA__)
     }
 
-#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif //#if defined(__XPU_GENERAL__)
 
     return -1;
 }
@@ -90,7 +95,7 @@ int abcdk_xpu_dnn_infer_fetch_tensor(abcdk_xpu_dnn_infer_t *ctx, int count, abcd
 {
     assert(ctx != NULL && count > 0 && tensor != NULL);
 
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
 
     abcdk_xpu::context::guard context_push_pop(_abcdk_xpu_context_current_get());
 
@@ -100,15 +105,15 @@ int abcdk_xpu_dnn_infer_fetch_tensor(abcdk_xpu_dnn_infer_t *ctx, int count, abcd
     }
     else if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NVIDIA)
     {
-#ifndef HAVE_CUDA
+#if !defined(__XPU_NVIDIA__)
         abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含NVIDIA工具."));
         return -1;
-#else  // #ifndef HAVE_CUDA
+#else  // #if !defined(__XPU_NVIDIA__)
         return abcdk_xpu::nvidia::dnn::infer::fetch_tensor((abcdk_xpu::nvidia::dnn::infer::metadata_t *)ctx, count, tensor);
-#endif // #ifndef HAVE_CUDA
+#endif // #if !defined(__XPU_NVIDIA__)
     }
 
-#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif //#if defined(__XPU_GENERAL__)
 
     return -1;
 }
@@ -117,7 +122,7 @@ int abcdk_xpu_dnn_infer_forward(abcdk_xpu_dnn_infer_t *ctx, int count, abcdk_xpu
 {
     assert(ctx != NULL && count > 0 && img != NULL);
 
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
 
     abcdk_xpu::context::guard context_push_pop(_abcdk_xpu_context_current_get());
 
@@ -127,15 +132,15 @@ int abcdk_xpu_dnn_infer_forward(abcdk_xpu_dnn_infer_t *ctx, int count, abcdk_xpu
     }
     else if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NVIDIA)
     {
-#ifndef HAVE_CUDA
+#if !defined(__XPU_NVIDIA__)
         abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含NVIDIA工具."));
         return -1;
-#else  // #ifndef HAVE_CUDA
+#else  // #if !defined(__XPU_NVIDIA__)
         return abcdk_xpu::nvidia::dnn::infer::forward((abcdk_xpu::nvidia::dnn::infer::metadata_t *)ctx, count, (abcdk_xpu::general::image::metadata_t **)img);
-#endif // #ifndef HAVE_CUDA
+#endif // #if !defined(__XPU_NVIDIA__)
     }
 
-#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif //#if defined(__XPU_GENERAL__)
 
     return -1;
 }

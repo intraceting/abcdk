@@ -7,14 +7,19 @@
 #include "abcdk/xpu/imgcodec.h"
 #include "runtime.in.h"
 #include "context.in.h"
+
+#if defined(__XPU_GENERAL__)
 #include "general/imgcodec.hxx"
+#if defined(__XPU_NVIDIA__)
 #include "nvidia/imgcodec.hxx"
+#endif //#if defined(__XPU_NVIDIA__)
+#endif //#if defined(__XPU_GENERAL__)
 
 abcdk_object_t *abcdk_xpu_imgcodec_encode(const abcdk_xpu_image_t *src, const char *ext)
 {
     assert(src != NULL);
 
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
 
     abcdk_xpu::context::guard context_push_pop(_abcdk_xpu_context_current_get());
 
@@ -24,15 +29,15 @@ abcdk_object_t *abcdk_xpu_imgcodec_encode(const abcdk_xpu_image_t *src, const ch
     }
     else if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NVIDIA)
     {
-#ifndef HAVE_CUDA
+#if !defined(__XPU_NVIDIA__)
         abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含NVIDIA工具."));
         return NULL;
-#else  // #ifndef HAVE_CUDA
+#else  // #if !defined(__XPU_NVIDIA__)
         return abcdk_xpu::nvidia::imgcodec::encode((abcdk_xpu::nvidia::image::metadata_t *)src, ext);
-#endif // #ifndef HAVE_CUDA
+#endif // #if !defined(__XPU_NVIDIA__)
     }
 
-#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif //#if defined(__XPU_GENERAL__)
 
     return NULL;
 }
@@ -63,7 +68,7 @@ abcdk_xpu_image_t *abcdk_xpu_imgcodec_decode(const void *src, size_t size)
 {
     assert(src != NULL && size > 0);
 
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
 
     abcdk_xpu::context::guard context_push_pop(_abcdk_xpu_context_current_get());
 
@@ -73,15 +78,15 @@ abcdk_xpu_image_t *abcdk_xpu_imgcodec_decode(const void *src, size_t size)
     }
     else if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NVIDIA)
     {
-#ifndef HAVE_CUDA
+#if !defined(__XPU_NVIDIA__)
         abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含NVIDIA工具."));
         return NULL;
-#else  // #ifndef HAVE_CUDA
+#else  // #if !defined(__XPU_NVIDIA__)
         return (abcdk_xpu_image_t *)abcdk_xpu::nvidia::imgcodec::decode(src, size);
-#endif // #ifndef HAVE_CUDA
+#endif // #if !defined(__XPU_NVIDIA__)
     }
 
-#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif //#if defined(__XPU_GENERAL__)
 
     return NULL;
 }

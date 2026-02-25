@@ -32,6 +32,7 @@ static struct _abcdk_tool_entry
     {"basecode",abcdk_tool_basecode},
     {"mcdump",abcdk_tool_mcdump},
     {"uart",abcdk_tool_uart},
+    {"calibrate",abcdk_tool_calibrate},
 };
 
 void _abcdk_tool_print_usage()

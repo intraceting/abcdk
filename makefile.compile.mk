@@ -18,16 +18,22 @@ LIB_SRC_CXX_FILES += $(wildcard $(SRC_DIR)/lib/source/*/*.cpp)
 #
 ifeq (${HAVE_FFMPEG},yes)
 ifeq (${HAVE_OPENCV},yes)
+ifeq (${HAVE_ONNX},yes)
+ifeq (${HAVE_EIGEN3},yes)
 LIB_SRC_CXX_FILES += $(wildcard $(SRC_DIR)/lib/source/xpu/common/*.cpp)
 LIB_SRC_CXX_FILES += $(wildcard $(SRC_DIR)/lib/source/xpu/common/bytetrack/*.cpp)
 LIB_SRC_CXX_FILES += $(wildcard $(SRC_DIR)/lib/source/xpu/general/*.cpp)
 endif
 endif
+endif
+endif
 
 #
 ifeq (${HAVE_CUDA},yes)
+ifeq (${HAVE_TENSORRT},yes)
 LIB_SRC_CXX_FILES += $(wildcard $(SRC_DIR)/lib/source/xpu/nvidia/*.cpp)
 LIB_SRC_CU_FILES += $(wildcard $(SRC_DIR)/lib/source/xpu/nvidia/*.cu)
+endif
 endif
 
 #

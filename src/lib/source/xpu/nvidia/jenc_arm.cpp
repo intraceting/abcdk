@@ -27,7 +27,12 @@ namespace abcdk_xpu
 
             metadata_t *alloc()
             {
+                return NULL;
+            }
 
+            abcdk_object_t *encode(metadata_t *ctx, const image::metadata_t *src)
+            {
+                return NULL;
             }
 
         } // namespace jenc

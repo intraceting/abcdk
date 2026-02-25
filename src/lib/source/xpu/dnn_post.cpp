@@ -6,25 +6,28 @@
  */
 #include "abcdk/xpu/dnn_post.h"
 #include "runtime.in.h"
+
+#if defined(__XPU_GENERAL__)
 #include "common/dnn_yolo_v11_obb.hxx"
 #include "common/dnn_yolo_v11_pose.hxx"
 #include "common/dnn_yolo_v11_seg.hxx"
 #include "common/dnn_yolo_v11.hxx"
 #include "common/dnn_face_yunet.hxx"
 #include "common/dnn_face_sface.hxx"
+#endif //#if defined(__XPU_GENERAL__)
 
 typedef struct _abcdk_xpu_dnn_post
 {
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
     abcdk_xpu::common::dnn::model *model_ctx;
-#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif //#if defined(__XPU_GENERAL__)
 } abcdk_xpu_dnn_post_t;
 
 void abcdk_xpu_dnn_post_free(abcdk_xpu_dnn_post_t **ctx)
 {
     abcdk_xpu_dnn_post_t *ctx_p;
 
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
 
     if (!ctx || !*ctx)
         return;
@@ -52,14 +55,14 @@ void abcdk_xpu_dnn_post_free(abcdk_xpu_dnn_post_t **ctx)
 
     abcdk_xpu::common::util::delete_object(&ctx_p);
 
-#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif //#if defined(__XPU_GENERAL__)
 }
 
 abcdk_xpu_dnn_post_t *abcdk_xpu_dnn_post_alloc()
 {
     abcdk_xpu_dnn_post_t *ctx = NULL;
 
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
 
     ctx = new abcdk_xpu_dnn_post_t;
     if (!ctx)
@@ -67,7 +70,7 @@ abcdk_xpu_dnn_post_t *abcdk_xpu_dnn_post_alloc()
 
     ctx->model_ctx = NULL;
 
-#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif //#if defined(__XPU_GENERAL__)
 
     return ctx;
 }
@@ -76,7 +79,7 @@ int abcdk_xpu_dnn_post_init(abcdk_xpu_dnn_post_t *ctx, const char *name, abcdk_o
 {
     assert(ctx != NULL && name != NULL && opt != NULL);
 
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
 
     ABCDK_TRACE_ASSERT(ctx->model_ctx == NULL, ABCDK_GETTEXT("仅允许初始化一次."));
 
@@ -124,9 +127,9 @@ int abcdk_xpu_dnn_post_init(abcdk_xpu_dnn_post_t *ctx, const char *name, abcdk_o
 
     ctx->model_ctx->prepare(opt);
     return 0;
-#else //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#else //#if defined(__XPU_GENERAL__)
     return -1;
-#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif //#if defined(__XPU_GENERAL__)
 }
 
 int abcdk_xpu_dnn_post_process(abcdk_xpu_dnn_post_t *ctx, int count, abcdk_xpu_dnn_tensor_t tensor[], float score_threshold, float nms_threshold)
@@ -135,7 +138,7 @@ int abcdk_xpu_dnn_post_process(abcdk_xpu_dnn_post_t *ctx, int count, abcdk_xpu_d
 
     assert(ctx != NULL && count > 0 && tensor != NULL);
 
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
 
     ABCDK_TRACE_ASSERT(ctx->model_ctx != NULL,ABCDK_GETTEXT("未初始化, 不能执行此操作."));
 
@@ -148,9 +151,9 @@ int abcdk_xpu_dnn_post_process(abcdk_xpu_dnn_post_t *ctx, int count, abcdk_xpu_d
 
     ctx->model_ctx->process(tmp_tensor, score_threshold, nms_threshold);
     return 0;
-#else //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#else //#if defined(__XPU_GENERAL__)
     return -1;
-#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif //#if defined(__XPU_GENERAL__)
 }
 
 int abcdk_xpu_dnn_post_fetch(abcdk_xpu_dnn_post_t *ctx, int index, int count, abcdk_xpu_dnn_object_t object[])
@@ -160,7 +163,7 @@ int abcdk_xpu_dnn_post_fetch(abcdk_xpu_dnn_post_t *ctx, int index, int count, ab
 
     assert(ctx != NULL && index >= 0 && count > 0 && object != NULL);
 
-#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#if defined(__XPU_GENERAL__)
 
     ABCDK_TRACE_ASSERT(ctx->model_ctx != NULL,ABCDK_GETTEXT("未初始化, 不能执行此操作."));
 
@@ -175,7 +178,7 @@ int abcdk_xpu_dnn_post_fetch(abcdk_xpu_dnn_post_t *ctx, int index, int count, ab
         chk_count += 1;
     }
 
-#endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG)
+#endif //#if defined(__XPU_GENERAL__)
 
     return chk_count;
 }

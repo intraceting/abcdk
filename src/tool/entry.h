@@ -25,6 +25,7 @@ int abcdk_tool_lsmmc(abcdk_option_t *args);
 int abcdk_tool_basecode(abcdk_option_t *args);
 int abcdk_tool_mcdump(abcdk_option_t *args);
 int abcdk_tool_uart(abcdk_option_t *args);
+int abcdk_tool_calibrate(abcdk_option_t *args);
 
 __END_DECLS
 

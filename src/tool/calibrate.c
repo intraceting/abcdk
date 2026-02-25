@@ -1,7 +1,7 @@
 /*
- * This file is part of ABVDK.
+ * This file is part of ABCDK.
  *
- * Copyright (c) 2021 The ABVDK project authors. All Rights Reserved.
+ * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  *
  */
 #include "entry.h"
@@ -11,14 +11,14 @@ typedef struct _calibrate
     int errcode;
     abcdk_option_t *args;
 
-    abvdk_context_t *dev_ctx;
-    abvdk_calibrate_t *ctx;
+    abcdk_xpu_context_t *dev_ctx;
+    abcdk_xpu_calibrate_t *ctx;
 
-    abvdk_size_t board_size;
-    abvdk_size_t grid_size;
+    abcdk_xpu_size_t board_size;
+    abcdk_xpu_size_t grid_size;
 
     int src_num;
-    abvdk_image_t *src_imgs[100];
+    abcdk_xpu_image_t *src_imgs[100];
 
 } calibrate_t;
 
@@ -34,12 +34,12 @@ void _calibrate_print_usage(abcdk_option_t *args)
     fprintf(stderr, ABCDK_GETTEXT("\t 显示帮助信息.\n"));
 
     fprintf(stderr, "\n\t--hwaccel-vendor < VENDOR > \n");
-    fprintf(stderr, ABCDK_GETTEXT("\t 硬件加速供应商. 默认: %d\n"), ABVDK_HWACCEL_NONE);
-    fprintf(stderr, ABCDK_GETTEXT("\t %d: NONE\n"), ABVDK_HWACCEL_NONE);
-    fprintf(stderr, ABCDK_GETTEXT("\t %d: NVIDIA\n"), ABVDK_HWACCEL_NVIDIA);
-    fprintf(stderr, ABCDK_GETTEXT("\t %d: SOPHON\n"), ABVDK_HWACCEL_SOPHON);
-    fprintf(stderr, ABCDK_GETTEXT("\t %d: ROCKCHIP\n"), ABVDK_HWACCEL_ROCKCHIP);
-    fprintf(stderr, ABCDK_GETTEXT("\t %d: AXERA\n"), ABVDK_HWACCEL_AXERA);
+    fprintf(stderr, ABCDK_GETTEXT("\t 硬件加速供应商. 默认: %d\n"), ABCDK_XPU_HWACCEL_NONE);
+    fprintf(stderr, ABCDK_GETTEXT("\t %d: NONE\n"), ABCDK_XPU_HWACCEL_NONE);
+    fprintf(stderr, ABCDK_GETTEXT("\t %d: NVIDIA\n"), ABCDK_XPU_HWACCEL_NVIDIA);
+    fprintf(stderr, ABCDK_GETTEXT("\t %d: SOPHON\n"), ABCDK_XPU_HWACCEL_SOPHON);
+    fprintf(stderr, ABCDK_GETTEXT("\t %d: ROCKCHIP\n"), ABCDK_XPU_HWACCEL_ROCKCHIP);
+    fprintf(stderr, ABCDK_GETTEXT("\t %d: AXERA\n"), ABCDK_XPU_HWACCEL_AXERA);
 
     fprintf(stderr, "\n\t--device-id < ID > \n");
     fprintf(stderr, ABCDK_GETTEXT("\t 设备ID. 默认: 0\n"));
@@ -81,7 +81,7 @@ void _calibrate_load_src_img(calibrate_t *ctx)
         if (chk != 0)
             break;
 
-        ctx->src_imgs[ctx->src_num] = abvdk_imgcodec_decode_from_file(file);
+        ctx->src_imgs[ctx->src_num] = abcdk_xpu_imgcodec_decode_from_file(file);
         if (ctx->src_imgs[ctx->src_num])
         {
             ctx->src_num += 1;
@@ -97,7 +97,7 @@ void _calibrate_load_src_img(calibrate_t *ctx)
 
 void _calibrate_save_dst_img(calibrate_t *ctx)
 {
-    abvdk_image_t *dst = NULL;
+    abcdk_xpu_image_t *dst = NULL;
     int chk;
 
     const char *dst_img_path_p = abcdk_option_get(ctx->args, "--dst-img-path", 0, NULL);
@@ -111,19 +111,19 @@ void _calibrate_save_dst_img(calibrate_t *ctx)
 
         snprintf(dst_file, PATH_MAX, "%s/undistort-%03d.jpg", dst_img_path_p, i + 1);
 
-        abvdk_image_t *src_p = ctx->src_imgs[i];
+        abcdk_xpu_image_t *src_p = ctx->src_imgs[i];
 
-        chk = abvdk_calibrate_undistort(ctx->ctx, src_p, &dst, ABVDK_INTER_CUBIC);
+        chk = abcdk_xpu_calibrate_undistort(ctx->ctx, src_p, &dst, ABCDK_XPU_INTER_CUBIC);
         if (chk != 0)
         {
             abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("内存不足."));
             break;
         }
 
-        abvdk_imgcodec_encode_to_file(dst, dst_file, NULL);
+        abcdk_xpu_imgcodec_encode_to_file(dst, dst_file, NULL);
     }
 
-    abvdk_image_free(&dst);
+    abcdk_xpu_image_free(&dst);
 }
 
 void _calibrate_work(calibrate_t *ctx)
@@ -132,7 +132,7 @@ void _calibrate_work(calibrate_t *ctx)
     double rms;
     int chk;
 
-    int hwaccel_vendor = abcdk_option_get_int(ctx->args, "--hwaccel-vendor", 0, ABVDK_HWACCEL_NONE);
+    int hwaccel_vendor = abcdk_option_get_int(ctx->args, "--hwaccel-vendor", 0, ABCDK_XPU_HWACCEL_NONE);
     int device_id = abcdk_option_get_int(ctx->args, "--device-id", 0, 0);
 
     const char *board_size_p = abcdk_option_get(ctx->args, "--board-size", 0, "7,11");
@@ -156,25 +156,25 @@ void _calibrate_work(calibrate_t *ctx)
         ABCDK_ERRNO_AND_RETURN0(ctx->errcode = EPERM);
     }
 
-    chk = abvdk_runtime_init(hwaccel_vendor);
+    chk = abcdk_xpu_runtime_init(hwaccel_vendor);
     assert(chk == 0);
 
-    ctx->dev_ctx = abvdk_context_alloc(device_id);
+    ctx->dev_ctx = abcdk_xpu_context_alloc(device_id);
     assert(ctx->dev_ctx != NULL);
 
-    abvdk_context_current_set(ctx->dev_ctx);
+    abcdk_xpu_context_current_set(ctx->dev_ctx);
 
-    ctx->ctx = abvdk_calibrate_alloc();
+    ctx->ctx = abcdk_xpu_calibrate_alloc();
     assert(ctx->ctx != NULL);
 
-    abvdk_calibrate_setup(ctx->ctx, ctx->board_size.width, ctx->board_size.height, ctx->grid_size.width, ctx->grid_size.height);
+    abcdk_xpu_calibrate_setup(ctx->ctx, ctx->board_size.width, ctx->board_size.height, ctx->grid_size.width, ctx->grid_size.height);
 
     _calibrate_load_src_img(ctx);
 
     for (int i = 0; i < ctx->src_num; i++)
     {
 
-        chk = abvdk_calibrate_detect_corners(ctx->ctx, ctx->src_imgs[i]);
+        chk = abcdk_xpu_calibrate_detect_corners(ctx->ctx, ctx->src_imgs[i]);
         if (chk < 0)
             continue;
 
@@ -187,11 +187,11 @@ void _calibrate_work(calibrate_t *ctx)
         goto END;
     }
 
-    rms = abvdk_calibrate_estimate_parameters(ctx->ctx);
+    rms = abcdk_xpu_calibrate_estimate_parameters(ctx->ctx);
 
     abcdk_trace_printf(LOG_INFO,ABCDK_GETTEXT("重投影误差: %0.6f"),rms);
 
-    chk = abvdk_calibrate_build_parameters(ctx->ctx, black_alpha);
+    chk = abcdk_xpu_calibrate_build_parameters(ctx->ctx, black_alpha);
     if (chk != 0)
     {
         abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("内存不足."));
@@ -204,7 +204,7 @@ void _calibrate_work(calibrate_t *ctx)
     if(!undistort_param_file_p)
         goto END;
 
-    chk = abvdk_calibrate_dump_parameters_to_file(ctx->ctx, undistort_param_file_p, NULL);
+    chk = abcdk_xpu_calibrate_dump_parameters_to_file(ctx->ctx, undistort_param_file_p, NULL);
     if (chk != 0)
     {
         abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("矫正参数写入文件(%s)失败, 无权限或空间不足."), undistort_param_file_p);
@@ -214,17 +214,17 @@ void _calibrate_work(calibrate_t *ctx)
 END:
 
     for (int i = 0; i < ctx->src_num; i++)
-        abvdk_image_free(&ctx->src_imgs[i]);
+        abcdk_xpu_image_free(&ctx->src_imgs[i]);
 
-    abvdk_calibrate_free(&ctx->ctx);
+    abcdk_xpu_calibrate_free(&ctx->ctx);
 
-    abvdk_context_unref(&ctx->dev_ctx);
-    abvdk_runtime_deinit();
+    abcdk_xpu_context_unref(&ctx->dev_ctx);
+    abcdk_xpu_runtime_deinit();
 
     return;
 }
 
-int abvdk_tool_calibrate(abcdk_option_t *args)
+int abcdk_tool_calibrate(abcdk_option_t *args)
 {
     calibrate_t ctx = {0};
 

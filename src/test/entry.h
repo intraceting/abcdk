@@ -34,6 +34,7 @@ int abcdk_test_ncurses(abcdk_option_t *args);
 int abcdk_test_gtk(abcdk_option_t *args);
 int abcdk_test_rtspserver(abcdk_option_t *args);
 int abcdk_test_gpio(abcdk_option_t *args);
+int abcdk_test_xpu(abcdk_option_t *args);
 
 
 __END_DECLS

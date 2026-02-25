@@ -26,6 +26,12 @@ namespace abcdk_xpu
 
             metadata_t *alloc()
             {
+                return NULL;
+            }
+
+            image::metadata_t *decode(metadata_t *ctx, const void *src, int src_size)
+            {
+                return NULL;
             }
         } // namespace jdec
     } // namespace nvidia

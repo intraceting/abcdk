@@ -47,6 +47,7 @@ static struct _abcdk_test_entry
     {"gtk",abcdk_test_gtk},
     {"rtspserver",abcdk_test_rtspserver},
     {"gpio",abcdk_test_gpio},
+    {"xpu",abcdk_test_xpu}
 };
 
 void _abcdk_test_print_usage()
