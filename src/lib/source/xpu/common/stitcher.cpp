@@ -111,13 +111,18 @@ namespace abcdk_xpu
                 return true;
             }
 
-            void draw_match_keypoints(const std::vector<cv::Mat> &imgs, std::vector<cv::Mat> &outs)
+            void dump_match_keypoints(const std::vector<cv::Mat> &imgs)
             {
                 assert(m_img_good_idxs.size() <= imgs.size());
                 assert(m_img_features.size() == m_img_good_idxs.size());
                 assert(m_img_matches.size() >= m_img_good_idxs.size());
 
-                outs.resize(m_img_matches.size());
+                std::string out_path = getenv("ABCDK_XPU_STITCHER_KEYPOINTS_DUMP_PATH");
+                if(out_path.empty())
+                    return;
+
+                std::vector<cv::Mat> outs(m_img_matches.size());
+
                 for (int i = 0; i < m_img_matches.size(); i++)
                 {
                     if (m_img_matches[i].confidence <= 0.0)
@@ -148,6 +153,13 @@ namespace abcdk_xpu
                         cv::drawMatches(imgs[src_img], m_img_features[src_idx].keypoints, imgs[dst_img], m_img_features[dst_idx].keypoints,
                                         m_img_matches[i].matches, outs[i], cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
                     }
+                }
+
+                std::vector<int> params = {cv::IMWRITE_JPEG_QUALITY, 100};
+                for (int i = 0; i < outs.size(); i++)
+                {
+                    std::string out_file = out_path + "/" + std::to_string(i + 1) + ".jpg";
+                    cv::imwrite(out_file,outs[i],params);
                 }
             }
 
@@ -463,6 +475,8 @@ namespace abcdk_xpu
 
                 if (!match_feature())
                     return -1;
+
+                dump_match_keypoints(imgs);
 
                 if (!leave_biggest_component(imgs, good_threshold))
                     return -2;
