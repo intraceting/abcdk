@@ -158,6 +158,9 @@ namespace abcdk_xpu
                 std::vector<int> params = {cv::IMWRITE_JPEG_QUALITY, 100};
                 for (int i = 0; i < outs.size(); i++)
                 {
+                    if(outs[i].empty()) 
+                        continue;
+
                     std::string out_file = out_path + "/" + std::to_string(i + 1) + ".jpg";
                     cv::imwrite(out_file,outs[i],params);
                 }
@@ -476,10 +479,10 @@ namespace abcdk_xpu
                 if (!match_feature())
                     return -1;
 
-                dump_match_keypoints(imgs);
-
                 if (!leave_biggest_component(imgs, good_threshold))
                     return -2;
+
+                dump_match_keypoints(imgs);
 
                 if (!estimate_camera())
                     return -3;
