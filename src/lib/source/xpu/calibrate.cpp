@@ -210,14 +210,7 @@ int abcdk_xpu_calibrate_dump_parameters_to_file(abcdk_xpu_calibrate_t *ctx, cons
     if (!tmp_dst)
         return -1;
 
-    if (access(dst, F_OK) == 0)
-    {
-        chk = truncate(dst, 0);
-        if (chk != 0)
-            return -1;
-    }
-
-    wr_len = abcdk_save(dst, tmp_dst->pptrs[0], tmp_dst->sizes[0], 0);
+    wr_len = abcdk_dump(dst, tmp_dst->pptrs[0], tmp_dst->sizes[0]);
     chk = (wr_len == tmp_dst->sizes[0] ? 0 : -1);
     abcdk_object_unref(&tmp_dst);
 

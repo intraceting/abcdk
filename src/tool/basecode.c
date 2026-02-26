@@ -142,7 +142,7 @@ void _abcdk_bc_work(abcdk_bc_t *ctx)
     }
     else
     {
-        outsize2 = abcdk_save(ctx->out,outbuf->pptrs[0],outsize,0);
+        outsize2 = abcdk_dump(ctx->out,outbuf->pptrs[0],outsize);
     }
 
     if(outsize2 != outsize)

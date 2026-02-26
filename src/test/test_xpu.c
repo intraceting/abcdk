@@ -89,7 +89,7 @@ static void _test_any_2(abcdk_option_t *args)
     abcdk_xpu_imgproc_brightness(img_src, &alpha, &bate);
 
     abcdk_object_t *dst_data = abcdk_xpu_imgcodec_encode(img_src, dst_ext);
-    abcdk_save(dst_file, dst_data->pptrs[0], dst_data->sizes[0], 0);
+    abcdk_dump(dst_file, dst_data->pptrs[0], dst_data->sizes[0]);
     abcdk_object_unref(&dst_data);
 
     abcdk_xpu_image_free(&img_src);
@@ -117,7 +117,7 @@ static void _test_any_3(abcdk_option_t *args)
     assert(chk == 0);
 
     abcdk_object_t *dst_data = abcdk_xpu_imgcodec_encode(img_dst, ".jpg");
-    abcdk_save(dst_file, dst_data->pptrs[0], dst_data->sizes[0], 0);
+    abcdk_dump(dst_file, dst_data->pptrs[0], dst_data->sizes[0]);
     abcdk_object_unref(&dst_data);
 
     abcdk_xpu_image_free(&img_dst);

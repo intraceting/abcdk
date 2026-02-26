@@ -57,7 +57,7 @@ int abcdk_xpu_imgcodec_encode_to_file(const abcdk_xpu_image_t *src, const char *
     if (!dst_data)
         return -1;
 
-    wr_size = abcdk_save(dst, dst_data->pptrs[0], dst_data->sizes[0], 0);
+    wr_size = abcdk_dump(dst, dst_data->pptrs[0], dst_data->sizes[0]);
     chk = (wr_size == dst_data->sizes[0] ? 0 : -1);
     abcdk_object_unref(&dst_data);
 

@@ -201,6 +201,8 @@ ssize_t abcdk_load(const char *file, void *buf, size_t size, size_t offset)
     off_t off;
     int chk;
 
+    assert(file != NULL && buf != NULL && size > 0);
+
     fd = abcdk_open(file, 0, 0, 0);
     if (fd < 0)
         return -1;
@@ -224,6 +226,8 @@ ssize_t abcdk_save(const char *file, const void *buf, size_t size, size_t offset
     ssize_t wlen = 0;
     off_t off;
     int chk;
+
+    assert(file != NULL && buf != NULL && size > 0);
 
     fd = abcdk_open(file, 1, 0, 1);
     if (fd < 0)
@@ -266,6 +270,22 @@ final:
     abcdk_closep(&fd);
 
     return wlen;
+}
+
+ssize_t abcdk_dump(const char *file, const void *buf, size_t size)
+{
+    int chk;
+
+    assert(file != NULL && buf != NULL && size > 0);
+
+    if (access(file, F_OK) == 0)
+    {
+        chk = truncate(file, 0);
+        if (chk != 0)
+            return -1;
+    }
+
+    return abcdk_save(file,buf,size,0);
 }
 
 ssize_t abcdk_fgetline(FILE *fp, char **line, size_t *len, uint8_t delim, char note)

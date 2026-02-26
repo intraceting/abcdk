@@ -66,7 +66,7 @@ NVCC_FLAGS += $(addprefix -Xcompiler ,${CXX_FLAGS})
 
 #伪目标，告诉make这些都是标志，而不是实体目录。
 #因为如果标签和目录同名，而目录内的文件没有更新的情况下，编译和链接会跳过。如："XXX is up to date"。
-.PHONY: lib tool test xgettext needed
+.PHONY: lib tool test launcher bin xgettext needed
 
 
 #

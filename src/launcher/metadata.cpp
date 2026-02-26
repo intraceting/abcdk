@@ -85,155 +85,87 @@ namespace abcdk
             return (m_help_show);
         }
 
-        int metadata::checkCache()
-        {
-            static int chk_ok_once = 0;
-            std::string sql;
-            int chk, chk2, chk3, chk4;
-
-            if (!abcdk_atomic_compare_and_swap(&chk_ok_once, 0, 1))
-                return 0;
-
-            m_main_db_pathfile = common::UtilEx::string_format("%s/%s", m_cache_path.c_str(), m_main_db_filename.c_str());
-
-            if (access(m_main_db_pathfile.c_str(), F_OK) == 0)
-            {
-                m_main_db = abcdk_sqlite_open(m_main_db_pathfile.c_str());
-                if (!m_main_db)
-                {
-                    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("打开缓存文件(%s)出错, 已损坏或无权限."), m_main_db_pathfile.c_str());
-                    return -1;
-                }
-
-                abcdk_sqlite_journal_mode(m_main_db, ABCDK_SQLITE_JOURNAL_MEMORY);
-
-                chk = common::UtilEx::sqlite_check_table_exist(m_main_db, ABCDK_GETTEXT("version"));
-                if (chk <= 0)
-                {
-                    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("读缓存文件(%s)出错, 已损坏或不兼容."), m_main_db_pathfile.c_str());
-                    chk = abcdk_sqlite_closep(&m_main_db);
-                    ABCDK_TRACE_ASSERT(chk == SQLITE_OK, ABCDK_GETTEXT("关闭缓存文失败."));
-                    return -2;
-                }
-
-                chk = common::UtilEx::sqlite_check_table_exist(m_main_db, "tasks");
-                if (chk <= 0)
-                {
-                    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("读缓存文件(%s)出错, 已损坏或不兼容."), m_main_db_pathfile.c_str());
-                    chk = abcdk_sqlite_closep(&m_main_db);
-                    ABCDK_TRACE_ASSERT(chk == SQLITE_OK, ABCDK_GETTEXT("关闭缓存文失败."));
-                    return -3;
-                }
-            }
-            else
-            {
-                // 创建可能不存在的路径.
-                abcdk_mkdir(m_main_db_pathfile.c_str(), 0755);
-
-                m_main_db = abcdk_sqlite_open(m_main_db_pathfile.c_str());
-                if (!m_main_db)
-                {
-                    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("打开缓存文件(%s)出错, 无空间或无权限."), m_main_db_pathfile.c_str());
-                    return -4;
-                }
-
-                abcdk_sqlite_journal_mode(m_main_db, ABCDK_SQLITE_JOURNAL_MEMORY);
-
-                abcdk_sqlite_tran_begin(m_main_db);
-
-                sql = "CREATE TABLE version ("
-                      "major INTEGER DEFAULT (0) NOT NULL,"
-                      "minor INTEGER DEFAULT (0) NOT NULL,"
-                      "patch INTEGER DEFAULT (0) NOT NULL"
-                      ");";
-
-                chk2 = abcdk_sqlite_exec_direct(m_main_db, sql.c_str());
-
-                sql = common::UtilEx::string_format("INSERT INTO version (major, minor, patch) VALUES(%d, %d, %d);",
-                                                    ABCDK_VERSION_MAJOR, ABCDK_VERSION_MINOR, ABCDK_VERSION_PATCH);
-
-                chk3 = abcdk_sqlite_exec_direct(m_main_db, sql.c_str());
-
-                sql = "CREATE TABLE tasks ("
-                      "task_index INTEGER DEFAULT (-1),"
-                      "task_uuid TEXT(32) NOT NULL,"
-                      "task_name TEXT(225),"
-                      "task_logo TEXT(255),"
-                      "task_exec TEXT(40960),"
-                      "task_kill TEXT(4096),"
-                      "task_uid TEXT(20),"
-                      "task_gid TEXT(20),"
-                      "task_rwd TEXT(4096),"
-                      "task_cwd TEXT(4096),"
-                      "task_env TEXT(40960),"
-                      "CONSTRAINT tasks_pk PRIMARY KEY (task_uuid)"
-                      ");";
-
-                chk4 = abcdk_sqlite_exec_direct(m_main_db, sql.c_str());
-
-                chk = ((chk2 >= 0 && chk3 >= 0 && chk4 >= 0) ? abcdk_sqlite_tran_commit(m_main_db) : SQLITE_ERROR);
-                if (chk != SQLITE_OK)
-                {
-                    abcdk_sqlite_tran_rollback(m_main_db); // 回滚.
-
-                    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("写缓存文件(%s)出错 ,无空间或无权限."), m_main_db_pathfile.c_str());
-                    chk = abcdk_sqlite_closep(&m_main_db);
-                    ABCDK_TRACE_ASSERT(chk == SQLITE_OK, ABCDK_GETTEXT("关闭缓存文失败."));
-                    return -5;
-                }
-            }
-
-            return 0;
-        }
-
         void metadata::loadTasks()
         {
             int chk;
 
-            chk = checkCache();
-            if (chk != 0)
-                return;
+            std::string dump_file = m_cache_path + "/" + m_main_db_name;
 
-                
+            abcdk_object_t *dump_data = abcdk_object_copyfrom_file(dump_file.c_str());
+            if(!dump_data)
+            {
+                abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("读缓存文件(%s)失败, 不存在或无权限."), dump_file.c_str());
+                return;
+            }
+
+            Json::Reader reader;
+            Json::Value doc;
+
+            bool bchk = reader.parse(dump_data->pstrs[0],doc);
+            abcdk_object_unref(&dump_data);
+
+            if(!bchk)
+            {
+                abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("解析缓存数据(%s)失败, 已损坏或其它."), dump_file.c_str());
+                return;
+            }
+
+            try
+            {
+                int ver_major = doc["abcdk"]["launcher"]["version"]["major"].asInt();
+                int ver_minor = doc["abcdk"]["launcher"]["version"]["minor"].asInt();
+                int ver_patch = doc["abcdk"]["launcher"]["version"]["patch"].asInt();
+            }
+            catch(const std::exception& e)
+            {
+                abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("解析缓存数据失败, 原因是: '%s'"), e.what());
+                return;
+            }
+            
+
+
+
+
         }
 
         void metadata::saveTasks()
         {
             int chk;
 
-            chk = checkCache();
-            if (chk != 0)
-                return;
+            Json::Value doc;
 
-            abcdk_sqlite_tran_begin(m_main_db);
-
-            abcdk_sqlite_exec_direct(m_main_db, "DELETE FROM tasks;");
+            doc["abcdk"]["launcher"]["version"]["major"] = ABCDK_VERSION_MAJOR;
+            doc["abcdk"]["launcher"]["version"]["minor"] = ABCDK_VERSION_MINOR;
+            doc["abcdk"]["launcher"]["version"]["patch"] = ABCDK_VERSION_PATCH;
 
             for (auto &one : m_tasks)
             {
-                std::vector<char> sql(200 * 1024);
+                Json::Value one_task;
 
-                snprintf(sql.data(), sql.size(),
-                         "INSERT INTO tasks (task_index, task_uuid, task_name,task_logo,"
-                         "task_exec, task_kill, task_uid ,task_gid, task_rwd, task_cwd, task_env) "
-                         "VALUES task_kill(%d, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);",
-                         one.second->m_index, one.second->m_uuid.c_str(), one.second->m_logo.c_str(),
-                         one.second->m_name.c_str(), one.second->m_exec.c_str(), one.second->m_kill.c_str(),
-                         one.second->m_uid.c_str(), one.second->m_gid.c_str(),
-                         one.second->m_rwd.c_str(), one.second->m_cwd.c_str(),
-                         one.second->m_env.c_str());
+                one_task["index"] = one.second->m_index;
+                one_task["name"] = one.second->m_name;
+                one_task["logo"] = one.second->m_logo;
+                one_task["exec"] = one.second->m_exec;
+                one_task["kill"] = one.second->m_kill;
+                one_task["rwd"] = one.second->m_rwd;
+                one_task["cwd"] = one.second->m_cwd;
+                one_task["gid"] = one.second->m_uid;
+                one_task["gid"] = one.second->m_gid;
+                one_task["env"] = one.second->m_env;
 
-                chk = abcdk_sqlite_exec_direct(m_main_db, sql.data());
-                if(chk != SQLITE_OK)
-                    break;
+                doc["abcdk"]["launcher"]["task"].append(one_task);
             }
 
-            if(chk == SQLITE_OK)
-                chk = abcdk_sqlite_tran_commit(m_main_db);
+            std::string dump_data = Json::FastWriter().write(doc);
 
-            if(chk != SQLITE_OK)
-                abcdk_sqlite_tran_rollback(m_main_db);
-            
+            std::string dump_file = m_cache_path + "/" + m_main_db_name;
+
+            ssize_t wr_size = abcdk_dump(dump_file.c_str(), dump_data.data(), dump_data.size());
+            if (wr_size <= 0 || (size_t)wr_size != dump_data.size())
+            {
+                abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("写缓存文件(%s)失败, 无空间或无权限."), dump_file.c_str());
+                return;
+            }
         }
 
         void metadata::deInit()
@@ -241,9 +173,6 @@ namespace abcdk
             int chk;
 
             abcdk_option_free(&m_args);
-
-            chk = abcdk_sqlite_closep(&m_main_db);
-            ABCDK_TRACE_ASSERT(chk == SQLITE_OK, "关闭缓存文失败.");
         }
 
         void metadata::Init()
@@ -269,10 +198,9 @@ namespace abcdk
             m_cache_path_default.resize(PATH_MAX);
             abcdk_user_dir_home(m_cache_path_default.data(), ".cache/abcdk/launcher/");
 
-            m_main_db_filename = "main.db";
+            m_main_db_name = "main.xml";
 
             m_args = NULL;
-            m_main_db = NULL;
         }
 
     } // namespace launcher
