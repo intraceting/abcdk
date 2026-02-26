@@ -45,6 +45,8 @@ namespace abcdk
             void onAbout();
             void onQuit();
         protected:
+            void loadTasks();
+            void saveTasks();
             void deInit();
             void Init();
             void onRefresh();

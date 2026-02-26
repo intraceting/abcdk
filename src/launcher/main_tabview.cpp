@@ -46,6 +46,20 @@ namespace abcdk
             }
         }
 
+        void main_tabview::retrieveView(task_view *view)
+        {
+            view->getInfo()->m_index = addTab(view, view->getInfo()->getAppIcon(), view->getInfo()->getAppName());
+        }
+
+        void main_tabview::updateState(std::shared_ptr<task_info> &info)
+        {
+            if (info->m_index < 0)
+                return;
+
+            setTabText(info->m_index, info->getAppName());
+            setTabIcon(info->m_index, info->getAppIcon());
+        }
+        
         void main_tabview::createTab(std::shared_ptr<task_info> &info)
         {
             if (!info.get())
@@ -76,38 +90,37 @@ namespace abcdk
             removeTab(index);
             metadata::get()->m_tasks.erase(old_page->getInfo()->getUUID()); // remove from list;
             old_page->deleteLater();
+
+            // 重新关联数据和标签. 没多少标签, 不需要考虑效率.
+            for (int i = 0; i < count(); i++)
+            {
+                old_page = (task_view *)widget(i);
+                old_page->getInfo()->m_index = i;
+            }
         }
 
         void main_tabview::detachTab(int index)
         {
-            task_view *old_page = (task_view *)widget(index);
-            if (!old_page)
+            task_view *old_view = (task_view *)widget(index);
+            if (!old_view)
                 return;
 
             removeTab(index);
-            old_page->getInfo()->m_index = -1;
+            old_view->getInfo()->m_index = -1;
 
-            task_window *new_win = new task_window(old_page, NULL, window()->windowFlags());
+            popView(old_view);
+        }
+
+        void main_tabview::popView(task_view *view)
+        {
+            task_window *new_win = new task_window(view, NULL, window()->windowFlags());
             new_win->resize(800, 500);
             new_win->show();
 
             connect(new_win, &task_window::detachView, this, &main_tabview::retrieveView);
-            connect(old_page, &task_view::updateState, new_win, &task_window::updateState);
+            connect(view, &task_view::updateState, new_win, &task_window::updateState);
         }
 
-        void main_tabview::retrieveView(task_view *view)
-        {
-            view->getInfo()->m_index = addTab(view, view->getInfo()->getAppIcon(), view->getInfo()->getAppName());
-        }
-
-        void main_tabview::updateState(std::shared_ptr<task_info> &info)
-        {
-            if (info->m_index < 0)
-                return;
-
-            setTabText(info->m_index, info->getAppName());
-            setTabIcon(info->m_index, info->getAppIcon());
-        }
 
         void main_tabview::deInit()
         {
@@ -115,30 +128,6 @@ namespace abcdk
 
         void main_tabview::Init()
         {
-            metadata::get()->loadTasks();
-
-            if (metadata::get()->m_tasks.size() <= 0)
-            {
-                std::shared_ptr<task_info> new_info;
-                createTab(new_info);
-            }
-            else
-            {
-                std::vector<std::shared_ptr<task_info>> tab_pages(metadata::get()->m_tasks.size());
-                for(auto &one:metadata::get()->m_tasks)
-                {
-                    if(one.second->m_index >= 0)
-                    {
-                        tab_pages[one.second->m_index] = one.second;
-                    }
-                    else 
-                    {
-
-                    }
-                }
-
-            }
-
             connect(this, &main_tabview::clickedRight, this, &main_tabview::showRightClickMenu);
         }
 

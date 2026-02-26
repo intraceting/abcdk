@@ -37,8 +37,49 @@ namespace abcdk
             close();
         }
 
+        void main_window::loadTasks()
+        {
+            metadata::get()->loadTasks();
+
+            if (metadata::get()->m_tasks.size() <= 0)
+            {
+                // std::shared_ptr<task_info> new_info;
+                // m_tabview->createTab(new_info);
+            }
+            else
+            {
+                std::vector<std::shared_ptr<task_info>> tab_pages(metadata::get()->m_tasks.size());
+                for (auto &one : metadata::get()->m_tasks)
+                {
+                    if (one.second->m_index >= 0)
+                    {
+                        tab_pages[one.second->m_index] = one.second;
+                    }
+                    else
+                    {
+                        task_view *new_page = new task_view(one.second, NULL, window()->windowFlags());
+                        m_tabview->popView(new_page);
+                    }
+                }
+
+                for (std::size_t i = 0; i < tab_pages.size(); i++)
+                {
+                    if (!tab_pages[i].get())
+                        continue;
+
+                    m_tabview->createTab(tab_pages[i]);
+                }
+            }
+        }
+
+        void main_window::saveTasks()
+        {
+            metadata::get()->saveTasks();
+        }
+
         void main_window::deInit()
         {
+            saveTasks();
         }
 
         void main_window::Init()
@@ -70,18 +111,19 @@ namespace abcdk
             QObject::connect(tray, &main_trayicon::onShow, this, &main_window::onShow);
             QObject::connect(tray, &main_trayicon::onAbout, this, &main_window::onAbout);
             QObject::connect(tray, &main_trayicon::onQuit, this, &main_window::onQuit);
+
+            loadTasks();
         }
 
         void main_window::onRefresh()
         {
-
         }
-        
+
         void main_window::closeEvent(QCloseEvent *event)
         {
             size_t alive_count = 0;
 
-#pragma message("无锁统计,当其它地方开始加锁时,这里要同步个修改.")
+            /*无锁统计. 当其它地方开始加锁时, 这里要同步个修改.*/
             for (auto &one : metadata::get()->m_tasks)
                 alive_count += (one.second->alive() ? 1 : 0);
 
@@ -98,7 +140,6 @@ namespace abcdk
                 m_app->exit();
             }
         }
-
 
     } // namespace launcher
 

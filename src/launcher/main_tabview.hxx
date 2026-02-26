@@ -39,12 +39,15 @@ namespace abcdk
 
         private Q_SLOTS:
             void showRightClickMenu(int index, const QPoint &globalPos);
+            void retrieveView(task_view *view);
+            void updateState(std::shared_ptr<task_info> &info);
+        public:
             void createTab(std::shared_ptr<task_info> &info);
             void deleteTab(int index);
             void detachTab(int index);
-            void retrieveView(task_view *view);
-            void updateState(std::shared_ptr<task_info> &info);
+            void popView(task_view *view);
         protected:
+            
             void deInit();
             void Init();
         };
