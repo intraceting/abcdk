@@ -203,7 +203,7 @@ void _calibrate_work(calibrate_t *ctx)
     if(!undistort_param_file_p)
         goto END;
 
-    chk = abcdk_xpu_calibrate_dump_parameters_to_file(ctx->ctx, undistort_param_file_p, NULL);
+    chk = abcdk_xpu_calibrate_dump_parameters_to_file(ctx->ctx, undistort_param_file_p, "ABCDK");
     if (chk != 0)
     {
         abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("矫正参数写入文件(%s)失败, 无权限或空间不足."), undistort_param_file_p);

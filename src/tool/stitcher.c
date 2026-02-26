@@ -139,28 +139,28 @@ void _stitcher_work(stitcher_t *ctx)
     _stitcher_load_src_img(ctx);
     if(ctx->src_num <2)
     {
-        abcdk_trace_printf(LOG_WARNING, "至少需要两张图片.");
+        abcdk_trace_printf(LOG_ERR, "至少需要两张图片.");
         goto END;
     }
 
     chk = abcdk_xpu_stitcher_estimate_parameters(ctx->ctx, ctx->src_num, (const abcdk_xpu_image_t **)ctx->src_imgs, NULL, 0.8);
     if (chk != 0)
     {
-        abcdk_trace_printf(LOG_WARNING, "评估相机参数失败, 特征不足或其它错误.");
+        abcdk_trace_printf(LOG_ERR, "评估相机参数失败, 特征不足或其它错误.");
         goto END;
     }
 
     chk = abcdk_xpu_stitcher_build_parameters(ctx->ctx);
     if (chk != 0)
     {
-        abcdk_trace_printf(LOG_WARNING, "构建相机参数失败, 内存不足或其它错误.");
+        abcdk_trace_printf(LOG_ERR, "构建相机参数失败, 内存不足或其它错误.");
         goto END;
     }
 
     chk = abcdk_xpu_stitcher_compose(ctx->ctx, ctx->src_num, (const abcdk_xpu_image_t **)ctx->src_imgs, &ctx->dst_img, optimize_seam);
     if (chk != 0)
     {
-        abcdk_trace_printf(LOG_WARNING, "全景拼接失败, 内存不足或其它错误.");
+        abcdk_trace_printf(LOG_ERR, "全景拼接失败, 内存不足或其它错误.");
         goto END;
     }
 
@@ -175,7 +175,7 @@ void _stitcher_work(stitcher_t *ctx)
 
     if (camera_param_file_p)
     {
-        chk = abcdk_xpu_stitcher_dump_parameters_to_file(ctx->ctx, camera_param_file_p, NULL);
+        chk = abcdk_xpu_stitcher_dump_parameters_to_file(ctx->ctx, camera_param_file_p, "ABCDK");
         if (chk != 0)
         {
             abcdk_trace_printf(LOG_WARNING, "保存相机参数文件(%s)失败, 无空间或无权限.", camera_param_file_p);

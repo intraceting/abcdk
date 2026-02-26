@@ -27,6 +27,7 @@ int abcdk_tool_mcdump(abcdk_option_t *args);
 int abcdk_tool_uart(abcdk_option_t *args);
 int abcdk_tool_calibrate(abcdk_option_t *args);
 int abcdk_tool_stitcher(abcdk_option_t *args);
+int abcdk_tool_undistort(abcdk_option_t *args);
 
 __END_DECLS
 
