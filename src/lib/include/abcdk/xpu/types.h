@@ -31,10 +31,6 @@ typedef enum _abcdk_xpu_hwaccel
     ABCDK_XPU_HWACCEL_ROCKCHIP = 3,
 #define ABCDK_XPU_HWACCEL_ROCKCHIP ABCDK_XPU_HWACCEL_ROCKCHIP
 
-    /**AXERA. */
-    ABCDK_XPU_HWACCEL_AXERA = 4,
-#define ABCDK_XPU_HWACCEL_AXERA ABCDK_XPU_HWACCEL_AXERA
-
 } abcdk_xpu_hwaccel_t;
 
 /**插值算法.*/

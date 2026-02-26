@@ -33,6 +33,7 @@ static struct _abcdk_tool_entry
     {"mcdump",abcdk_tool_mcdump},
     {"uart",abcdk_tool_uart},
     {"calibrate",abcdk_tool_calibrate},
+    {"stitcher",abcdk_tool_stitcher}
 };
 
 void _abcdk_tool_print_usage()

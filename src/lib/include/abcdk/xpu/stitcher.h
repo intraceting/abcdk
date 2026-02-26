@@ -27,7 +27,7 @@ abcdk_xpu_stitcher_t *abcdk_xpu_stitcher_alloc();
  *
  * @param [in] name 算法名称. 目前仅支持ORB, SIFT, SURF. 默认: ORB
  *
- * @return 0 成功, < 1 失败.
+ * @return 0 成功, < 0 失败.
  */
 int abcdk_xpu_stitcher_set_feature_finder(abcdk_xpu_stitcher_t *ctx, const char *name);
 
@@ -36,7 +36,7 @@ int abcdk_xpu_stitcher_set_feature_finder(abcdk_xpu_stitcher_t *ctx, const char 
  *
  * @param [in] name 算法名称. 目前仅支持plane, spherical. 默认: spherical
  *
- * @return 0 成功, < 1 失败.
+ * @return 0 成功, < 0 失败.
  */
 int abcdk_xpu_stitcher_set_warper(abcdk_xpu_stitcher_t *ctx, const char *name);
 
@@ -46,14 +46,14 @@ int abcdk_xpu_stitcher_set_warper(abcdk_xpu_stitcher_t *ctx, const char *name);
  * @param [in] img 分屏图像的数组, 评估时自动排序.
  * @param [in] mask 掩码图像的数组, 顺序与分屏图像对应, 允许为NULL(0).
  *
- * @return 0 成功, < 1 失败.
+ * @return 0 成功, < 0 失败.
  */
 int abcdk_xpu_stitcher_estimate_parameters(abcdk_xpu_stitcher_t *ctx, int count,const abcdk_xpu_image_t *img[], const abcdk_xpu_image_t *mask[], float threshold);
 
 /**
  * 构建参数.
  *
- * @return 0 成功, < 1 失败.
+ * @return 0 成功, < 0 失败.
  */
 int abcdk_xpu_stitcher_build_parameters(abcdk_xpu_stitcher_t *ctx);
 
@@ -91,7 +91,7 @@ int abcdk_xpu_stitcher_load_parameters_from_file(abcdk_xpu_stitcher_t *ctx, cons
  *
  * @note 待拼接图像顺序必须与评估时保持一致.
  *
- * @return @return 0 成功, < 1 失败.
+ * @return @return 0 成功, < 0 失败.
  */
 int abcdk_xpu_stitcher_compose(abcdk_xpu_stitcher_t *ctx, int count, const abcdk_xpu_image_t *img[], abcdk_xpu_image_t **out, int optimize_seam);
 

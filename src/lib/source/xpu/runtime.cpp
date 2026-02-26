@@ -56,8 +56,7 @@ int abcdk_xpu_runtime_init(int hwaccel, ...)
     assert(hwaccel == ABCDK_XPU_HWACCEL_NONE ||
            hwaccel == ABCDK_XPU_HWACCEL_NVIDIA ||
            hwaccel == ABCDK_XPU_HWACCEL_SOPHON ||
-           hwaccel == ABCDK_XPU_HWACCEL_ROCKCHIP ||
-           hwaccel == ABCDK_XPU_HWACCEL_AXERA);
+           hwaccel == ABCDK_XPU_HWACCEL_ROCKCHIP);
 
 #if defined(__XPU_GENERAL__)
 

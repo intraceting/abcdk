@@ -161,7 +161,7 @@ static void _test_any_4(abcdk_option_t *args)
     const char *dst_file = abcdk_option_get(args, "--dst-file", 0, "");
     const char *src_file = abcdk_option_get(args, "--src-file", 0, "");
     const char *param_file = abcdk_option_get(args, "--calibrate-param", 0, "calibrate.xml");
-    const char *magic_name = abcdk_option_get(args, "--magic-name", 0, "abvdk");
+    const char *magic_name = abcdk_option_get(args, "--magic-name", 0, "abcdk");
 
     abcdk_xpu_image_t *src_imgs[100] = {0};
     _load_imgs(src_imgs, src_file);
@@ -218,7 +218,7 @@ static void _test_any_5(abcdk_option_t *args)
     const char *warper_name = abcdk_option_get(args, "--warper-name", 0, "spherical");
     int optimize_seam = abcdk_option_get_int(args, "--optimize-seam", 0, 1);
     const char *param_file = abcdk_option_get(args, "--stitcher-param", 0, "stitcher.xml");
-    const char *magic_name = abcdk_option_get(args, "--magic-name", 0, "abvdk");
+    const char *magic_name = abcdk_option_get(args, "--magic-name", 0, "abcdk");
 
     abcdk_xpu_image_t *src_imgs[100] = {0};
     int count = _load_imgs(src_imgs, src_file);
