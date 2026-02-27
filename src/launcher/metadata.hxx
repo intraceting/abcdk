@@ -73,7 +73,6 @@ namespace abcdk
             void parseCmdLine(int &argc, char *argv[]);
             void printUsage(FILE *out = stderr);
             bool isPrintUsage();
-            int checkCache();
             void loadTasks();
             void saveTasks();
         protected:

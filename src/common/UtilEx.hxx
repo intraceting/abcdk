@@ -97,6 +97,7 @@ namespace abcdk
                 return cid;
             }
 
+#if defined(HAVE_SQLITE)
             static inline int sqlite_check_table_exist(sqlite3 *db, const char *name)
             {
                 std::string sql = common::UtilEx::string_format("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='%s';", name);
@@ -118,7 +119,9 @@ namespace abcdk
 
                 return chk;
             }
-
+#endif //#if defined(HAVE_SQLITE)
+        
+#if defined(HAVE_JSONCPP)
             static inline int jsoncpp_reader_parse_memory(const char *str, Json::Value &doc)
             {
                 Json::Reader reader;
@@ -159,7 +162,7 @@ namespace abcdk
 
                 return 0;
             }
-
+#endif //#if defined(HAVE_JSONCPP)
         } // namespace UtilEx
 
     } // namespace common

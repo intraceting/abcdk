@@ -87,6 +87,7 @@ namespace abcdk
 
         void metadata::loadTasks()
         {
+#if defined(HAVE_JSONCPP)
             int chk;
             Json::Value doc;
 
@@ -136,11 +137,12 @@ namespace abcdk
                 abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("解析缓存数据失败, 原因是: '%s'"), e.what());
                 return;
             }
-            
+#endif //#if defined(HAVE_JSONCPP)            
         }
 
         void metadata::saveTasks()
         {
+#if defined(HAVE_JSONCPP)
             int chk;
 
             Json::Value doc;
@@ -176,6 +178,7 @@ namespace abcdk
                 abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("写缓存文件(%s)失败, 无空间或无权限."), dump_file.c_str());
                 return;
             }
+#endif //#if defined(HAVE_JSONCPP)
         }
 
         void metadata::deInit()
