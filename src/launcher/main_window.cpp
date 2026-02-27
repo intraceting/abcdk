@@ -43,8 +43,8 @@ namespace abcdk
 
             if (metadata::get()->m_tasks.size() <= 0)
             {
-                // std::shared_ptr<task_info> new_info;
-                // m_tabview->createTab(new_info);
+                std::shared_ptr<task_info> new_info;
+                m_tabview->createTab(new_info);
             }
             else
             {

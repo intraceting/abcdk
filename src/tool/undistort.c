@@ -121,7 +121,7 @@ void _undistort_work(undistort_t *ctx)
     chk = abcdk_xpu_calibrate_load_parameters_from_file(ctx->ctx, undistort_param_file_p, "ABCDK");
     if (chk != 0)
     {
-        abcdk_trace_printf(LOG_ERR, "加载标定参数文件(%s)失败, 不存在或无权限.", undistort_param_file_p);
+        abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("加载标定参数文件(%s)失败, 不存在或无权限."), undistort_param_file_p);
         goto END;
     }
 

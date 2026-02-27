@@ -56,7 +56,7 @@ namespace abcdk
             QMessageBox::StandardButton chk = QMessageBox::StandardButton::Yes;
 
             if(!m_stop_tip)
-               chk = QMessageBox::question(this,ABCDK_GETTEXT("提示"),ABCDK_GETTEXT("正在准备停止作业进程.\n注: 所有依赖此作业进程的服务可能将无法正常工作.\n确定要停止吗?"));
+               chk = QMessageBox::question(this,ABCDK_GETTEXT("提示"),ABCDK_GETTEXT("所有依赖此作业的进程或服务可能将无法正常工作.\n确定要停止吗?"));
             
             if(chk != QMessageBox::StandardButton::Yes)
                 return;
@@ -84,6 +84,7 @@ namespace abcdk
 
             m_edit_exec = new common::QLineEditEx(this);
             m_edit_exec->setPlaceholderText(ABCDK_GETTEXT("在这里输入命令或点击右侧的配置按钮."));
+            m_edit_exec->setText(m_info->m_exec.c_str());
 
             m_btn_conf = new common::QPushButtonEx(this);
             m_btn_conf->setIcon(QIcon(":/images/set.svg"));

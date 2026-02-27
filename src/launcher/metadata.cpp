@@ -88,25 +88,14 @@ namespace abcdk
         void metadata::loadTasks()
         {
             int chk;
+            Json::Value doc;
 
             std::string dump_file = m_cache_path + "/" + m_main_db_name;
 
-            abcdk_object_t *dump_data = abcdk_object_copyfrom_file(dump_file.c_str());
-            if(!dump_data)
+            chk = common::UtilEx::jsoncpp_reader_parse_file(dump_file.c_str(),doc);
+            if(chk != 0)
             {
                 abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("读缓存文件(%s)失败, 不存在或无权限."), dump_file.c_str());
-                return;
-            }
-
-            Json::Reader reader;
-            Json::Value doc;
-
-            bool bchk = reader.parse(dump_data->pstrs[0],doc);
-            abcdk_object_unref(&dump_data);
-
-            if(!bchk)
-            {
-                abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("解析缓存数据(%s)失败, 已损坏或其它."), dump_file.c_str());
                 return;
             }
 
@@ -115,6 +104,32 @@ namespace abcdk
                 int ver_major = doc["abcdk"]["launcher"]["version"]["major"].asInt();
                 int ver_minor = doc["abcdk"]["launcher"]["version"]["minor"].asInt();
                 int ver_patch = doc["abcdk"]["launcher"]["version"]["patch"].asInt();
+
+                Json::Value tasks = doc["abcdk"]["launcher"]["tasks"];
+                for (Json::Value::ArrayIndex i = 0; i < tasks.size(); ++i)
+                {
+                    auto &one_task = tasks[i];
+
+                    std::string uuid = one_task["uuid"].asCString();
+                    if(uuid.empty())
+                        continue;
+
+                    std::shared_ptr<abcdk::launcher::task_info> one_info = task_info::newTask(uuid);
+
+                    one_info->m_index = one_task["index"].asInt();
+                    one_info->m_uuid = uuid;
+                    one_info->m_name = one_task["name"].asCString();
+                    one_info->m_logo = one_task["logo"].asCString();
+                    one_info->m_exec = one_task["exec"].asCString();
+                    one_info->m_kill = one_task["kill"].asCString();
+                    one_info->m_rwd = one_task["rwd"].asCString();
+                    one_info->m_cwd = one_task["cwd"].asCString();
+                    one_info->m_uid = one_task["uid"].asCString();
+                    one_info->m_gid = one_task["gid"].asCString();
+                    one_info->m_env = one_task["env"].asCString();
+
+                    m_tasks[uuid] = one_info;
+                }
             }
             catch(const std::exception& e)
             {
@@ -122,10 +137,6 @@ namespace abcdk
                 return;
             }
             
-
-
-
-
         }
 
         void metadata::saveTasks()
@@ -143,25 +154,24 @@ namespace abcdk
                 Json::Value one_task;
 
                 one_task["index"] = one.second->m_index;
-                one_task["name"] = one.second->m_name;
-                one_task["logo"] = one.second->m_logo;
-                one_task["exec"] = one.second->m_exec;
-                one_task["kill"] = one.second->m_kill;
-                one_task["rwd"] = one.second->m_rwd;
-                one_task["cwd"] = one.second->m_cwd;
-                one_task["gid"] = one.second->m_uid;
-                one_task["gid"] = one.second->m_gid;
-                one_task["env"] = one.second->m_env;
+                one_task["uuid"] = one.second->m_uuid.c_str();
+                one_task["name"] = one.second->m_name.c_str();
+                one_task["logo"] = one.second->m_logo.c_str();
+                one_task["exec"] = one.second->m_exec.c_str();
+                one_task["kill"] = one.second->m_kill.c_str();
+                one_task["rwd"] = one.second->m_rwd.c_str();
+                one_task["cwd"] = one.second->m_cwd.c_str();
+                one_task["uid"] = one.second->m_uid.c_str();
+                one_task["gid"] = one.second->m_gid.c_str();
+                one_task["env"] = one.second->m_env.c_str();
 
-                doc["abcdk"]["launcher"]["task"].append(one_task);
+                doc["abcdk"]["launcher"]["tasks"].append(one_task);
             }
-
-            std::string dump_data = Json::FastWriter().write(doc);
 
             std::string dump_file = m_cache_path + "/" + m_main_db_name;
 
-            ssize_t wr_size = abcdk_dump(dump_file.c_str(), dump_data.data(), dump_data.size());
-            if (wr_size <= 0 || (size_t)wr_size != dump_data.size())
+            chk = common::UtilEx::jsoncpp_writer_to_file(dump_file.c_str(),doc);
+            if (chk != 0)
             {
                 abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("写缓存文件(%s)失败, 无空间或无权限."), dump_file.c_str());
                 return;

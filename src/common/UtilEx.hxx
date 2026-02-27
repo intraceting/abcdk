@@ -8,6 +8,7 @@
 #define ABCDK_COMMON_UTILEX_HXX
 
 #include "abcdk.h"
+#include "json/json.h"
 
 namespace abcdk
 {
@@ -116,6 +117,47 @@ namespace abcdk
                 abcdk_sqlite_finalize(stmt);
 
                 return chk;
+            }
+
+            static inline int jsoncpp_reader_parse_memory(const char *str, Json::Value &doc)
+            {
+                Json::Reader reader;
+
+                bool bchk = reader.parse(str, doc);
+                if(!bchk)
+                    return -1;
+
+                return 0;
+            }
+
+            static inline int jsoncpp_reader_parse_file(const char *file, Json::Value &doc)
+            {
+                int chk;
+
+                abcdk_object_t *dump_data = abcdk_object_copyfrom_file(file);
+                if (!dump_data)
+                    return -1;
+
+                chk = jsoncpp_reader_parse_memory(dump_data->pstrs[0], doc);
+                abcdk_object_unref(&dump_data);
+
+                return chk;
+            }
+
+            static inline std::string jsoncpp_writer_to_string(const Json::Value &doc)
+            {
+                return Json::FastWriter().write(doc);
+            }
+
+            static inline int jsoncpp_writer_to_file(const char *file, const Json::Value &doc)
+            {
+                std::string dump_data = jsoncpp_writer_to_string(doc);
+
+                ssize_t wr_size = abcdk_dump(file, dump_data.data(), dump_data.size());
+                if (wr_size <= 0 || (size_t)wr_size != dump_data.size())
+                    return -1;
+
+                return 0;
             }
 
         } // namespace UtilEx
