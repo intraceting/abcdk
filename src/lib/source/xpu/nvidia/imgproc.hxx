@@ -23,6 +23,8 @@ namespace abcdk_xpu
 
             int convert(const image::metadata_t *src, image::metadata_t *dst);
 
+            int convert2(image::metadata_t **dst, abcdk_xpu_pixfmt_t pixfmt);
+
             int resize(const image::metadata_t *src, const abcdk_xpu_rect_t *src_roi, image::metadata_t *dst, abcdk_xpu_inter_t inter_mode);
 
             int stuff(image::metadata_t *dst, const abcdk_xpu_rect_t *roi, const abcdk_xpu_scalar_t *scalar);

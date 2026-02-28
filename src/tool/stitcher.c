@@ -53,6 +53,9 @@ void _stitcher_print_usage(abcdk_option_t *args)
     fprintf(stderr, ABCDK_GETTEXT("\t plane: 平面\n"));
     fprintf(stderr, ABCDK_GETTEXT("\t spherical: 球面\n"));
 
+    fprintf(stderr, "\n\t--estimate-threshold < VALUE > \n");
+    fprintf(stderr, ABCDK_GETTEXT("\t 评估阈值. 默认: 0.8\n"));
+
     fprintf(stderr, "\n\t--optimize-seam < BOOL > \n");
     fprintf(stderr, ABCDK_GETTEXT("\t 接缝美化. 默认: 1\n"));
     fprintf(stderr, ABCDK_GETTEXT("\t 0: 关\n"));
@@ -89,6 +92,8 @@ void _stitcher_load_src_img(stitcher_t *ctx)
         ctx->src_imgs[ctx->src_num] = abcdk_xpu_imgcodec_decode_from_file(file);
         if (ctx->src_imgs[ctx->src_num])
         {
+            /*统一图像格式. */
+            chk = abcdk_xpu_imgproc_convert2(&ctx->src_imgs[ctx->src_num],ABCDK_XPU_PIXFMT_RGB24);
             ctx->src_num += 1;
         }
         else
@@ -108,6 +113,7 @@ void _stitcher_work(stitcher_t *ctx)
     int device_id = abcdk_option_get_int(ctx->args, "--device-id", 0, 0);
     const char *feature_name_p = abcdk_option_get(ctx->args, "--feature-name", 0, "ORB");
     const char *warper_name_p = abcdk_option_get(ctx->args, "--warper-name", 0, "spherical");
+    float estimate_threshold = abcdk_option_get_double(ctx->args, "--estimate-threshold", 0, 0.8);
     int optimize_seam = abcdk_option_get_int(ctx->args, "--optimize-seam", 0, 1);
     const char *dst_img_file_p = abcdk_option_get(ctx->args, "--dst-img-file", 0, "./panorama.jpg");
     const char *camera_param_file_p = abcdk_option_get(ctx->args, "--camera-param-file", 0, NULL);
@@ -143,7 +149,7 @@ void _stitcher_work(stitcher_t *ctx)
         goto END;
     }
 
-    chk = abcdk_xpu_stitcher_estimate_parameters(ctx->ctx, ctx->src_num, (const abcdk_xpu_image_t **)ctx->src_imgs, NULL, 0.8);
+    chk = abcdk_xpu_stitcher_estimate_parameters(ctx->ctx, ctx->src_num, (const abcdk_xpu_image_t **)ctx->src_imgs, NULL, estimate_threshold);
     if (chk != 0)
     {
         abcdk_trace_printf(LOG_ERR, "评估相机参数失败, 特征不足或其它错误.");

@@ -72,6 +72,9 @@ void _undistort_process(undistort_t *ctx)
             continue;
         }
 
+        /**统一图像格式. */
+        chk = abcdk_xpu_imgproc_convert2(&src_img,ABCDK_XPU_PIXFMT_RGB24);
+
         chk = abcdk_xpu_calibrate_undistort(ctx->ctx, src_img, &dst_img, ABCDK_XPU_INTER_CUBIC);
         if (chk != 0)
         {

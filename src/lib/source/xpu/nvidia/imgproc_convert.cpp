@@ -307,6 +307,34 @@ namespace abcdk_xpu
             {
                 return _convert_gpu(dst, src);
             }
+
+            int convert2(image::metadata_t **dst, abcdk_xpu_pixfmt_t pixfmt)
+            {
+                image::metadata_t *tmp_dst;
+                image::metadata_t *dst_p;
+                int chk;
+
+                dst_p = *dst;
+
+                if (pixfmt::ffmpeg_to_local(dst_p->format) == pixfmt)
+                    return 0;
+
+                tmp_dst = image::create(dst_p->width, dst_p->height, pixfmt, 16, 0);
+                if (!tmp_dst)
+                    return -1;
+
+                chk = convert(dst_p, tmp_dst);
+                if (chk != 0)
+                {
+                    image::free(&tmp_dst);
+                    return -2;
+                }
+
+                image::free(dst);
+                *dst = tmp_dst;
+                
+                return 0;
+            }
         } // namespace imgproc
     } // namespace nvidia
 

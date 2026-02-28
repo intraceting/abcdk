@@ -42,6 +42,33 @@ int abcdk_xpu_imgproc_convert(const abcdk_xpu_image_t *src, abcdk_xpu_image_t *d
     return -1;
 }
 
+int abcdk_xpu_imgproc_convert2(abcdk_xpu_image_t **dst, abcdk_xpu_pixfmt_t pixfmt)
+{
+    assert(dst != NULL && pixfmt > ABCDK_XPU_PIXFMT_NONE);
+
+#if defined(__XPU_GENERAL__)
+
+    abcdk_xpu::context::guard context_push_pop(_abcdk_xpu_context_current_get());
+
+    if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NONE)
+    {
+        return abcdk_xpu::general::imgproc::convert2((abcdk_xpu::general::image::metadata_t **)dst, pixfmt);
+    }
+    else if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NVIDIA)
+    {
+#if !defined(__XPU_NVIDIA__)
+        abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含NVIDIA工具."));
+        return -1;
+#else  // #if !defined(__XPU_NVIDIA__)
+        return abcdk_xpu::nvidia::imgproc::convert2((abcdk_xpu::nvidia::image::metadata_t **)dst, pixfmt);
+#endif // #if !defined(__XPU_NVIDIA__)
+    }
+
+#endif //#if defined(__XPU_GENERAL__)
+
+    return -1;  
+}
+
 int abcdk_xpu_imgproc_resize(const abcdk_xpu_image_t *src, const abcdk_xpu_rect_t *src_roi, abcdk_xpu_image_t *dst, abcdk_xpu_inter_t inter_mode)
 {
     assert(src != NULL && dst != NULL);

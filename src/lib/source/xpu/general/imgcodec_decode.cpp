@@ -22,7 +22,7 @@ namespace abcdk_xpu
                 if (chk != 0)
                     return NULL;
 
-                return image::clone(ABCDK_XPU_PIXFMT_BGR24,tmp_dst,16);
+                return image::clone(ABCDK_XPU_PIXFMT_RGB24,tmp_dst,16);
             }
         } // namespace imgcodec
     } // namespace general

@@ -81,8 +81,11 @@ void _calibrate_load_src_img(calibrate_t *ctx)
             break;
 
         ctx->src_imgs[ctx->src_num] = abcdk_xpu_imgcodec_decode_from_file(file);
+
         if (ctx->src_imgs[ctx->src_num])
         {
+            /*统一图像格式. */
+            chk = abcdk_xpu_imgproc_convert2(&ctx->src_imgs[ctx->src_num],ABCDK_XPU_PIXFMT_RGB24);
             ctx->src_num += 1;
         }
         else

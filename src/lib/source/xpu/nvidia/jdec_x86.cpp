@@ -169,7 +169,7 @@ namespace abcdk_xpu
 
                 /*全部转成RGB和GRAY.*/
                 if (components == 3)
-                    dst = image::create(widths[0], heights[0], ABCDK_XPU_PIXFMT_BGR24, 16, 0); // 只使用第一层的宽和高.
+                    dst = image::create(widths[0], heights[0], ABCDK_XPU_PIXFMT_RGB24, 16, 0); // 只使用第一层的宽和高.
                 else if (components == 1)
                     dst = image::create(widths[0], heights[0], ABCDK_XPU_PIXFMT_GRAY8, 16, 0);
                 else
@@ -182,7 +182,7 @@ namespace abcdk_xpu
                 dst_data.pitch[0] = dst->linesize[0];
 
                 if (components == 3)
-                    jpeg_chk = nvjpegDecode(ctx->cu_ctx, ctx->cu_state, (uint8_t *)src, src_size, NVJPEG_OUTPUT_BGRI, &dst_data, ctx->cu_stream);
+                    jpeg_chk = nvjpegDecode(ctx->cu_ctx, ctx->cu_state, (uint8_t *)src, src_size, NVJPEG_OUTPUT_RGBI, &dst_data, ctx->cu_stream);
                 else if (components == 1)
                     jpeg_chk = nvjpegDecode(ctx->cu_ctx, ctx->cu_state, (uint8_t *)src, src_size, NVJPEG_OUTPUT_Y, &dst_data, ctx->cu_stream);
                 else

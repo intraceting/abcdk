@@ -14,7 +14,7 @@ namespace abcdk_xpu
         {
             int decode(const std::vector<uint8_t> &src, cv::Mat &dst)
             {
-                dst = cv::imdecode(src, cv::IMREAD_COLOR_BGR);
+                dst = cv::imdecode(src, cv::IMREAD_COLOR_RGB);
                 if (dst.empty())
                     return -1;
 

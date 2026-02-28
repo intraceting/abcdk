@@ -20,6 +20,13 @@ __BEGIN_DECLS
 int abcdk_xpu_imgproc_convert(const abcdk_xpu_image_t *src, abcdk_xpu_image_t *dst);
 
 /**
+ * 格式转换.
+ *
+ * @return 0 成功, < 0 失败.
+ */
+int abcdk_xpu_imgproc_convert2(abcdk_xpu_image_t **dst, abcdk_xpu_pixfmt_t pixfmt);
+
+/**
  * 缩放.
  *
  * @return 0 成功, < 0 失败.

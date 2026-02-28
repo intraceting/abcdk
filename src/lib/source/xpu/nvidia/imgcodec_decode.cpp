@@ -22,7 +22,7 @@ namespace abcdk_xpu
                 if (chk != 0)
                     return NULL;
 
-                return image::clone(ABCDK_XPU_PIXFMT_BGR24, tmp_dst, 1, 16, 0);
+                return image::clone(ABCDK_XPU_PIXFMT_RGB24, tmp_dst, 1, 16, 0);
             }
 
             static pthread_once_t _current_key_status = PTHREAD_ONCE_INIT;
@@ -49,7 +49,7 @@ namespace abcdk_xpu
                 assert(chk == 0);
             }
 
-            image::metadata_t *decode(const void *src, size_t size)
+            static image::metadata_t *_decode(const void *src, size_t size)
             {
                 image::metadata_t *dst;
                 jdec::metadata_t *ctx;
@@ -72,6 +72,11 @@ namespace abcdk_xpu
                 {
                     return _decode_cpu(src, size);
                 }
+            }
+
+            image::metadata_t *decode(const void *src, size_t size)
+            {
+                return _decode(src, size);
             }
         } // namespace imgcodec
     } // namespace nvidia
