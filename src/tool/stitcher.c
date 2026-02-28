@@ -54,7 +54,7 @@ void _stitcher_print_usage(abcdk_option_t *args)
     fprintf(stderr, ABCDK_GETTEXT("\t spherical: 球面\n"));
 
     fprintf(stderr, "\n\t--estimate-threshold < VALUE > \n");
-    fprintf(stderr, ABCDK_GETTEXT("\t 评估阈值. 默认: 0.8\n"));
+    fprintf(stderr, ABCDK_GETTEXT("\t 评估阈值(0.1~0.9). 默认: 0.8\n"));
 
     fprintf(stderr, "\n\t--optimize-seam < BOOL > \n");
     fprintf(stderr, ABCDK_GETTEXT("\t 接缝美化. 默认: 1\n"));
