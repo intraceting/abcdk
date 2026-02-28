@@ -68,5 +68,4 @@
 void _abcdk_xpu_hwaccel_set(int hwaccel);
 int _abcdk_xpu_hwaccel_get();
 
-
 #endif //ABCDK_XPU_RUNTIME_IN_H

@@ -8,7 +8,7 @@
 
 #ifdef __aarch64__
 
-#include "jetson/NvVideoEncoder.h"
+#include "NvVideoEncoder.h"
 
 namespace abcdk_xpu
 {
