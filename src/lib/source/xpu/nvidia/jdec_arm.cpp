@@ -54,6 +54,7 @@ namespace abcdk_xpu
             image::metadata_t *decode(metadata_t *ctx, const void *src, int src_size)
             {
                 int dma_fd = -1;
+                int cp_dma_fd = -1;
                 uint32_t pixfmt = -1;
                 uint32_t width = 0;
                 uint32_t height = 0;
@@ -82,7 +83,10 @@ namespace abcdk_xpu
                     return NULL;
                 }
 
-                chk = NvBufSurfaceFromFd(dma_fd, (void **)&dma_surf);
+                /*复制句柄, 因为NvBufSurf::NvDestroy会深度释放.*/
+                cp_dma_fd = dup(dma_fd);//不好用.
+
+                chk = NvBufSurfaceFromFd(cp_dma_fd, (void **)&dma_surf);
                 if (chk != 0)
                 {
                     NvBufSurf::NvDestroy(dma_fd);
