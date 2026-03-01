@@ -9,10 +9,10 @@
 
 #include "abcdk/util/general.h"
 
-#ifdef HAVE_UNIXODBC
+#ifdef HAVE_ODBC
 #include <sql.h>
 #include <sqlext.h>
-#endif // HAVE_UNIXODBC
+#endif // HAVE_ODBC
 
 #ifndef __SQL_H
 #define SQL_SUCCESS 0

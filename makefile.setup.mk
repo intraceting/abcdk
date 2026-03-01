@@ -33,7 +33,10 @@ SHELLNAME=$$(basename $${0})
 SHELLDIR=$$(cd `dirname $${0}`; pwd)
 
 #Export the necessary environment variables.
-export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH}:$${SHELLDIR}:$${SHELLDIR}/../lib:$${SHELLDIR}/../lib/abcdk.compat
+export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH}:$${SHELLDIR}
+export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH}:$${SHELLDIR}/../lib
+export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH}:$${SHELLDIR}/../lib/abcdk.3rdparty
+#export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH}:$${SHELLDIR}/../lib/abcdk.compiler
 
 #Start the executable program.
 $${0}.exe "$$@"
@@ -138,11 +141,13 @@ uninstall-dev:
 #
 install-needed:
 #
-	mkdir -p -m 0755 ${INSTALL_PREFIX}/lib/abcdk.compat
-	${SHELLKITS_HOME}/tools/copy-3rdparty-needed.sh ${BUILD_PATH}/abcdk.needed ${INSTALL_PREFIX}/lib/abcdk.compat/
-	${SHELLKITS_HOME}/tools/copy-compiler-needed.sh ${CC} ${INSTALL_PREFIX}/lib/abcdk.compat/
+	mkdir -p -m 0755 ${INSTALL_PREFIX}/lib/abcdk.3rdparty
+	${SHELLKITS_HOME}/tools/copy-3rdparty-needed.sh ${BUILD_PATH}/abcdk.needed ${INSTALL_PREFIX}/lib/abcdk.3rdparty/
+	mkdir -p -m 0755 ${INSTALL_PREFIX}/lib/abcdk.compiler
+	${SHELLKITS_HOME}/tools/copy-compiler-needed.sh ${CC} ${INSTALL_PREFIX}/lib/abcdk.compiler/
 
 #
 uninstall-needed:
 #
-	rm -rf ${INSTALL_PREFIX}/lib/abcdk.compat
+	rm -rf ${INSTALL_PREFIX}/lib/abcdk.3rdparty
+	rm -rf ${INSTALL_PREFIX}/lib/abcdk.compiler
