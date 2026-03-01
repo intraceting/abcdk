@@ -66,6 +66,23 @@ exit_if_error()
     fi
 }
 
+
+
+#
+TMP_HOEM_A=$(realpath -s "${SHELLDIR}")
+TMP_HOME_B=$(realpath -s "${PWD}")
+
+#构建过程中的临时文件放在单独的目录里.
+if [ "${TMP_HOEM_A}" == "${TMP_HOME_B}" ];then
+BUILD_PATH=${PWD}/build/
+fi
+
+#按需要进入单独目录.
+if [ "${BUILD_PATH}" != "" ];then
+mkdir -p ${BUILD_PATH}
+cd ${BUILD_PATH}
+fi
+
 #
 ${SHELLKITS_HOME}/fast-c-cxx/configure.sh "$@" -d SOURCE_PATH=${SHELLDIR} -d PRIVATE_CONF_PATH=${SHELLDIR}/configure.d
 exit_if_error $? "Configuration failed." $?

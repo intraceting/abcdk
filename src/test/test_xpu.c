@@ -351,6 +351,8 @@ static void _test_any_6(abcdk_option_t *args)
 
 static void _test_any_7(abcdk_option_t *args)
 {
+#ifdef HAVE_FFMPEG
+
     int chk;
 
     const char *dst_file = abcdk_option_get(args, "--dst-file", 0, "");
@@ -434,6 +436,8 @@ static void _test_any_7(abcdk_option_t *args)
     abcdk_ffmpeg_editor_free(&ff_ctx);
 
     abcdk_xpu_vdec_free(&vdec_ctx);
+
+#endif //HAVE_FFMPEG
 }
 
 static uint8_t select_color(int idx, int channel)
