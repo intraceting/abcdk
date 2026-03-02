@@ -109,8 +109,9 @@ namespace abcdk_xpu
 #if 0
 			    cv::find4QuadCornerSubpix(img_gray, pts_2d, cv::Size(11, 11));
 #else
-                cv::TermCriteria criteria = cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::MAX_ITER, 30, 0.001);
-                cv::cornerSubPix(img_gray, pts_2d, cv::Size(5, 5), cv::Size(-1, -1), criteria);
+                cv::Size sub_winsize(5, 5);
+                cv::TermCriteria criteria = cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::MAX_ITER, 30, 0.1);
+                cv::cornerSubPix(img_gray, pts_2d, sub_winsize, cv::Size(-1, -1), criteria);
 #endif
 
                 /*保存角点.*/

@@ -36,6 +36,9 @@ void _undistort_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--undistort-param-file < FILE >\n");
     fprintf(stderr, ABCDK_GETTEXT("\t 矫正参数文件.\n"));
 
+    fprintf(stderr, "\n\t--black-alpha < VALUE > \n");
+    fprintf(stderr, ABCDK_GETTEXT("\t 黑色区域比例(0.0~1.0). 默认: 1\n"));
+
     fprintf(stderr, "\n\t--src-img-path < PATH >\n");
     fprintf(stderr, ABCDK_GETTEXT("\t 源图像路径. 默认: ./\n"));
 
@@ -110,6 +113,9 @@ void _undistort_work(undistort_t *ctx)
 
     const char *undistort_param_file_p = abcdk_option_get(ctx->args, "--undistort-param-file", 0, NULL);
 
+
+    double black_alpha = abcdk_option_get_double(ctx->args, "--black-alpha", 0, 1.0);
+
     chk = abcdk_xpu_runtime_init(hwaccel_vendor);
     assert(chk == 0);
 
@@ -125,6 +131,13 @@ void _undistort_work(undistort_t *ctx)
     if (chk != 0)
     {
         abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("加载标定参数文件(%s)失败, 不存在或无权限."), undistort_param_file_p);
+        goto END;
+    }
+
+    chk = abcdk_xpu_calibrate_build_parameters(ctx->ctx, black_alpha);
+    if (chk != 0)
+    {
+        abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("内存不足."));
         goto END;
     }
 
