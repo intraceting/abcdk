@@ -73,7 +73,7 @@ void _calibrate_load_src_img(calibrate_t *ctx)
 
     abcdk_dirent_open(&dir_ctx, src_img_path_p);
 
-    while (ctx->src_num < 500)
+    while (ctx->src_num < ABCDK_ARRAY_SIZE(ctx->src_imgs))
     {
         char file[PATH_MAX] = {0};
         int chk = abcdk_dirent_read(dir_ctx, NULL, file, 1);

@@ -15,7 +15,7 @@ typedef struct _stitcher
     abcdk_xpu_stitcher_t *ctx;
 
     int src_num;
-    abcdk_xpu_image_t *src_imgs[100];
+    abcdk_xpu_image_t *src_imgs[10];
 
     abcdk_xpu_image_t *dst_img;
 
@@ -82,7 +82,7 @@ void _stitcher_load_src_img(stitcher_t *ctx)
 
     abcdk_dirent_open(&dir_ctx, src_img_path_p);
 
-    while (ctx->src_num < 10)
+    while (ctx->src_num < ABCDK_ARRAY_SIZE(ctx->src_imgs))
     {
         char file[PATH_MAX] = {0};
         int chk = abcdk_dirent_read(dir_ctx, NULL, file, 1);
