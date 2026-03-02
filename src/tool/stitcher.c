@@ -82,7 +82,7 @@ void _stitcher_load_src_img(stitcher_t *ctx)
 
     abcdk_dirent_open(&dir_ctx, src_img_path_p);
 
-    while (ctx->src_num < 100)
+    while (ctx->src_num < 10)
     {
         char file[PATH_MAX] = {0};
         int chk = abcdk_dirent_read(dir_ctx, NULL, file, 1);

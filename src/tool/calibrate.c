@@ -18,7 +18,7 @@ typedef struct _calibrate
     abcdk_xpu_size_t grid_size;
 
     int src_num;
-    abcdk_xpu_image_t *src_imgs[100];
+    abcdk_xpu_image_t *src_imgs[500];
 
 } calibrate_t;
 
@@ -73,7 +73,7 @@ void _calibrate_load_src_img(calibrate_t *ctx)
 
     abcdk_dirent_open(&dir_ctx, src_img_path_p);
 
-    while (ctx->src_num < 100)
+    while (ctx->src_num < 500)
     {
         char file[PATH_MAX] = {0};
         int chk = abcdk_dirent_read(dir_ctx, NULL, file, 1);
