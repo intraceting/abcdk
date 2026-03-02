@@ -103,12 +103,13 @@ namespace abcdk_xpu
                     if (src->linesize[i] <= 0)
                         break;
 
-                    NvBufSurfaceMap(dma_surf, 0, i, NVBUF_MAP_READ);
+                    NvBufSurfaceMap(dma_surf, 0, i, NVBUF_MAP_READ_WRITE);
                     NvBufSurfaceSyncForCpu(dma_surf, 0, i);
 
-                    chk = image::copy(src, i, 0, dma_surf->surfaceList[0].mappedAddr.addr[i], dma_surf->surfaceList[0].pitch, 1);
+                    chk = image::copy(src, i, 0, dma_surf->surfaceList[0].mappedAddr.addr[i], dma_surf->surfaceList[0].planeParams.pitch[i], 1);
                     assert(chk == 0);
 
+                    NvBufSurfaceSyncForDevice (dma_surf, 0, i);
                     NvBufSurfaceUnMap(dma_surf, 0, i);
                 }
 

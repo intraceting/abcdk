@@ -117,8 +117,8 @@ namespace abcdk_xpu
                 assert(m_img_features.size() == m_img_good_idxs.size());
                 assert(m_img_matches.size() >= m_img_good_idxs.size());
 
-                std::string out_path = getenv("ABCDK_XPU_STITCHER_KEYPOINTS_DUMP_PATH");
-                if(out_path.empty())
+                const char *out_path_p = getenv("ABCDK_XPU_STITCHER_KEYPOINTS_DUMP_PATH");
+                if (!out_path_p || !*out_path_p)
                     return;
 
                 std::vector<cv::Mat> outs(m_img_matches.size());
@@ -158,11 +158,13 @@ namespace abcdk_xpu
                 std::vector<int> params = {cv::IMWRITE_JPEG_QUALITY, 100};
                 for (int i = 0; i < outs.size(); i++)
                 {
-                    if(outs[i].empty()) 
+                    if (outs[i].empty())
                         continue;
 
-                    std::string out_file = out_path + "/" + std::to_string(i + 1) + ".jpg";
-                    cv::imwrite(out_file,outs[i],params);
+                    std::vector<char> out_file(PATH_MAX);
+                    sprintf(out_file.data(), "%s/s%02d.jpg", out_path_p, i);
+
+                    cv::imwrite(out_file.data(), outs[i], params);
                 }
             }
 

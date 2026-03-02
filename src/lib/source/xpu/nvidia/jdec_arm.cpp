@@ -78,18 +78,40 @@ namespace abcdk_xpu
                     chk = -127;
 
                 if (chk != 0)
-                {
-                    NvBufSurf::NvDestroy(dma_fd);
                     return NULL;
-                }
 
-                /*复制句柄, 因为NvBufSurf::NvDestroy会深度释放.*/
-                cp_dma_fd = dup(dma_fd);//不好用.
+                NvBufSurf::NvCommonAllocateParams params;
+                params.memType = NVBUF_MEM_SURFACE_ARRAY;
+                params.width = width;
+                params.height = height;
+                params.layout = NVBUF_LAYOUT_PITCH;
+                params.colorFormat = NVBUF_COLOR_FORMAT_YUV420;
+                params.memtag = NvBufSurfaceTag_VIDEO_CONVERT;
 
+                chk = NvBufSurf::NvAllocate(&params, 1, &cp_dma_fd);
+                if (chk != 0)
+                    return NULL;
+
+                NvBufSurf::NvCommonTransformParams transform_params;
+                transform_params.src_top = 0;
+                transform_params.src_left = 0;
+                transform_params.src_width = width;
+                transform_params.src_height = height;
+                transform_params.dst_top = 0;
+                transform_params.dst_left = 0;
+                transform_params.dst_width = width;
+                transform_params.dst_height = height;
+                transform_params.flag = NVBUFSURF_TRANSFORM_FILTER;
+                transform_params.flip = NvBufSurfTransform_None;
+                transform_params.filter = NvBufSurfTransformInter_Nearest;
+                chk = NvBufSurf::NvTransform(&transform_params, dma_fd, cp_dma_fd);
+                if(chk != 0)
+                    return NULL;
+                    
                 chk = NvBufSurfaceFromFd(cp_dma_fd, (void **)&dma_surf);
                 if (chk != 0)
                 {
-                    NvBufSurf::NvDestroy(dma_fd);
+                    NvBufSurf::NvDestroy(cp_dma_fd);
                     return NULL;
                 }
 
@@ -101,7 +123,7 @@ namespace abcdk_xpu
                     NvBufSurfaceMap(dma_surf, 0, i, NVBUF_MAP_READ);
                     NvBufSurfaceSyncForCpu(dma_surf, 0, i);
 
-                    chk = image::copy(dma_surf->surfaceList[0].mappedAddr.addr[i], dma_surf->surfaceList[0].pitch, 1, dst, i, 0);
+                    chk = image::copy(dma_surf->surfaceList[0].mappedAddr.addr[i], dma_surf->surfaceList[0].planeParams.pitch[i], 1, dst, i, 0);
                     assert(chk == 0);
 
                     NvBufSurfaceUnMap(dma_surf, 0, i);

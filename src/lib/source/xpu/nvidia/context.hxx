@@ -89,12 +89,30 @@ namespace abcdk_xpu
 
             static inline int current_pop(metadata_t *ctx)
             {
+                std::queue<CUcontext> cu_ctx_stack;
                 CUcontext cu_ctx = NULL;
                 CUresult cu_chk;
 
-                cu_chk = cuCtxPopCurrent(&cu_ctx);
-                if (cu_chk != CUDA_SUCCESS)
-                    return -1;
+                while(1)
+                {
+                    cu_chk = cuCtxPopCurrent(&cu_ctx);
+                    if (cu_chk != CUDA_SUCCESS)
+                        return -1;
+
+                     /*出栈项为空或是自己时, 直接跳出.*/
+                    if (ctx->cu_ctx == NULL || ctx->cu_ctx == cu_ctx)
+                        break;
+                    
+                    /*出栈项栈是其它时, 入临时栈.*/
+                    cu_ctx_stack.push(cu_ctx);
+                }
+
+                /*恢复栈信息.*/
+                while (cu_ctx_stack.size() > 0)
+                {
+                    cuCtxPushCurrent(cu_ctx_stack.front());
+                    cu_ctx_stack.pop();
+                }
 
                 ABCDK_TRACE_ASSERT(ctx->cu_ctx == cu_ctx,ABCDK_GETTEXT("设备环境的绑定与解绑必须配对使用."));
 
