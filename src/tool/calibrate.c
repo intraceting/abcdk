@@ -18,7 +18,7 @@ typedef struct _calibrate
     abcdk_xpu_size_t grid_size;
 
     int src_num;
-    abcdk_xpu_image_t *src_imgs[500];
+    abcdk_xpu_image_t *src_imgs[100];
 
 } calibrate_t;
 

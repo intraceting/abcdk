@@ -110,12 +110,27 @@ namespace abcdk_xpu
 			    cv::find4QuadCornerSubpix(img_gray, pts_2d, cv::Size(11, 11));
 #else
                 cv::Size sub_winsize(5, 5);
-                cv::TermCriteria criteria = cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::MAX_ITER, 30, 0.1);
+                cv::TermCriteria criteria = cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::MAX_ITER, 30, 0.001);
                 cv::cornerSubPix(img_gray, pts_2d, sub_winsize, cv::Size(-1, -1), criteria);
 #endif
 
                 /*保存角点.*/
                 m_pts_2d.push_back(pts_2d);
+
+                const char *out_path_p = getenv("ABCDK_XPU_CALIBRATE_KEYPOINTS_DUMP_PATH");
+                if (!out_path_p || !*out_path_p)
+                    return 0;
+
+                cv::Mat out = img.clone();
+
+                for (auto &one : pts_2d)
+                    cv::circle(out, cv::Point(one.x, one.y), 5, cv::Scalar(0, 0, 255));
+
+                std::vector<char> out_file(PATH_MAX);
+                sprintf(out_file.data(), "%s/c%zd.jpg", out_path_p,pts_2d.size());
+
+                std::vector<int> params = {cv::IMWRITE_JPEG_QUALITY, 100};
+                cv::imwrite(out_file.data(), out, params);
 
                 return 0;
             }
