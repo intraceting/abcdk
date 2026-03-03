@@ -14,6 +14,8 @@ typedef struct _stitcher
     abcdk_xpu_context_t *dev_ctx;
     abcdk_xpu_stitcher_t *ctx;
 
+    char src_feature[33];
+
     int src_num;
     abcdk_xpu_image_t *src_imgs[10];
 
@@ -61,8 +63,8 @@ void _stitcher_print_usage(abcdk_option_t *args)
     fprintf(stderr, ABCDK_GETTEXT("\t 0: 关\n"));
     fprintf(stderr, ABCDK_GETTEXT("\t 1: 开\n"));
 
-    fprintf(stderr, "\n\t--src-img-path < PATH >\n");
-    fprintf(stderr, ABCDK_GETTEXT("\t 源图像路径. 默认: ./\n"));
+    fprintf(stderr, "\n\t--src-img-file < FILE >\n");
+    fprintf(stderr, ABCDK_GETTEXT("\t 源图像文件(包括路径). \n"));
 
     fprintf(stderr, "\n\t--dst-img-file < FILE >\n");
     fprintf(stderr, ABCDK_GETTEXT("\t 全景图像文件(包括路径). 默认: ./panorama.jpg \n"));
@@ -73,36 +75,45 @@ void _stitcher_print_usage(abcdk_option_t *args)
 
 void _stitcher_load_src_img(stitcher_t *ctx)
 {
-    abcdk_tree_t *dir_ctx = NULL;
-
-    const char *src_img_path_p = abcdk_option_get(ctx->args, "--src-img-path", 0, "./");
+    int chk;
 
     /*set 0.*/
     ctx->src_num = 0;
 
-    abcdk_dirent_open(&dir_ctx, src_img_path_p);
-
-    while (ctx->src_num < ABCDK_ARRAY_SIZE(ctx->src_imgs))
+    for (int i = 0; i < ABCDK_ARRAY_SIZE(ctx->src_imgs); i++)
     {
-        char file[PATH_MAX] = {0};
-        int chk = abcdk_dirent_read(dir_ctx, NULL, file, 1);
-        if (chk != 0)
+        const char *file_p = abcdk_option_get(ctx->args, "--src-img-file", i, NULL);
+        if (!file_p)
             break;
 
-        ctx->src_imgs[ctx->src_num] = abcdk_xpu_imgcodec_decode_from_file(file);
+        ctx->src_imgs[ctx->src_num] = abcdk_xpu_imgcodec_decode_from_file(file_p);
         if (ctx->src_imgs[ctx->src_num])
         {
             /*统一图像格式. */
-            chk = abcdk_xpu_imgproc_convert2(&ctx->src_imgs[ctx->src_num],ABCDK_XPU_PIXFMT_RGB24);
+            chk = abcdk_xpu_imgproc_convert2(&ctx->src_imgs[ctx->src_num], ABCDK_XPU_PIXFMT_RGB24);
             ctx->src_num += 1;
         }
         else
         {
-            abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("加载源图像文件(%s)失败, 无权限或不支持."), file);
+            abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("加载源图像文件(%s)失败, 无权限或不支持."), file_p);
         }
     }
+}
 
-    abcdk_tree_free(&dir_ctx);
+void _stitcher_make_feature(stitcher_t *ctx)
+{
+    abcdk_md5_t *md5_ctx = abcdk_md5_create();
+
+    for (int i = 0; i < ctx->src_num; i++)
+    {
+        char img_size[50] = {0};
+        sprintf(img_size, "%dx%d", abcdk_xpu_image_get_width(ctx->src_imgs[i]), abcdk_xpu_image_get_height(ctx->src_imgs[i]));
+
+        abcdk_md5_update(md5_ctx, img_size, strlen(img_size));
+    }
+
+    abcdk_md5_final2hex(md5_ctx,ctx->src_feature,0);
+    abcdk_md5_destroy(&md5_ctx);
 }
 
 void _stitcher_work(stitcher_t *ctx)
@@ -126,22 +137,6 @@ void _stitcher_work(stitcher_t *ctx)
 
     abcdk_xpu_context_current_set(ctx->dev_ctx);
 
-    ctx->ctx = abcdk_xpu_stitcher_alloc();
-
-    chk = abcdk_xpu_stitcher_set_feature_finder(ctx->ctx, feature_name_p);
-    if (chk != 0)
-    {
-        abcdk_trace_printf(LOG_ERR, "不支持的特征算法(%s).", feature_name_p);
-        goto END;
-    }
-
-    chk = abcdk_xpu_stitcher_set_warper(ctx->ctx, warper_name_p);
-    if (chk != 0)
-    {
-        abcdk_trace_printf(LOG_ERR, "不支持的矫正算法(%s).", warper_name_p);
-        goto END;
-    }
-
     _stitcher_load_src_img(ctx);
     if(ctx->src_num <2)
     {
@@ -149,10 +144,45 @@ void _stitcher_work(stitcher_t *ctx)
         goto END;
     }
 
-    chk = abcdk_xpu_stitcher_estimate_parameters(ctx->ctx, ctx->src_num, (const abcdk_xpu_image_t **)ctx->src_imgs, NULL, estimate_threshold);
+    _stitcher_make_feature(ctx);
+
+    ctx->ctx = abcdk_xpu_stitcher_alloc();
+
+    if(camera_param_file_p && access(camera_param_file_p,R_OK) == 0)
+    {
+        chk = abcdk_xpu_stitcher_load_parameters_from_file(ctx->ctx, camera_param_file_p, ctx->src_feature);
+        if (chk == -127)
+        {
+            abcdk_trace_printf(LOG_ERR, "加载相机参数文件(%s)成功, 但与当前源图像不匹配.", camera_param_file_p);
+            goto END;
+        }
+        else if (chk <0)
+        {
+            abcdk_trace_printf(LOG_ERR, "加载相机参数文件(%s)失败, 格式错误或无权限.", camera_param_file_p);
+            goto END;
+        }
+    }
+    else
+    {
+        chk = abcdk_xpu_stitcher_set_feature_finder(ctx->ctx, feature_name_p);
+        if (chk != 0)
+        {
+            abcdk_trace_printf(LOG_ERR, "不支持的特征算法(%s).", feature_name_p);
+            goto END;
+        }
+
+        chk = abcdk_xpu_stitcher_estimate_parameters(ctx->ctx, ctx->src_num, (const abcdk_xpu_image_t **)ctx->src_imgs, NULL, estimate_threshold);
+        if (chk != 0)
+        {
+            abcdk_trace_printf(LOG_ERR, "评估相机参数失败, 特征不足或其它错误.");
+            goto END;
+        }
+    }
+
+    chk = abcdk_xpu_stitcher_set_warper(ctx->ctx, warper_name_p);
     if (chk != 0)
     {
-        abcdk_trace_printf(LOG_ERR, "评估相机参数失败, 特征不足或其它错误.");
+        abcdk_trace_printf(LOG_ERR, "不支持的矫正算法(%s).", warper_name_p);
         goto END;
     }
 
@@ -181,7 +211,7 @@ void _stitcher_work(stitcher_t *ctx)
 
     if (camera_param_file_p)
     {
-        chk = abcdk_xpu_stitcher_dump_parameters_to_file(ctx->ctx, camera_param_file_p, "ABCDK");
+        chk = abcdk_xpu_stitcher_dump_parameters_to_file(ctx->ctx, camera_param_file_p, ctx->src_feature);
         if (chk != 0)
         {
             abcdk_trace_printf(LOG_WARNING, "保存相机参数文件(%s)失败, 无空间或无权限.", camera_param_file_p);

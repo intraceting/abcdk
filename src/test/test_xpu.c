@@ -6,7 +6,7 @@
  */
 #include "entry.h"
 
-static void _test_any_1(abcdk_option_t *args)
+static void _test_xpu_1(abcdk_option_t *args)
 {
     int chk;
 
@@ -52,7 +52,7 @@ static void _test_any_1(abcdk_option_t *args)
     abcdk_xpu_image_free(&img_dst);
 }
 
-static void _test_any_2(abcdk_option_t *args)
+static void _test_xpu_2(abcdk_option_t *args)
 {
     int chk;
 
@@ -95,7 +95,7 @@ static void _test_any_2(abcdk_option_t *args)
     abcdk_xpu_image_free(&img_src);
 }
 
-static void _test_any_3(abcdk_option_t *args)
+static void _test_xpu_3(abcdk_option_t *args)
 {
     int chk;
 
@@ -154,7 +154,7 @@ static int _load_imgs(abcdk_xpu_image_t *img[100], const char *img_path)
     return count;
 }
 
-static void _test_any_4(abcdk_option_t *args)
+static void _test_xpu_4(abcdk_option_t *args)
 {
     int chk;
 
@@ -208,7 +208,7 @@ static void _test_any_4(abcdk_option_t *args)
     abcdk_xpu_calibrate_free(&ctx);
 }
 
-static void _test_any_5(abcdk_option_t *args)
+static void _test_xpu_5(abcdk_option_t *args)
 {
     int chk;
 
@@ -265,7 +265,7 @@ static void _test_any_5(abcdk_option_t *args)
         abcdk_xpu_image_free(&src_imgs[i]);
 }
 
-static void _test_any_6(abcdk_option_t *args)
+static void _test_xpu_6(abcdk_option_t *args)
 {
     int chk;
 
@@ -349,7 +349,7 @@ static void _test_any_6(abcdk_option_t *args)
     abcdk_xpu_venc_free(&venc_ctx);
 }
 
-static void _test_any_7(abcdk_option_t *args)
+static void _test_xpu_7(abcdk_option_t *args)
 {
 #ifdef HAVE_FFMPEG
 
@@ -588,7 +588,7 @@ static void _size_dst2src(abcdk_xpu_dnn_object_t *obj, double src_w, double src_
     }
 }
 
-static int _test_any_8(abcdk_option_t *args)
+static int _test_xpu_8(abcdk_option_t *args)
 {
 
     // for(int i = 0;i<1000;i++)
@@ -735,7 +735,7 @@ static int _test_any_8(abcdk_option_t *args)
     return 0;
 }
 
-static int _test_any_9(abcdk_option_t *args)
+static int _test_xpu_9(abcdk_option_t *args)
 {
     const char *src_p = abcdk_option_get(args, "--src-file", 0, "");
     const char *dst_p = abcdk_option_get(args, "--dst-file", 0, "");
@@ -829,7 +829,7 @@ static int _test_any_9(abcdk_option_t *args)
     abcdk_xpu_image_free(&src_img);
 }
 
-static int _test_any_10(abcdk_option_t *args)
+static int _test_xpu_10(abcdk_option_t *args)
 {
     const char *src_p = abcdk_option_get(args, "--src-file", 0, "");
     const char *dst_p = abcdk_option_get(args, "--dst-file", 0, "");
@@ -854,7 +854,7 @@ static int _test_any_10(abcdk_option_t *args)
     abcdk_xpu_image_free(&src_img);
 }
 
-static int _test_any_11(abcdk_option_t *args)
+static int _test_xpu_11(abcdk_option_t *args)
 {
 
     int test_count = abcdk_option_get_int(args, "--test-count", 0, 1);
@@ -937,7 +937,7 @@ static int _test_any_11(abcdk_option_t *args)
     return 0;
 }
 
-static int _test_any_12(abcdk_option_t *args)
+static int _test_xpu_12(abcdk_option_t *args)
 {
 
     int test_count = abcdk_option_get_int(args, "--test-count", 0, 1);
@@ -1006,6 +1006,159 @@ static int _test_any_12(abcdk_option_t *args)
     return 0;
 }
 
+static int _test_xpu_13(abcdk_option_t *args)
+{
+    const char *dst_file_p = NULL;
+
+    int src_file_max = 4;
+    int src_file_num = 0;
+    const char *src_file_p[4] = {NULL};
+
+    dst_file_p = abcdk_option_get(args, "--dst-file", 0, "");
+
+    for (int i = 0; i < src_file_max; i++)
+    {
+        src_file_p[i] = abcdk_option_get(args, "--src-file", i, "");
+        if (!src_file_p[i])
+            break;
+
+        src_file_num += 1;
+    }
+
+    abcdk_xpu_vdec_t *src_dec_ctx[4] = {NULL};
+    abcdk_ffmpeg_editor_t *src_ff_ctx[4] = {NULL};
+    int chk;
+
+    for (int i = 0; i < src_file_max; i++)
+    {
+        src_dec_ctx[i] = abcdk_xpu_vdec_alloc();
+
+        src_ff_ctx[i] = abcdk_ffmpeg_editor_alloc(0);
+
+        abcdk_ffmpeg_editor_param_t ff_param = {0};
+
+        ff_param.url = src_file_p[i];
+        ff_param.timeout = 0;
+        ff_param.read_mp4toannexb = 1;
+        ff_param.read_ignore_audio = 1;
+        ff_param.read_ignore_subtitle = 1;
+        ff_param.read_nodelay = 1;
+
+        chk = abcdk_ffmpeg_editor_open(src_ff_ctx[i], &ff_param);
+        assert(chk == 0);
+
+        for (int j = 0; j < abcdk_ffmpeg_editor_stream_nb(src_ff_ctx[i]); j++)
+        {
+            AVStream *p = abcdk_ffmpeg_editor_stream_ctx(src_ff_ctx[i], j);
+
+            if (p->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
+            {
+                abcdk_xpu_vcodec_params_t src_dec_params = {0};
+
+                if (p->codecpar->codec_id == AV_CODEC_ID_H264)
+                    src_dec_params.format = ABCDK_XPU_VCODEC_ID_H264;
+                if (p->codecpar->codec_id == AV_CODEC_ID_H265)
+                    src_dec_params.format = ABCDK_XPU_VCODEC_ID_H265;
+
+                src_dec_params.ext_data = p->codecpar->extradata;
+                src_dec_params.ext_size = p->codecpar->extradata_size;
+
+                chk = abcdk_xpu_vdec_setup(src_dec_ctx[j], &src_dec_params);
+                assert(chk == 0);
+            }
+        }
+    }
+
+    abcdk_xpu_venc_t *dst_enc_ctx = abcdk_xpu_venc_alloc();
+
+    abcdk_xpu_vcodec_params_t dst_enc_params = {0};
+
+    // dst_enc_params.format = ABCDK_XPU_VCODEC_ID_H264;
+    dst_enc_params.format = ABCDK_XPU_VCODEC_ID_H265;
+    dst_enc_params.bitrate = 15000 * 1000;     // 15Mbps
+    dst_enc_params.max_bitrate = 30000 * 1000; // 30Mbps
+    dst_enc_params.width = 1920;
+    dst_enc_params.height = 1080;
+    dst_enc_params.fps_n = 25;
+    dst_enc_params.fps_d = 1;
+    dst_enc_params.max_b_frames = 0;
+    dst_enc_params.refs = 4;
+    dst_enc_params.hw_preset_type = 0;
+    dst_enc_params.idr_interval = 12;
+    dst_enc_params.iframe_interval = 13;
+    dst_enc_params.insert_spspps_idr = 50;
+    dst_enc_params.mode_vbr = 0;
+    dst_enc_params.level = 51;
+    dst_enc_params.profile = 66;
+    dst_enc_params.qmax = 51;
+    dst_enc_params.qmin = 25;
+
+    chk = abcdk_xpu_venc_setup(dst_enc_ctx, &dst_enc_params);
+    assert(chk == 0);
+
+    abcdk_xpu_vcodec_params_t dst_enc_params2 = {0};
+    chk = abcdk_xpu_venc_get_params(dst_enc_ctx, &dst_enc_params2);
+    assert(chk == 0);
+
+    abcdk_ffmpeg_editor_t *dst_ff_ctx = NULL;
+
+    dst_ff_ctx = abcdk_ffmpeg_editor_alloc(1);
+
+    abcdk_ffmpeg_editor_param_t dst_ff_param = {0};
+
+    dst_ff_param.url = dst_file_p;
+    dst_ff_param.timeout = 0;
+    dst_ff_param.write_nodelay = 1;
+    dst_ff_param.write_fmp4 = 1;
+
+    chk = abcdk_ffmpeg_editor_open(dst_ff_ctx, &dst_ff_param);
+    assert(chk == 0);
+
+    // AVRational time_base = {25, 1};
+    // chk = abcdk_ffmpeg_editor_add_stream2(dst_ff_ctx, &dst_enc_params2, &time_base, NULL, NULL);
+    // assert(chk >= 0);
+
+    abcdk_xpu_image_t *src_img_ori[4] = {0};
+    abcdk_xpu_image_t *src_img_fix[4] = {0};
+    int src_recv_count = 0;
+
+    for (int i = 0; i < src_file_max; i++)
+    {
+        AVPacket *src_ff_pkt = av_packet_alloc();
+        int src_recv_ok = 0;
+
+        for (int j = 0; j < 100; j++)
+        {
+            if (src_recv_ok)
+                break;
+
+            chk = abcdk_ffmpeg_editor_read_packet(src_ff_ctx[i], src_ff_pkt);
+            if (chk != 0)
+                break;
+
+            int64_t dst_ts;
+
+            chk = abcdk_xpu_vdec_recv_frame(src_dec_ctx[i], &src_img_ori[i], &dst_ts);
+            if (chk > 0)
+            {
+                abcdk_trace_printf(LOG_DEBUG, "src[%d],pts:%.3f", i + 1, abcdk_ffmpeg_editor_stream_ts2sec(src_ff_ctx, src_ff_pkt->stream_index, dst_ts));
+                src_recv_ok = 1;
+            }
+
+            chk = abcdk_xpu_vdec_send_packet(src_dec_ctx[i], src_ff_pkt->data, src_ff_pkt->size, src_ff_pkt->pts);
+            assert(chk > 0);
+        }
+
+        av_packet_free(&src_ff_pkt);
+
+        if (src_recv_ok)
+            src_recv_count += 1;
+
+        if (src_recv_count == src_file_num)
+            break;
+    }
+}
+
 int abcdk_test_xpu(abcdk_option_t *args)
 {
     int hwaccel_vendor = abcdk_option_get_int(args, "--hwaccel-vendor", 0, ABCDK_XPU_HWACCEL_NONE);
@@ -1023,29 +1176,31 @@ int abcdk_test_xpu(abcdk_option_t *args)
     abcdk_xpu_context_t *cp_ctx = abcdk_xpu_context_refer(ctx);
 
     if (cmd == 1)
-        _test_any_1(args);
+        _test_xpu_1(args);
     if (cmd == 2)
-        _test_any_2(args);
+        _test_xpu_2(args);
     if (cmd == 3)
-        _test_any_3(args);
+        _test_xpu_3(args);
     if (cmd == 4)
-        _test_any_4(args);
+        _test_xpu_4(args);
     if (cmd == 5)
-        _test_any_5(args);
+        _test_xpu_5(args);
     if (cmd == 6)
-        _test_any_6(args);
+        _test_xpu_6(args);
     if (cmd == 7)
-        _test_any_7(args);
+        _test_xpu_7(args);
     if (cmd == 8)
-        _test_any_8(args);
+        _test_xpu_8(args);
     if (cmd == 9)
-        _test_any_9(args);
+        _test_xpu_9(args);
     if (cmd == 10)
-        _test_any_10(args);
+        _test_xpu_10(args);
     if (cmd == 11)
-        _test_any_11(args);
+        _test_xpu_11(args);
     if (cmd == 12)
-        _test_any_12(args);
+        _test_xpu_12(args);
+    if (cmd == 13)
+        _test_xpu_13(args);
 
     abcdk_xpu_context_current_set(NULL);
     abcdk_xpu_context_unref(&ctx);

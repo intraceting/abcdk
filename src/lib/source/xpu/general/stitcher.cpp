@@ -80,7 +80,7 @@ namespace abcdk_xpu
                         tmp_mask[i] = cv::Mat(img[i]->height, img[i]->width, CV_8UC1, cv::Scalar(255, 255, 255)); // white.
                 }
 
-                return ctx->co_ctx->estimate_parameters(tmp_img, tmp_mask, threshold);
+                return ctx->co_ctx->estimate_parameters(tmp_img, tmp_mask, threshold, threshold);//匹配和筛选阈值设置为相同的.
             }
 
             int estimate_parameters(metadata_t *ctx, int count, const image::metadata_t *img[], const image::metadata_t *mask[], float threshold)
@@ -97,8 +97,8 @@ namespace abcdk_xpu
                            img_p->format == AV_PIX_FMT_BGR32);
 
                     assert(img[i]->format == img[(i + 1) % count]->format);
-                    assert(img[i]->width == img[(i + 1) % count]->width);
-                    assert(img[i]->height == img[(i + 1) % count]->height);
+                    // assert(img[i]->width == img[(i + 1) % count]->width);
+                    // assert(img[i]->height == img[(i + 1) % count]->height);
 
                     if (!mask)
                         continue;
@@ -114,8 +114,8 @@ namespace abcdk_xpu
                            mask_p->format == AV_PIX_FMT_RGB32 ||
                            mask_p->format == AV_PIX_FMT_BGR32);
 
-                    assert(mask[i]->width == mask[(i + 1) % count]->width);
-                    assert(mask[i]->height == mask[(i + 1) % count]->height);
+                    // assert(mask[i]->width == mask[(i + 1) % count]->width);
+                    // assert(mask[i]->height == mask[(i + 1) % count]->height);
                 }
 
                 return _estimate_parameters(ctx, count, img, mask, threshold);
