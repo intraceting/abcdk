@@ -122,5 +122,5 @@ int main(int argc, char **argv)
 
     abcdk_option_free(&args);
 
-    return errcode;
+    return abs(errcode) & 0x7f;
 }

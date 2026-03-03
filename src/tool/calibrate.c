@@ -186,7 +186,7 @@ void _calibrate_work(calibrate_t *ctx)
     if (valid_num < 2)
     {
         abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("源图像(%d)中包含全部角点的有效图像(%d >= 2)太少, 无法评估矫正参数."), ctx->src_num, valid_num);
-        goto END;
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL,END);
     }
 
     rms = abcdk_xpu_calibrate_estimate_parameters(ctx->ctx);
@@ -197,7 +197,7 @@ void _calibrate_work(calibrate_t *ctx)
     if (chk != 0)
     {
         abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("内存不足."));
-        goto END;
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -ENOMEM,END);
     }
 
     _calibrate_save_dst_img(ctx);
@@ -210,7 +210,7 @@ void _calibrate_work(calibrate_t *ctx)
     if (chk != 0)
     {
         abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("矫正参数写入文件(%s)失败, 无权限或空间不足."), undistort_param_file_p);
-        goto END;
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -ENOSPC,END);
     }
 
 END:

@@ -131,14 +131,14 @@ void _undistort_work(undistort_t *ctx)
     if (chk != 0)
     {
         abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("加载标定参数文件(%s)失败, 不存在或无权限."), undistort_param_file_p);
-        goto END;
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EPERM,END);
     }
 
     chk = abcdk_xpu_calibrate_build_parameters(ctx->ctx, black_alpha);
     if (chk != 0)
     {
         abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("内存不足."));
-        goto END;
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -ENOMEM,END);
     }
 
     _undistort_process(ctx);

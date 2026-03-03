@@ -141,7 +141,7 @@ void _stitcher_work(stitcher_t *ctx)
     if(ctx->src_num <2)
     {
         abcdk_trace_printf(LOG_ERR, "至少需要两张图片.");
-        goto END;
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL,END);
     }
 
     _stitcher_make_feature(ctx);
@@ -154,12 +154,12 @@ void _stitcher_work(stitcher_t *ctx)
         if (chk == -127)
         {
             abcdk_trace_printf(LOG_ERR, "加载相机参数文件(%s)成功, 但与当前源图像不匹配.", camera_param_file_p);
-            goto END;
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL,END);
         }
         else if (chk <0)
         {
             abcdk_trace_printf(LOG_ERR, "加载相机参数文件(%s)失败, 格式错误或无权限.", camera_param_file_p);
-            goto END;
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL,END);
         }
     }
     else
@@ -168,14 +168,14 @@ void _stitcher_work(stitcher_t *ctx)
         if (chk != 0)
         {
             abcdk_trace_printf(LOG_ERR, "不支持的特征算法(%s).", feature_name_p);
-            goto END;
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL,END);
         }
 
         chk = abcdk_xpu_stitcher_estimate_parameters(ctx->ctx, ctx->src_num, (const abcdk_xpu_image_t **)ctx->src_imgs, NULL, estimate_threshold);
         if (chk != 0)
         {
             abcdk_trace_printf(LOG_ERR, "评估相机参数失败, 特征不足或其它错误.");
-            goto END;
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL,END);
         }
     }
 
@@ -183,21 +183,21 @@ void _stitcher_work(stitcher_t *ctx)
     if (chk != 0)
     {
         abcdk_trace_printf(LOG_ERR, "不支持的矫正算法(%s).", warper_name_p);
-        goto END;
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL,END);
     }
 
     chk = abcdk_xpu_stitcher_build_parameters(ctx->ctx);
     if (chk != 0)
     {
         abcdk_trace_printf(LOG_ERR, "构建相机参数失败, 内存不足或其它错误.");
-        goto END;
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL,END);
     }
 
     chk = abcdk_xpu_stitcher_compose(ctx->ctx, ctx->src_num, (const abcdk_xpu_image_t **)ctx->src_imgs, &ctx->dst_img, optimize_seam);
     if (chk != 0)
     {
         abcdk_trace_printf(LOG_ERR, "全景拼接失败, 内存不足或其它错误.");
-        goto END;
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -ENOMEM,END);
     }
 
     if (dst_img_file_p)
