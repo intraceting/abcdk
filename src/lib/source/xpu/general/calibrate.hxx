@@ -28,7 +28,7 @@ namespace abcdk_xpu
   
             void setup(metadata_t *ctx ,int board_cols,int board_rows,int grid_width,int grid_height);
 
-            int detect_corners(metadata_t *ctx ,const image::metadata_t *img);
+            int detect_corners(metadata_t *ctx ,const image::metadata_t *img, int win_width, int win_height);
 
             double estimate_parameters(metadata_t *ctx);
 

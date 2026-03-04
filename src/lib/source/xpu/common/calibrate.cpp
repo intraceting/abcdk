@@ -70,7 +70,7 @@ namespace abcdk_xpu
                 m_undistort_param_ok = false;
             }
 
-            int detect_corners(const cv::Mat &img)
+            int detect_corners(const cv::Mat &img, const cv::Size &win_size /*= cv::Size(15, 15)*/)
             {
                 ABCDK_TRACE_ASSERT(!m_camera_param_ok, ABCDK_GETTEXT("评估参数已经建立, 不能检测角点."));
 
@@ -109,9 +109,8 @@ namespace abcdk_xpu
 #if 0
 			    cv::find4QuadCornerSubpix(img_gray, pts_2d, cv::Size(11, 11));
 #else
-                cv::Size sub_winsize(5, 5);
                 cv::TermCriteria criteria = cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::MAX_ITER, 30, 0.001);
-                cv::cornerSubPix(img_gray, pts_2d, sub_winsize, cv::Size(-1, -1), criteria);
+                cv::cornerSubPix(img_gray, pts_2d, win_size, cv::Size(-1, -1), criteria);
 #endif
 
                 /*保存角点.*/
@@ -124,10 +123,13 @@ namespace abcdk_xpu
                 cv::Mat out = img.clone();
 
                 for (auto &one : pts_2d)
-                    cv::circle(out, cv::Point(one.x, one.y), 5, cv::Scalar(0, 0, 255));
+                {
+                    cv::circle(out, cv::Point(one.x, one.y), 10, cv::Scalar(0, 0, 255));
+                    cv::circle(out, cv::Point(one.x, one.y), 3, cv::Scalar(0, 0, 255),-1);
+                }
 
                 std::vector<char> out_file(PATH_MAX);
-                sprintf(out_file.data(), "%s/c%zd.jpg", out_path_p,pts_2d.size());
+                sprintf(out_file.data(), "%s/c%zd.jpg", out_path_p,m_pts_2d.size());
 
                 std::vector<int> params = {cv::IMWRITE_JPEG_QUALITY, 100};
                 cv::imwrite(out_file.data(), out, params);

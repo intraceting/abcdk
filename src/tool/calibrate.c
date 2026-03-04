@@ -17,6 +17,8 @@ typedef struct _calibrate
     abcdk_xpu_size_t board_size;
     abcdk_xpu_size_t grid_size;
 
+    abcdk_xpu_size_t win_size;
+
     int src_num;
     abcdk_xpu_image_t *src_imgs[100];
 
@@ -48,6 +50,9 @@ void _calibrate_print_usage(abcdk_option_t *args)
 
     fprintf(stderr, "\n\t--grid-size < HEIGHT,WIDTH >\n");
     fprintf(stderr, ABCDK_GETTEXT("\t 网格尺寸(高,宽)(毫米). 默认: 25,25\n"));
+
+    fprintf(stderr, "\n\t--win-size < HEIGHT,WIDTH >\n");
+    fprintf(stderr, ABCDK_GETTEXT("\t 搜索窗口尺寸(高,宽)(像素). 默认: 15,15\n"));
 
     fprintf(stderr, "\n\t--black-alpha < VALUE > \n");
     fprintf(stderr, ABCDK_GETTEXT("\t 黑色区域比例(0.0~1.0). 默认: 1\n"));
@@ -140,6 +145,8 @@ void _calibrate_work(calibrate_t *ctx)
     const char *board_size_p = abcdk_option_get(ctx->args, "--board-size", 0, "7,11");
     const char *grid_size_p = abcdk_option_get(ctx->args, "--grid-size", 0, "25,25");
 
+    const char *win_size_p = abcdk_option_get(ctx->args, "--win-size", 0, "15,15");
+
     double black_alpha = abcdk_option_get_double(ctx->args, "--black-alpha", 0, 1.0);
 
     const char *undistort_param_file_p = abcdk_option_get(ctx->args, "--undistort-param-file", 0, NULL);
@@ -155,6 +162,13 @@ void _calibrate_work(calibrate_t *ctx)
     if (chk != 2)
     {
         abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("网格尺寸(%d >= 5,%d >= 5)错误, 未指定或不支持."), ctx->grid_size.width, ctx->grid_size.height);
+        ABCDK_ERRNO_AND_RETURN0(ctx->errcode = EPERM);
+    }
+
+    chk = sscanf(win_size_p, "%d,%d", &ctx->win_size.width, &ctx->win_size.height);
+    if (chk != 2)
+    {
+        abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("窗口尺寸(%d >= 5,%d >= 5)错误, 未指定或不支持."), ctx->win_size.width, ctx->win_size.height);
         ABCDK_ERRNO_AND_RETURN0(ctx->errcode = EPERM);
     }
 
@@ -176,7 +190,7 @@ void _calibrate_work(calibrate_t *ctx)
     for (int i = 0; i < ctx->src_num; i++)
     {
 
-        chk = abcdk_xpu_calibrate_detect_corners(ctx->ctx, ctx->src_imgs[i]);
+        chk = abcdk_xpu_calibrate_detect_corners(ctx->ctx, ctx->src_imgs[i], ctx->win_size.width, ctx->win_size.height);
         if (chk < 0)
             continue;
 

@@ -55,7 +55,7 @@ namespace abcdk_xpu
                 ctx->co_ctx->setup(cv::Size(board_cols, board_rows), cv::Size(grid_width, grid_height));
             }
 
-            int detect_corners(metadata_t *ctx, const image::metadata_t *src)
+            int detect_corners(metadata_t *ctx, const image::metadata_t *src, int win_width, int win_height)
             {
                 assert(src->format == AV_PIX_FMT_GRAY8 ||
                        src->format == AV_PIX_FMT_RGB24 ||
@@ -63,7 +63,7 @@ namespace abcdk_xpu
                        src->format == AV_PIX_FMT_RGB32 ||
                        src->format == AV_PIX_FMT_BGR32);
 
-                return ctx->co_ctx->detect_corners(common::util::AVFrame2cvMat(src));
+                return ctx->co_ctx->detect_corners(common::util::AVFrame2cvMat(src), cv::Size(win_width,win_height));
             }
 
             double estimate_parameters(metadata_t *ctx)

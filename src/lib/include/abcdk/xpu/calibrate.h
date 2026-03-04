@@ -35,7 +35,7 @@ void abcdk_xpu_calibrate_setup(abcdk_xpu_calibrate_t *ctx, int board_cols, int b
  * 
  * @return 0 成功, < 0 失败.
 */
-int abcdk_xpu_calibrate_detect_corners(abcdk_xpu_calibrate_t *ctx, const abcdk_xpu_image_t *img);
+int abcdk_xpu_calibrate_detect_corners(abcdk_xpu_calibrate_t *ctx, const abcdk_xpu_image_t *img, int win_width, int win_height);
 
 /**
  * 评估参数.

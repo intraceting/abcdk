@@ -55,7 +55,7 @@ namespace abcdk_xpu
                 ctx->co_ctx->setup(cv::Size(board_cols, board_rows), cv::Size(grid_width, grid_height));
             }
 
-            static int _detect_corners(metadata_t *ctx, const image::metadata_t *src)
+            static int _detect_corners(metadata_t *ctx, const image::metadata_t *src, int win_width, int win_height)
             {
                 image::metadata_t *tmp_src;
                 int chk;
@@ -64,7 +64,7 @@ namespace abcdk_xpu
                 if (!tmp_src)
                     return -ENOMEM;
 
-                chk = ctx->co_ctx->detect_corners(common::util::AVFrame2cvMat(tmp_src));
+                chk = ctx->co_ctx->detect_corners(common::util::AVFrame2cvMat(tmp_src), cv::Size(win_width,win_height));
                 image::free(&tmp_src);
 
                 return chk;

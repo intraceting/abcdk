@@ -45,7 +45,7 @@ namespace abcdk_xpu
             virtual void setup(const cv::Size &board_size, const cv::Size &grid_size) = 0;
 
             /**检测角点. */
-            virtual int detect_corners(const cv::Mat &img) = 0;
+            virtual int detect_corners(const cv::Mat &img, const cv::Size &win_size = cv::Size(15, 15)) = 0;
 
             /**
              * 评估参数.

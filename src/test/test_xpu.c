@@ -178,7 +178,7 @@ static void _test_xpu_4(abcdk_option_t *args)
             if (!src_imgs[i])
                 break;
 
-            abcdk_xpu_calibrate_detect_corners(ctx, src_imgs[i]);
+            abcdk_xpu_calibrate_detect_corners(ctx, src_imgs[i],5,5);
         }
 
         double rms = abcdk_xpu_calibrate_estimate_parameters(ctx);
@@ -1141,7 +1141,7 @@ static int _test_xpu_13(abcdk_option_t *args)
             chk = abcdk_xpu_vdec_recv_frame(src_dec_ctx[i], &src_img_ori[i], &dst_ts);
             if (chk > 0)
             {
-                abcdk_trace_printf(LOG_DEBUG, "src[%d],pts:%.3f", i + 1, abcdk_ffmpeg_editor_stream_ts2sec(src_ff_ctx, src_ff_pkt->stream_index, dst_ts));
+                abcdk_trace_printf(LOG_DEBUG, "src[%d],pts:%.3f", i + 1, abcdk_ffmpeg_editor_stream_ts2sec(src_ff_ctx[i], src_ff_pkt->stream_index, dst_ts));
                 src_recv_ok = 1;
             }
 

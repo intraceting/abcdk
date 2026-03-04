@@ -12,8 +12,8 @@
 #include "general/calibrate.hxx"
 #if defined(__XPU_NVIDIA__)
 #include "nvidia/calibrate.hxx"
-#endif //#if defined(__XPU_NVIDIA__)
-#endif //#if defined(__XPU_GENERAL__)
+#endif // #if defined(__XPU_NVIDIA__)
+#endif // #if defined(__XPU_GENERAL__)
 
 void abcdk_xpu_calibrate_free(abcdk_xpu_calibrate_t **ctx)
 {
@@ -34,7 +34,7 @@ void abcdk_xpu_calibrate_free(abcdk_xpu_calibrate_t **ctx)
 #endif // #if !defined(__XPU_NVIDIA__)
     }
 
-#endif //#if defined(__XPU_GENERAL__)
+#endif // #if defined(__XPU_GENERAL__)
 
     return;
 }
@@ -59,7 +59,7 @@ abcdk_xpu_calibrate_t *abcdk_xpu_calibrate_alloc()
 #endif // #if !defined(__XPU_NVIDIA__)
     }
 
-#endif //#if defined(__XPU_GENERAL__)
+#endif // #if defined(__XPU_GENERAL__)
 
     return NULL;
 }
@@ -74,23 +74,27 @@ void abcdk_xpu_calibrate_setup(abcdk_xpu_calibrate_t *ctx, int board_cols, int b
 
     if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NONE)
     {
-        abcdk_xpu::general::calibrate::setup((abcdk_xpu::general::calibrate::metadata_t *)ctx, board_cols, board_rows, grid_width, grid_height);
+        abcdk_xpu::general::calibrate::setup(
+            (abcdk_xpu::general::calibrate::metadata_t *)ctx,
+            board_cols, board_rows, grid_width, grid_height);
     }
     else if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NVIDIA)
     {
 #if !defined(__XPU_NVIDIA__)
         abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含NVIDIA工具."));
 #else  // #if !defined(__XPU_NVIDIA__)
-        abcdk_xpu::nvidia::calibrate::setup((abcdk_xpu::nvidia::calibrate::metadata_t *)ctx, board_cols, board_rows, grid_width, grid_height);
+        abcdk_xpu::nvidia::calibrate::setup(
+            (abcdk_xpu::nvidia::calibrate::metadata_t *)ctx,
+            board_cols, board_rows, grid_width, grid_height);
 #endif // #if !defined(__XPU_NVIDIA__)
     }
 
-#endif //#if defined(__XPU_GENERAL__)
+#endif // #if defined(__XPU_GENERAL__)
 
     return;
 }
 
-int abcdk_xpu_calibrate_detect_corners(abcdk_xpu_calibrate_t *ctx, const abcdk_xpu_image_t *img)
+int abcdk_xpu_calibrate_detect_corners(abcdk_xpu_calibrate_t *ctx, const abcdk_xpu_image_t *img, int win_width, int win_height)
 {
     assert(ctx != NULL && img != NULL);
 
@@ -100,7 +104,10 @@ int abcdk_xpu_calibrate_detect_corners(abcdk_xpu_calibrate_t *ctx, const abcdk_x
 
     if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NONE)
     {
-        return abcdk_xpu::general::calibrate::detect_corners((abcdk_xpu::general::calibrate::metadata_t *)ctx, (abcdk_xpu::general::image::metadata_t *)img);
+        return abcdk_xpu::general::calibrate::detect_corners(
+            (abcdk_xpu::general::calibrate::metadata_t *)ctx,
+            (abcdk_xpu::general::image::metadata_t *)img,
+            win_width, win_height);
     }
     else if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NVIDIA)
     {
@@ -108,11 +115,14 @@ int abcdk_xpu_calibrate_detect_corners(abcdk_xpu_calibrate_t *ctx, const abcdk_x
         abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含NVIDIA工具."));
         return -1;
 #else  // #if !defined(__XPU_NVIDIA__)
-        return abcdk_xpu::nvidia::calibrate::detect_corners((abcdk_xpu::nvidia::calibrate::metadata_t *)ctx, (abcdk_xpu::general::image::metadata_t *)img);
+        return abcdk_xpu::nvidia::calibrate::detect_corners(
+            (abcdk_xpu::nvidia::calibrate::metadata_t *)ctx,
+            (abcdk_xpu::general::image::metadata_t *)img,
+            win_width, win_height);
 #endif // #if !defined(__XPU_NVIDIA__)
     }
 
-#endif //#if defined(__XPU_GENERAL__)
+#endif // #if defined(__XPU_GENERAL__)
 
     return -1;
 }
@@ -139,7 +149,7 @@ double abcdk_xpu_calibrate_estimate_parameters(abcdk_xpu_calibrate_t *ctx)
 #endif // #if !defined(__XPU_NVIDIA__)
     }
 
-#endif //#if defined(__XPU_GENERAL__)
+#endif // #if defined(__XPU_GENERAL__)
 
     return 1.0;
 }
@@ -154,7 +164,7 @@ int abcdk_xpu_calibrate_build_parameters(abcdk_xpu_calibrate_t *ctx, double alph
 
     if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NONE)
     {
-        return abcdk_xpu::general::calibrate::build_parameters((abcdk_xpu::general::calibrate::metadata_t *)ctx,alpha);
+        return abcdk_xpu::general::calibrate::build_parameters((abcdk_xpu::general::calibrate::metadata_t *)ctx, alpha);
     }
     else if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NVIDIA)
     {
@@ -162,11 +172,11 @@ int abcdk_xpu_calibrate_build_parameters(abcdk_xpu_calibrate_t *ctx, double alph
         abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含NVIDIA工具."));
         return -1;
 #else  // #if !defined(__XPU_NVIDIA__)
-        return abcdk_xpu::nvidia::calibrate::build_parameters((abcdk_xpu::nvidia::calibrate::metadata_t *)ctx,alpha);
+        return abcdk_xpu::nvidia::calibrate::build_parameters((abcdk_xpu::nvidia::calibrate::metadata_t *)ctx, alpha);
 #endif // #if !defined(__XPU_NVIDIA__)
     }
 
-#endif //#if defined(__XPU_GENERAL__)
+#endif // #if defined(__XPU_GENERAL__)
 
     return -1;
 }
@@ -193,7 +203,7 @@ abcdk_object_t *abcdk_xpu_calibrate_dump_parameters(abcdk_xpu_calibrate_t *ctx, 
 #endif // #if !defined(__XPU_NVIDIA__)
     }
 
-#endif //#if defined(__XPU_GENERAL__)
+#endif // #if defined(__XPU_GENERAL__)
 
     return NULL;
 }
@@ -239,7 +249,7 @@ int abcdk_xpu_calibrate_load_parameters(abcdk_xpu_calibrate_t *ctx, const char *
 #endif // #if !defined(__XPU_NVIDIA__)
     }
 
-#endif //#if defined(__XPU_GENERAL__)
+#endif // #if defined(__XPU_GENERAL__)
 
     return -1;
 }
@@ -252,17 +262,17 @@ int abcdk_xpu_calibrate_load_parameters_from_file(abcdk_xpu_calibrate_t *ctx, co
 
     assert(ctx != NULL && src != NULL);
 
-    tmp_src = abcdk_mmap_filename(src,0,0,0,0);
+    tmp_src = abcdk_mmap_filename(src, 0, 0, 0, 0);
     if (!tmp_src)
         return -1;
 
-    chk = abcdk_xpu_calibrate_load_parameters(ctx,tmp_src->pstrs[0],magic);
+    chk = abcdk_xpu_calibrate_load_parameters(ctx, tmp_src->pstrs[0], magic);
     abcdk_object_unref(&tmp_src);
 
     return chk;
 }
 
-int abcdk_xpu_calibrate_undistort(abcdk_xpu_calibrate_t *ctx, const abcdk_xpu_image_t*src, abcdk_xpu_image_t **dst, abcdk_xpu_inter_t inter_mode)
+int abcdk_xpu_calibrate_undistort(abcdk_xpu_calibrate_t *ctx, const abcdk_xpu_image_t *src, abcdk_xpu_image_t **dst, abcdk_xpu_inter_t inter_mode)
 {
     assert(ctx != NULL && src != NULL);
 
@@ -272,7 +282,11 @@ int abcdk_xpu_calibrate_undistort(abcdk_xpu_calibrate_t *ctx, const abcdk_xpu_im
 
     if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NONE)
     {
-        return abcdk_xpu::general::calibrate::undistort((abcdk_xpu::general::calibrate::metadata_t *)ctx, (abcdk_xpu::general::image::metadata_t *)src, (abcdk_xpu::general::image::metadata_t **)dst, inter_mode);
+        return abcdk_xpu::general::calibrate::undistort(
+            (abcdk_xpu::general::calibrate::metadata_t *)ctx,
+            (abcdk_xpu::general::image::metadata_t *)src,
+            (abcdk_xpu::general::image::metadata_t **)dst,
+            inter_mode);
     }
     else if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NVIDIA)
     {
@@ -280,11 +294,15 @@ int abcdk_xpu_calibrate_undistort(abcdk_xpu_calibrate_t *ctx, const abcdk_xpu_im
         abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含NVIDIA工具."));
         return -1;
 #else  // #if !defined(__XPU_NVIDIA__)
-        return abcdk_xpu::nvidia::calibrate::undistort((abcdk_xpu::nvidia::calibrate::metadata_t *)ctx, (abcdk_xpu::general::image::metadata_t *)src, (abcdk_xpu::general::image::metadata_t **)dst,inter_mode);
+        return abcdk_xpu::nvidia::calibrate::undistort(
+            (abcdk_xpu::nvidia::calibrate::metadata_t *)ctx,
+            (abcdk_xpu::general::image::metadata_t *)src,
+            (abcdk_xpu::general::image::metadata_t **)dst,
+            inter_mode);
 #endif // #if !defined(__XPU_NVIDIA__)
     }
 
-#endif //#if defined(__XPU_GENERAL__)
+#endif // #if defined(__XPU_GENERAL__)
 
     return -1;
 }
