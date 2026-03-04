@@ -21,10 +21,10 @@ namespace abcdk_xpu
                 tmp_size.height = size->height;
 
                 cv::Mat R = cv::Mat::eye(3, 3, CV_64F); // 不做旋转.
-                cv::Mat newCameraMatrix = cv::getOptimalNewCameraMatrix(camera_matrix, dist_coeffs, tmp_size, alpha, tmp_size, 0);
+                cv::Mat K = cv::getOptimalNewCameraMatrix(camera_matrix, dist_coeffs, tmp_size, alpha, tmp_size, 0, false);
 
                 // 生成映射表, xmap 和 ymap 都是 CV_32FC1(CUDA兼容).
-                cv::initUndistortRectifyMap(camera_matrix, dist_coeffs, R, newCameraMatrix, tmp_size, CV_32FC1, xmap, ymap);
+                cv::initUndistortRectifyMap(camera_matrix, dist_coeffs, R, K, tmp_size, CV_32FC1, xmap, ymap);
 
                 return 0;
             }
