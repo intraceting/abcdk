@@ -156,6 +156,8 @@ namespace abcdk
             {
                 std::string dump_data = jsoncpp_writer_to_string(doc);
 
+                abcdk_mkdir(file,0755);
+                
                 ssize_t wr_size = abcdk_dump(file, dump_data.data(), dump_data.size());
                 if (wr_size <= 0 || (size_t)wr_size != dump_data.size())
                     return -1;
