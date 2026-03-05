@@ -140,7 +140,7 @@ void _stitcher_work(stitcher_t *ctx)
     _stitcher_load_src_img(ctx);
     if(ctx->src_num <2)
     {
-        abcdk_trace_printf(LOG_ERR, "至少需要两张图片.");
+        abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("至少需要两张图片."));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL,END);
     }
 
@@ -153,12 +153,12 @@ void _stitcher_work(stitcher_t *ctx)
         chk = abcdk_xpu_stitcher_load_parameters_from_file(ctx->ctx, camera_param_file_p, ctx->src_feature);
         if (chk == -127)
         {
-            abcdk_trace_printf(LOG_ERR, "加载相机参数文件(%s)成功, 但与当前源图像不匹配.", camera_param_file_p);
+            abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("加载相机参数文件(%s)成功, 但与当前源图像不匹配."), camera_param_file_p);
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL,END);
         }
         else if (chk <0)
         {
-            abcdk_trace_printf(LOG_ERR, "加载相机参数文件(%s)失败, 格式错误或无权限.", camera_param_file_p);
+            abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("加载相机参数文件(%s)失败, 格式错误或无权限."), camera_param_file_p);
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL,END);
         }
     }
@@ -167,14 +167,14 @@ void _stitcher_work(stitcher_t *ctx)
         chk = abcdk_xpu_stitcher_set_feature_finder(ctx->ctx, feature_name_p);
         if (chk != 0)
         {
-            abcdk_trace_printf(LOG_ERR, "不支持的特征算法(%s).", feature_name_p);
+            abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("不支持的特征算法(%s)."), feature_name_p);
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL,END);
         }
 
         chk = abcdk_xpu_stitcher_estimate_parameters(ctx->ctx, ctx->src_num, (const abcdk_xpu_image_t **)ctx->src_imgs, NULL, estimate_threshold);
         if (chk != 0)
         {
-            abcdk_trace_printf(LOG_ERR, "评估相机参数失败, 特征不足或其它错误.");
+            abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("评估相机参数失败, 特征不足或其它错误."));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL,END);
         }
     }
@@ -182,21 +182,21 @@ void _stitcher_work(stitcher_t *ctx)
     chk = abcdk_xpu_stitcher_set_warper(ctx->ctx, warper_name_p);
     if (chk != 0)
     {
-        abcdk_trace_printf(LOG_ERR, "不支持的矫正算法(%s).", warper_name_p);
+        abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("不支持的矫正算法(%s)."), warper_name_p);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL,END);
     }
 
     chk = abcdk_xpu_stitcher_build_parameters(ctx->ctx);
     if (chk != 0)
     {
-        abcdk_trace_printf(LOG_ERR, "构建相机参数失败, 内存不足或其它错误.");
+        abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("构建相机参数失败, 内存不足或其它错误."));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL,END);
     }
 
     chk = abcdk_xpu_stitcher_compose(ctx->ctx, ctx->src_num, (const abcdk_xpu_image_t **)ctx->src_imgs, &ctx->dst_img, optimize_seam);
     if (chk != 0)
     {
-        abcdk_trace_printf(LOG_ERR, "全景拼接失败, 内存不足或其它错误.");
+        abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("全景拼接失败, 内存不足或其它错误."));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -ENOMEM,END);
     }
 
@@ -205,7 +205,7 @@ void _stitcher_work(stitcher_t *ctx)
         chk = abcdk_xpu_imgcodec_encode_to_file(ctx->dst_img, dst_img_file_p, NULL);
         if (chk != 0)
         {
-            abcdk_trace_printf(LOG_WARNING, "保存全景图像文件(%s)失败, 无空间或无权限.", dst_img_file_p);
+            abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("保存全景图像文件(%s)失败, 无空间或无权限."), dst_img_file_p);
         }
     }
 
@@ -214,7 +214,7 @@ void _stitcher_work(stitcher_t *ctx)
         chk = abcdk_xpu_stitcher_dump_parameters_to_file(ctx->ctx, camera_param_file_p, ctx->src_feature);
         if (chk != 0)
         {
-            abcdk_trace_printf(LOG_WARNING, "保存相机参数文件(%s)失败, 无空间或无权限.", camera_param_file_p);
+            abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("保存相机参数文件(%s)失败, 无空间或无权限."), camera_param_file_p);
         }
     }
 

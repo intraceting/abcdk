@@ -186,6 +186,9 @@ typedef struct _abcdk_xpu_size2i
 } abcdk_xpu_size2i_t;
 
 /**尺寸.*/
+typedef abcdk_xpu_size2i_t abcdk_xpu_size_t;
+
+/**尺寸.*/
 typedef struct _abcdk_xpu_size2l
 {
     int64_t width;
@@ -205,9 +208,6 @@ typedef struct _abcdk_xpu_size2d
     double width;
     double height;
 } abcdk_xpu_size2d_t;
-
-/**/
-typedef abcdk_xpu_size2i_t abcdk_xpu_size_t;
 
 /**矩形.*/
 typedef struct _abcdk_xpu_rect
