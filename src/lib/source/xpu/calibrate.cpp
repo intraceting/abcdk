@@ -64,9 +64,9 @@ abcdk_xpu_calibrate_t *abcdk_xpu_calibrate_alloc()
     return NULL;
 }
 
-void abcdk_xpu_calibrate_setup(abcdk_xpu_calibrate_t *ctx, int board_cols, int board_rows, int grid_width, int grid_height)
+void abcdk_xpu_calibrate_setup(abcdk_xpu_calibrate_t *ctx, int board_cols, int board_rows, float grid_width, float grid_height)
 {
-    assert(ctx != NULL && board_cols >= 2 && board_rows >= 2 && grid_width >= 5 && grid_height >= 5);
+    assert(ctx != NULL && board_cols >= 2 && board_rows >= 2 && grid_width >= 5. && grid_height >= 5.);
 
 #if defined(__XPU_GENERAL__)
 

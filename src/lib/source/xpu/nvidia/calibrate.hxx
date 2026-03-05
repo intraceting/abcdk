@@ -26,7 +26,7 @@ namespace abcdk_xpu
 
             metadata_t *alloc();
   
-            void setup(metadata_t *ctx ,int board_cols,int board_rows,int grid_width,int grid_height);
+            void setup(metadata_t *ctx ,int board_cols,int board_rows,float grid_width,float grid_height);
 
             int detect_corners(metadata_t *ctx ,const image::metadata_t *src, int win_width, int win_height);
 

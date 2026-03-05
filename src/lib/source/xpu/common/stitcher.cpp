@@ -117,10 +117,13 @@ namespace abcdk_xpu
                 assert(m_img_features.size() == m_img_good_idxs.size());
                 assert(m_img_matches.size() >= m_img_good_idxs.size());
 
+                /*查找特定的环境变量.*/
                 const char *out_path_p = getenv("ABCDK_XPU_STITCHER_KEYPOINTS_DUMP_PATH");
                 if (!out_path_p || !*out_path_p)
                     return;
 
+                /*以下代码用输出中间图像, 以便于发行版在没有源码的情况下进行参考或调试.*/
+                
                 std::vector<cv::Mat> outs(m_img_matches.size());
 
                 for (int i = 0; i < m_img_matches.size(); i++)

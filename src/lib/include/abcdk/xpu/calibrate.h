@@ -25,10 +25,10 @@ abcdk_xpu_calibrate_t *abcdk_xpu_calibrate_alloc();
 /**
  * @param [in] board_cols 格子行数.
  * @param [in] board_rows 格子列数.
- * @param [in] grid_width 格子的宽.
- * @param [in] grid_height 格子的高.
+ * @param [in] grid_width 格子的宽(毫米).
+ * @param [in] grid_height 格子的高(毫米).
 */
-void abcdk_xpu_calibrate_setup(abcdk_xpu_calibrate_t *ctx, int board_cols, int board_rows, int grid_width, int grid_height);
+void abcdk_xpu_calibrate_setup(abcdk_xpu_calibrate_t *ctx, int board_cols, int board_rows, float grid_width, float grid_height);
 
 /**
  * 检测角点.

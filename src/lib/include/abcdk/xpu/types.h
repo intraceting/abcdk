@@ -179,11 +179,35 @@ typedef struct _abcdk_xpu_point
 } abcdk_xpu_point_t;
 
 /**尺寸.*/
-typedef struct _abcdk_xpu_size
+typedef struct _abcdk_xpu_size2i
 {
     int width;
     int height;
-} abcdk_xpu_size_t;
+} abcdk_xpu_size2i_t;
+
+/**尺寸.*/
+typedef struct _abcdk_xpu_size2l
+{
+    int64_t width;
+    int64_t height;
+} abcdk_xpu_size2l_t;
+
+/**尺寸.*/
+typedef struct _abcdk_xpu_size2f
+{
+    float width;
+    float height;
+} abcdk_xpu_size2f_t;
+
+/**尺寸.*/
+typedef struct _abcdk_xpu_size2d
+{
+    double width;
+    double height;
+} abcdk_xpu_size2d_t;
+
+/**/
+typedef abcdk_xpu_size2i_t abcdk_xpu_size_t;
 
 /**矩形.*/
 typedef struct _abcdk_xpu_rect

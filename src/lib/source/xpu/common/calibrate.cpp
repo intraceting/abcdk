@@ -21,7 +21,7 @@ namespace abcdk_xpu
             cv::Size m_pattern_size;
 
             /*方格尺寸(毫米).*/
-            cv::Size m_grid_size;
+            cv::Size2f m_grid_size;
 
             /*原始角点列表.*/
             std::vector<std::vector<cv::Point2f>> m_pts_2d;
@@ -49,7 +49,7 @@ namespace abcdk_xpu
             }
 
         protected:
-            void setup(const cv::Size &board_size = cv::Size(7, 11), const cv::Size &grid_size = cv::Size(25, 25))
+            void setup(const cv::Size &board_size = cv::Size(7, 11), const cv::Size2f &grid_size = cv::Size2f(25, 25))
             {
                 assert(board_size.area() >= 4 && grid_size.area() >= 1);
 
@@ -116,9 +116,13 @@ namespace abcdk_xpu
                 /*保存角点.*/
                 m_pts_2d.push_back(pts_2d);
 
+                /*查找特定的环境变量.*/
                 const char *out_path_p = getenv("ABCDK_XPU_CALIBRATE_KEYPOINTS_DUMP_PATH");
                 if (!out_path_p || !*out_path_p)
                     return 0;
+
+                /*以下代码用输出中间图像, 以便于发行版在没有源码的情况下进行参考或调试.*/
+
 
                 cv::Mat out = img.clone();
 

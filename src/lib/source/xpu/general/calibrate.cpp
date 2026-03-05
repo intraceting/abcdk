@@ -50,9 +50,9 @@ namespace abcdk_xpu
                 return ctx;
             }
 
-            void setup(metadata_t *ctx, int board_cols, int board_rows, int grid_width, int grid_height)
+            void setup(metadata_t *ctx, int board_cols, int board_rows, float grid_width, float grid_height)
             {
-                ctx->co_ctx->setup(cv::Size(board_cols, board_rows), cv::Size(grid_width, grid_height));
+                ctx->co_ctx->setup(cv::Size(board_cols, board_rows), cv::Size2f(grid_width, grid_height));
             }
 
             int detect_corners(metadata_t *ctx, const image::metadata_t *src, int win_width, int win_height)

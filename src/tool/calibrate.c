@@ -15,7 +15,7 @@ typedef struct _calibrate
     abcdk_xpu_calibrate_t *ctx;
 
     abcdk_xpu_size_t board_size;
-    abcdk_xpu_size_t grid_size;
+    abcdk_xpu_size2f_t grid_size;
 
     abcdk_xpu_size_t win_size;
 
@@ -49,7 +49,7 @@ void _calibrate_print_usage(abcdk_option_t *args)
     fprintf(stderr, ABCDK_GETTEXT("\t 标定板维度(行,列). 默认: 7,11\n"));
 
     fprintf(stderr, "\n\t--grid-size < HEIGHT,WIDTH >\n");
-    fprintf(stderr, ABCDK_GETTEXT("\t 网格尺寸(高,宽)(毫米). 默认: 25,25\n"));
+    fprintf(stderr, ABCDK_GETTEXT("\t 网格尺寸(高,宽)(毫米.微米). 默认: 25,25\n"));
 
     fprintf(stderr, "\n\t--win-size < HEIGHT,WIDTH >\n");
     fprintf(stderr, ABCDK_GETTEXT("\t 搜索窗口尺寸(高,宽)(像素). 默认: 5,5\n"));
@@ -158,7 +158,7 @@ void _calibrate_work(calibrate_t *ctx)
         ABCDK_ERRNO_AND_RETURN0(ctx->errcode = EPERM);
     }
 
-    chk = sscanf(grid_size_p, "%d,%d", &ctx->grid_size.width, &ctx->grid_size.height);
+    chk = sscanf(grid_size_p, "%f,%f", &ctx->grid_size.width, &ctx->grid_size.height);
     if (chk != 2)
     {
         abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("网格尺寸(%d >= 5,%d >= 5)错误, 未指定或不支持."), ctx->grid_size.width, ctx->grid_size.height);
