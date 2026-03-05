@@ -52,7 +52,7 @@ void _calibrate_print_usage(abcdk_option_t *args)
     fprintf(stderr, ABCDK_GETTEXT("\t 网格尺寸(高,宽)(毫米.微米). 默认: 25,25\n"));
 
     fprintf(stderr, "\n\t--win-size < HEIGHT,WIDTH >\n");
-    fprintf(stderr, ABCDK_GETTEXT("\t 搜索窗口尺寸(高,宽)(像素). 默认: 5,5\n"));
+    fprintf(stderr, ABCDK_GETTEXT("\t 搜索窗口尺寸(高,宽)(像素). 默认: 11,11\n"));
 
     fprintf(stderr, "\n\t--black-alpha < VALUE > \n");
     fprintf(stderr, ABCDK_GETTEXT("\t 黑色区域比例(0.0~1.0). 默认: 1\n"));
@@ -145,7 +145,7 @@ void _calibrate_work(calibrate_t *ctx)
     const char *board_size_p = abcdk_option_get(ctx->args, "--board-size", 0, "7,11");
     const char *grid_size_p = abcdk_option_get(ctx->args, "--grid-size", 0, "25,25");
 
-    const char *win_size_p = abcdk_option_get(ctx->args, "--win-size", 0, "5,5");
+    const char *win_size_p = abcdk_option_get(ctx->args, "--win-size", 0, "11,11");
 
     double black_alpha = abcdk_option_get_double(ctx->args, "--black-alpha", 0, 1.0);
 
