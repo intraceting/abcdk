@@ -70,7 +70,7 @@ namespace abcdk_xpu
                 return chk;
             }
 
-            int detect_corners(metadata_t *ctx, const image::metadata_t *src)
+            int detect_corners(metadata_t *ctx, const image::metadata_t *src, int win_width, int win_height)
             {
                 assert(src->format == AV_PIX_FMT_GRAY8 ||
                        src->format == AV_PIX_FMT_RGB24 ||
@@ -78,7 +78,7 @@ namespace abcdk_xpu
                        src->format == AV_PIX_FMT_RGB32 ||
                        src->format == AV_PIX_FMT_BGR32);
 
-                return _detect_corners(ctx, src);
+                return _detect_corners(ctx, src, win_width, win_height);
             }
 
             double estimate_parameters(metadata_t *ctx)
