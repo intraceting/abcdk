@@ -63,7 +63,7 @@ void _undistort_process(undistort_t *ctx)
 
     abcdk_dirent_open(&dir_ctx, src_img_path_p);
 
-    while (1)
+    for (int64_t i = 1; i < INT64_MAX; i++)
     {
         char file[PATH_MAX] = {0};
         int chk = abcdk_dirent_read(dir_ctx, NULL, file, 1);
@@ -79,7 +79,7 @@ void _undistort_process(undistort_t *ctx)
         }
 
         /**统一图像格式. */
-        chk = abcdk_xpu_imgproc_convert2(&src_img,ABCDK_XPU_PIXFMT_RGB24);
+        chk = abcdk_xpu_imgproc_convert2(&src_img, ABCDK_XPU_PIXFMT_RGB24);
 
         chk = abcdk_xpu_calibrate_undistort(ctx->ctx, src_img, &dst_img, ABCDK_XPU_INTER_CUBIC);
         if (chk != 0)
@@ -100,6 +100,8 @@ void _undistort_process(undistort_t *ctx)
             abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("保存矫正图像文件(%s)失败, 无空间或无权限."), out_file);
             break;
         }
+
+        abcdk_trace_printf(LOG_DEBUG, ABCDK_GETTEXT("已处理: %lld"), i);
     }
 
     abcdk_xpu_image_free(&src_img);

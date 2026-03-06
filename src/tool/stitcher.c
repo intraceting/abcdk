@@ -72,11 +72,17 @@ void _stitcher_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--src-img-file < FILE >\n");
     fprintf(stderr, ABCDK_GETTEXT("\t 源图像文件(包括路径). \n"));
 
+    fprintf(stderr, "\n\t--src-start-num < NUMBER >\n");
+    fprintf(stderr, ABCDK_GETTEXT("\t 源起始编号. 默认: 1 \n"));
+
     fprintf(stderr, "\n\t--dst-img-file < FILE >\n");
     fprintf(stderr, ABCDK_GETTEXT("\t 全景图像文件(包括路径). 默认: ./panorama.jpg \n"));
+
+    fprintf(stderr, "\n\t--dst-start-num < NUMBER >\n");
+    fprintf(stderr, ABCDK_GETTEXT("\t 全景始编号. 默认: 1 \n"));
 }
 
-int _stitcher_fetch_src_img(stitcher_t *ctx)
+int _stitcher_fetch_src_img(stitcher_t *ctx, int64_t pts)
 {
     int chk;
 
@@ -99,9 +105,15 @@ int _stitcher_fetch_src_img(stitcher_t *ctx)
     for (int i = 0; i < ctx->src_count; i++)
     {
         char pathfile[PATH_MAX] = {0};
-        snprintf(pathfile, src_file_p[i], ctx->src_start_num[i]++);
+        snprintf(pathfile, PATH_MAX, src_file_p[i], ctx->src_start_num[i]++);
 
-        abcdk_xpu_image_free(&ctx->src_imgs[i]);
+        if (pts > 0)
+        {
+            if (abcdk_strcmp(pathfile, src_file_p[i], 1) == 0)
+                return -ENOENT;
+        }
+
+        abcdk_xpu_image_free(&ctx->src_imgs[i]);//free old.
         ctx->src_imgs[i] = abcdk_xpu_imgcodec_decode_from_file(pathfile);
         if (ctx->src_imgs[i])
         {
@@ -135,7 +147,7 @@ int _stitcher_dump_dst_img(stitcher_t *ctx)
         return 0;
     
     char pathfile[PATH_MAX] = {0};
-    snprintf(pathfile, dst_img_file_p, ctx->dst_start_num++);
+    snprintf(pathfile, PATH_MAX, dst_img_file_p, ctx->dst_start_num++);
 
     chk = abcdk_xpu_imgcodec_encode_to_file(ctx->dst_img, pathfile, NULL);
     if (chk != 0)
@@ -168,7 +180,7 @@ void _stitcher_work(stitcher_t *ctx)
 
     abcdk_xpu_context_current_set(ctx->dev_ctx);
 
-    chk = _stitcher_fetch_src_img(ctx);
+    chk = _stitcher_fetch_src_img(ctx, 0);
     if(chk != 0 || ctx->src_count <2)
     {
         abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("源图像至少需要两张."));
@@ -206,6 +218,15 @@ void _stitcher_work(stitcher_t *ctx)
             abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("评估相机参数失败, 特征不足或其它错误."));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL,END);
         }
+
+        if (camera_param_file_p)
+        {
+            chk = abcdk_xpu_stitcher_dump_parameters_to_file(ctx->ctx, camera_param_file_p, camera_param_magic_p);
+            if (chk != 0)
+            {
+                abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("保存相机参数文件(%s)失败, 无空间或无权限. 忽略."), camera_param_file_p);
+            }
+        }
     }
 
     chk = abcdk_xpu_stitcher_set_warper(ctx->ctx, warper_name_p);
@@ -229,24 +250,15 @@ void _stitcher_work(stitcher_t *ctx)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -ENOMEM,END);
     }
 
-    if (camera_param_file_p)
-    {
-        chk = abcdk_xpu_stitcher_dump_parameters_to_file(ctx->ctx, camera_param_file_p, camera_param_magic_p);
-        if (chk != 0)
-        {
-            abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("保存相机参数文件(%s)失败, 无空间或无权限."), camera_param_file_p);
-        }
-    }
-
     chk = _stitcher_dump_dst_img(ctx);
     if(chk != 0)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = chk,END);
 
-    while(1)
+    for (int64_t i = 1; i < INT64_MAX; i++)
     {
-        chk = _stitcher_fetch_src_img(ctx);
-        if(chk != 0)
-            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0,END);//no error.
+        chk = _stitcher_fetch_src_img(ctx, i);
+        if (chk != 0)
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, END); // no error.
 
         chk = abcdk_xpu_stitcher_compose(ctx->ctx, ctx->src_count, (const abcdk_xpu_image_t **)ctx->src_imgs, &ctx->dst_img, optimize_seam);
         if (chk != 0)
@@ -258,6 +270,8 @@ void _stitcher_work(stitcher_t *ctx)
         chk = _stitcher_dump_dst_img(ctx);
         if (chk != 0)
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = chk, END);
+
+        abcdk_trace_printf(LOG_DEBUG, ABCDK_GETTEXT("已处理: %lld"), i);
     }
 
 END:
