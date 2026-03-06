@@ -36,8 +36,11 @@ void _undistort_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--undistort-param-file < FILE >\n");
     fprintf(stderr, ABCDK_GETTEXT("\t 矫正参数文件.\n"));
 
+    fprintf(stderr, "\n\t--undistort-param-magic < STRING >\n");
+    fprintf(stderr, ABCDK_GETTEXT("\t 矫正参数魔法字符串. 默认: ABCDK \n"));
+
     fprintf(stderr, "\n\t--black-alpha < VALUE > \n");
-    fprintf(stderr, ABCDK_GETTEXT("\t 黑色区域比例(0.0~1.0). 默认: 1\n"));
+    fprintf(stderr, ABCDK_GETTEXT("\t 黑色区域比例(0.0~1.0). 默认: 0\n"));
 
     fprintf(stderr, "\n\t--src-img-path < PATH >\n");
     fprintf(stderr, ABCDK_GETTEXT("\t 源图像路径. 默认: ./\n"));
@@ -112,9 +115,9 @@ void _undistort_work(undistort_t *ctx)
     int device_id = abcdk_option_get_int(ctx->args, "--device-id", 0, 0);
 
     const char *undistort_param_file_p = abcdk_option_get(ctx->args, "--undistort-param-file", 0, NULL);
+    const char *undistort_param_magic_p = abcdk_option_get(ctx->args, "--undistort-param-magic", 0, "ABCDK");
 
-
-    double black_alpha = abcdk_option_get_double(ctx->args, "--black-alpha", 0, 1.0);
+    double black_alpha = abcdk_option_get_double(ctx->args, "--black-alpha", 0, 0.);
 
     chk = abcdk_xpu_runtime_init(hwaccel_vendor);
     assert(chk == 0);
@@ -127,7 +130,7 @@ void _undistort_work(undistort_t *ctx)
     ctx->ctx = abcdk_xpu_calibrate_alloc();
     assert(ctx->ctx != NULL);
 
-    chk = abcdk_xpu_calibrate_load_parameters_from_file(ctx->ctx, undistort_param_file_p, "ABCDK");
+    chk = abcdk_xpu_calibrate_load_parameters_from_file(ctx->ctx, undistort_param_file_p, undistort_param_magic_p);
     if (chk != 0)
     {
         abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("加载标定参数文件(%s)失败, 不存在或无权限."), undistort_param_file_p);

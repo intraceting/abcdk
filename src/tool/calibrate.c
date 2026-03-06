@@ -65,6 +65,9 @@ void _calibrate_print_usage(abcdk_option_t *args)
 
     fprintf(stderr, "\n\t--undistort-param-file < FILE >\n");
     fprintf(stderr, ABCDK_GETTEXT("\t 矫正参数文件, 未指定则忽略.\n"));
+
+    fprintf(stderr, "\n\t--undistort-param-magic < STRING >\n");
+    fprintf(stderr, ABCDK_GETTEXT("\t 矫正参数魔法字符串. 默认: ABCDK \n"));
 }
 
 void _calibrate_load_src_img(calibrate_t *ctx)
@@ -150,6 +153,7 @@ void _calibrate_work(calibrate_t *ctx)
     double black_alpha = abcdk_option_get_double(ctx->args, "--black-alpha", 0, 1.0);
 
     const char *undistort_param_file_p = abcdk_option_get(ctx->args, "--undistort-param-file", 0, NULL);
+    const char *undistort_param_magic_p = abcdk_option_get(ctx->args, "--undistort-param-magic", 0, "ABCDK");
 
     chk = sscanf(board_size_p, "%d,%d", &ctx->board_size.width, &ctx->board_size.height);
     if (chk != 2 || ctx->board_size.width < 2 || ctx->board_size.height < 2)
@@ -220,7 +224,7 @@ void _calibrate_work(calibrate_t *ctx)
     if(!undistort_param_file_p)
         goto END;
 
-    chk = abcdk_xpu_calibrate_dump_parameters_to_file(ctx->ctx, undistort_param_file_p, "ABCDK");
+    chk = abcdk_xpu_calibrate_dump_parameters_to_file(ctx->ctx, undistort_param_file_p, undistort_param_magic_p);
     if (chk != 0)
     {
         abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("矫正参数写入文件(%s)失败, 无权限或空间不足."), undistort_param_file_p);

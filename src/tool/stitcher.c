@@ -13,13 +13,13 @@ typedef struct _stitcher
 
     abcdk_xpu_context_t *dev_ctx;
     abcdk_xpu_stitcher_t *ctx;
-
-    char src_feature[33];
-
-    int src_num;
+    
+    int src_count;
     abcdk_xpu_image_t *src_imgs[10];
-
+    int src_start_num[10];
+    
     abcdk_xpu_image_t *dst_img;
+    int dst_start_num;
 
 } stitcher_t;
 
@@ -63,57 +63,88 @@ void _stitcher_print_usage(abcdk_option_t *args)
     fprintf(stderr, ABCDK_GETTEXT("\t 0: 关\n"));
     fprintf(stderr, ABCDK_GETTEXT("\t 1: 开\n"));
 
+    fprintf(stderr, "\n\t--camera-param-file < FILE >\n");
+    fprintf(stderr, ABCDK_GETTEXT("\t 相机参数文件. 未指定则忽略.\n"));
+
+    fprintf(stderr, "\n\t--camera-param-magic < STRING >\n");
+    fprintf(stderr, ABCDK_GETTEXT("\t 相机参数魔法字符串. 默认: ABCDK \n"));
+
     fprintf(stderr, "\n\t--src-img-file < FILE >\n");
     fprintf(stderr, ABCDK_GETTEXT("\t 源图像文件(包括路径). \n"));
 
     fprintf(stderr, "\n\t--dst-img-file < FILE >\n");
     fprintf(stderr, ABCDK_GETTEXT("\t 全景图像文件(包括路径). 默认: ./panorama.jpg \n"));
-
-    fprintf(stderr, "\n\t--camera-param-file < FILE >\n");
-    fprintf(stderr, ABCDK_GETTEXT("\t 相机参数文件. 未指定则忽略.\n"));
 }
 
-void _stitcher_load_src_img(stitcher_t *ctx)
+int _stitcher_fetch_src_img(stitcher_t *ctx)
 {
     int chk;
 
-    /*set 0.*/
-    ctx->src_num = 0;
+    static const char *src_file_p[10] = {NULL};
 
-    for (int i = 0; i < ABCDK_ARRAY_SIZE(ctx->src_imgs); i++)
+    if (ctx->src_count <= 0)
     {
-        const char *file_p = abcdk_option_get(ctx->args, "--src-img-file", i, NULL);
-        if (!file_p)
-            break;
+        for (int i = 0; i < ABCDK_ARRAY_SIZE(src_file_p); i++)
+        {
+            src_file_p[i] = abcdk_option_get(ctx->args, "--src-img-file", i, NULL);
+            if (!src_file_p[i])
+                break;
 
-        ctx->src_imgs[ctx->src_num] = abcdk_xpu_imgcodec_decode_from_file(file_p);
-        if (ctx->src_imgs[ctx->src_num])
+            ctx->src_start_num[i] = abcdk_option_get_int(ctx->args, "--src-start-num", i, 1);
+
+            ctx->src_count += 1;
+        }
+    }
+
+    for (int i = 0; i < ctx->src_count; i++)
+    {
+        char pathfile[PATH_MAX] = {0};
+        snprintf(pathfile, src_file_p[i], ctx->src_start_num[i]++);
+
+        abcdk_xpu_image_free(&ctx->src_imgs[i]);
+        ctx->src_imgs[i] = abcdk_xpu_imgcodec_decode_from_file(pathfile);
+        if (ctx->src_imgs[i])
         {
             /*统一图像格式. */
-            chk = abcdk_xpu_imgproc_convert2(&ctx->src_imgs[ctx->src_num], ABCDK_XPU_PIXFMT_RGB24);
-            ctx->src_num += 1;
+            chk = abcdk_xpu_imgproc_convert2(&ctx->src_imgs[i], ABCDK_XPU_PIXFMT_RGB24);
+            if(chk != 0)
+                return -EINVAL;
         }
         else
         {
-            abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("加载源图像文件(%s)失败, 无权限或不支持."), file_p);
+            abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("加载源图像文件(%s)失败, 不存在或无权限."), pathfile);
+            return -ENOENT;
         }
     }
+
+    return 0;
 }
 
-void _stitcher_make_feature(stitcher_t *ctx)
+int _stitcher_dump_dst_img(stitcher_t *ctx)
 {
-    abcdk_md5_t *md5_ctx = abcdk_md5_create();
-
-    for (int i = 0; i < ctx->src_num; i++)
+    static const char *dst_img_file_p = NULL;
+    int chk;
+    
+    if(!dst_img_file_p)
     {
-        char img_size[50] = {0};
-        sprintf(img_size, "%dx%d", abcdk_xpu_image_get_width(ctx->src_imgs[i]), abcdk_xpu_image_get_height(ctx->src_imgs[i]));
-
-        abcdk_md5_update(md5_ctx, img_size, strlen(img_size));
+        dst_img_file_p = abcdk_option_get(ctx->args, "--dst-img-file", 0, "./panorama.jpg");
+        ctx->dst_start_num = abcdk_option_get_int(ctx->args, "--dst-start-num", 0, 1);
     }
 
-    abcdk_md5_final2hex(md5_ctx,ctx->src_feature,0);
-    abcdk_md5_destroy(&md5_ctx);
+    if(!dst_img_file_p || !*dst_img_file_p)
+        return 0;
+    
+    char pathfile[PATH_MAX] = {0};
+    snprintf(pathfile, dst_img_file_p, ctx->dst_start_num++);
+
+    chk = abcdk_xpu_imgcodec_encode_to_file(ctx->dst_img, pathfile, NULL);
+    if (chk != 0)
+    {
+        abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("保存全景图像文件(%s)失败, 无空间或无权限."), pathfile);
+        return -ENOSPC;
+    }
+
+    return 0;
 }
 
 void _stitcher_work(stitcher_t *ctx)
@@ -126,8 +157,8 @@ void _stitcher_work(stitcher_t *ctx)
     const char *warper_name_p = abcdk_option_get(ctx->args, "--warper-name", 0, "spherical");
     float estimate_threshold = abcdk_option_get_double(ctx->args, "--estimate-threshold", 0, 0.8);
     int optimize_seam = abcdk_option_get_int(ctx->args, "--optimize-seam", 0, 1);
-    const char *dst_img_file_p = abcdk_option_get(ctx->args, "--dst-img-file", 0, "./panorama.jpg");
     const char *camera_param_file_p = abcdk_option_get(ctx->args, "--camera-param-file", 0, NULL);
+    const char *camera_param_magic_p = abcdk_option_get(ctx->args, "--camera-param-magic", 0, "ABCDK");
 
     chk = abcdk_xpu_runtime_init(hwaccel_vendor);
     assert(chk == 0);
@@ -137,20 +168,18 @@ void _stitcher_work(stitcher_t *ctx)
 
     abcdk_xpu_context_current_set(ctx->dev_ctx);
 
-    _stitcher_load_src_img(ctx);
-    if(ctx->src_num <2)
+    chk = _stitcher_fetch_src_img(ctx);
+    if(chk != 0 || ctx->src_count <2)
     {
-        abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("至少需要两张图片."));
+        abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("源图像至少需要两张."));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL,END);
     }
-
-    _stitcher_make_feature(ctx);
 
     ctx->ctx = abcdk_xpu_stitcher_alloc();
 
     if(camera_param_file_p && access(camera_param_file_p,R_OK) == 0)
     {
-        chk = abcdk_xpu_stitcher_load_parameters_from_file(ctx->ctx, camera_param_file_p, ctx->src_feature);
+        chk = abcdk_xpu_stitcher_load_parameters_from_file(ctx->ctx, camera_param_file_p, camera_param_magic_p);
         if (chk == -127)
         {
             abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("加载相机参数文件(%s)成功, 但与当前源图像不匹配."), camera_param_file_p);
@@ -171,7 +200,7 @@ void _stitcher_work(stitcher_t *ctx)
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL,END);
         }
 
-        chk = abcdk_xpu_stitcher_estimate_parameters(ctx->ctx, ctx->src_num, (const abcdk_xpu_image_t **)ctx->src_imgs, NULL, estimate_threshold);
+        chk = abcdk_xpu_stitcher_estimate_parameters(ctx->ctx, ctx->src_count, (const abcdk_xpu_image_t **)ctx->src_imgs, NULL, estimate_threshold);
         if (chk != 0)
         {
             abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("评估相机参数失败, 特征不足或其它错误."));
@@ -193,34 +222,47 @@ void _stitcher_work(stitcher_t *ctx)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL,END);
     }
 
-    chk = abcdk_xpu_stitcher_compose(ctx->ctx, ctx->src_num, (const abcdk_xpu_image_t **)ctx->src_imgs, &ctx->dst_img, optimize_seam);
+    chk = abcdk_xpu_stitcher_compose(ctx->ctx, ctx->src_count, (const abcdk_xpu_image_t **)ctx->src_imgs, &ctx->dst_img, optimize_seam);
     if (chk != 0)
     {
         abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("全景拼接失败, 内存不足或其它错误."));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -ENOMEM,END);
     }
 
-    if (dst_img_file_p)
-    {
-        chk = abcdk_xpu_imgcodec_encode_to_file(ctx->dst_img, dst_img_file_p, NULL);
-        if (chk != 0)
-        {
-            abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("保存全景图像文件(%s)失败, 无空间或无权限."), dst_img_file_p);
-        }
-    }
-
     if (camera_param_file_p)
     {
-        chk = abcdk_xpu_stitcher_dump_parameters_to_file(ctx->ctx, camera_param_file_p, ctx->src_feature);
+        chk = abcdk_xpu_stitcher_dump_parameters_to_file(ctx->ctx, camera_param_file_p, camera_param_magic_p);
         if (chk != 0)
         {
             abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("保存相机参数文件(%s)失败, 无空间或无权限."), camera_param_file_p);
         }
     }
 
+    chk = _stitcher_dump_dst_img(ctx);
+    if(chk != 0)
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = chk,END);
+
+    while(1)
+    {
+        chk = _stitcher_fetch_src_img(ctx);
+        if(chk != 0)
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0,END);//no error.
+
+        chk = abcdk_xpu_stitcher_compose(ctx->ctx, ctx->src_count, (const abcdk_xpu_image_t **)ctx->src_imgs, &ctx->dst_img, optimize_seam);
+        if (chk != 0)
+        {
+            abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("全景拼接失败, 内存不足或其它错误."));
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -ENOMEM, END);
+        }
+
+        chk = _stitcher_dump_dst_img(ctx);
+        if (chk != 0)
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = chk, END);
+    }
+
 END:
 
-    for (int i = 0; i < ctx->src_num; i++)
+    for (int i = 0; i < ctx->src_count; i++)
         abcdk_xpu_image_free(&ctx->src_imgs[i]);
 
     abcdk_xpu_image_free(&ctx->dst_img);
