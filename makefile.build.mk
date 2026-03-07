@@ -37,6 +37,8 @@ echo "export PATH=${INSTALL_PREFIX}/bin:\$${PATH}" > /etc/profile.d/abcdk-bin.sh
 chmod 0755 /etc/profile.d/abcdk-bin.sh
 echo "Run 'source /etc/profile' to update PATH, or restart the system for the change to take effect."
 #
+cp -fP ${INSTALL_PREFIX}/share/applications/abcdk-launcher.desktop.unused /usr/share/applications/abcdk-launcher.desktop
+#
 endef
 export BIN_POST_SHELL_CONTEXT
 
@@ -44,6 +46,8 @@ export BIN_POST_SHELL_CONTEXT
 define BIN_POSTUN_SHELL_CONTEXT
 #
 rm -f /etc/profile.d/abcdk-bin.sh
+#
+rm -f /usr/share/applications/abcdk-launcher.desktop
 #
 endef
 export BIN_POSTUN_SHELL_CONTEXT

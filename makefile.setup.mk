@@ -44,6 +44,21 @@ exit $$?
 endef
 export BIN_RT0_CONTEXT
 
+#生成DESKTOP文件内容.
+define BIN_LAUNCHER_DESKTOP
+[Desktop Entry]
+Comment=Used for running and hosting third-party programs.
+Comment[zh_CN]=用于第三方程序运行和托管.
+Exec=${INSTALL_PREFIX}/bin/abcdk-launcher
+Name=Application launcher
+Name[zh_CN]=应用程序启动器
+StartupNotify=false
+Terminal=false
+Type=Application
+Icon=${INSTALL_PREFIX}/share/abcdk/bin/icon/logo-v2.png
+endef
+export BIN_LAUNCHER_DESKTOP
+
 #
 install-bin:
 #
@@ -52,11 +67,16 @@ install-bin:
 	chmod 0755 ${INSTALL_PREFIX}/bin/abcdk-tool.exe
 	printf "%s" "$${BIN_RT0_CONTEXT}" > ${INSTALL_PREFIX}/bin/abcdk-tool
 	chmod 0755 ${INSTALL_PREFIX}/bin/abcdk-tool
+#
 ifeq ($(HAVE_QT5),yes)
 	cp -f $(BUILD_PATH)/abcdk-launcher ${INSTALL_PREFIX}/bin/abcdk-launcher.exe
 	chmod 0755 ${INSTALL_PREFIX}/bin/abcdk-launcher.exe
 	printf "%s" "$${BIN_RT0_CONTEXT}" > ${INSTALL_PREFIX}/bin/abcdk-launcher
 	chmod 0755 ${INSTALL_PREFIX}/bin/abcdk-launcher
+#
+	mkdir -p -m 0755 ${INSTALL_PREFIX}/share/applications/
+	printf "%s" "$${BIN_LAUNCHER_DESKTOP}" > ${INSTALL_PREFIX}/share/applications/abcdk-launcher.desktop.unused
+	chmod 0644 ${INSTALL_PREFIX}/share/applications/abcdk-launcher.desktop.unused
 endif
 #
 	mkdir -p -m 0755 ${INSTALL_PREFIX}/share/abcdk/bin/
@@ -70,9 +90,11 @@ uninstall-bin:
 #
 	rm -f ${INSTALL_PREFIX}/bin/abcdk-tool.exe
 	rm -f ${INSTALL_PREFIX}/bin/abcdk-tool
+#
 ifeq ($(HAVE_QT5),yes)
 	rm -f ${INSTALL_PREFIX}/bin/abcdk-launcher.exe
 	rm -f ${INSTALL_PREFIX}/bin/abcdk-launcher
+	rm -f ${INSTALL_PREFIX}/share/applications/abcdk-launcher.desktop
 endif
 #
 	rm -rf ${INSTALL_PREFIX}/share/abcdk/bin
