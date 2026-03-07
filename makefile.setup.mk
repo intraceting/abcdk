@@ -94,7 +94,7 @@ uninstall-bin:
 ifeq ($(HAVE_QT5),yes)
 	rm -f ${INSTALL_PREFIX}/bin/abcdk-launcher.exe
 	rm -f ${INSTALL_PREFIX}/bin/abcdk-launcher
-	rm -f ${INSTALL_PREFIX}/share/applications/abcdk-launcher.desktop
+	rm -f ${INSTALL_PREFIX}/share/applications/abcdk-launcher.desktop.unused
 endif
 #
 	rm -rf ${INSTALL_PREFIX}/share/abcdk/bin
