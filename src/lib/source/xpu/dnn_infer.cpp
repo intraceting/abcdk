@@ -4,6 +4,7 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/trace.h"
 #include "abcdk/xpu/dnn_infer.h"
 #include "runtime.in.h"
 #include "context.in.h"
