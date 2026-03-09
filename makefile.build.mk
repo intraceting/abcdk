@@ -123,6 +123,7 @@ prepare-lib:
 	$(MAKE) -s -C ${MAKEFILE_DIR} INSTALL_PREFIX=${LIB_SYSROOT_TMP}/${INSTALL_PREFIX} install-lib
 	find ${LIB_SYSROOT_TMP}/${INSTALL_PREFIX} -type f -printf "${INSTALL_PREFIX}/%P\n" > ${LIB_FILE_LIST}
 	find ${LIB_SYSROOT_TMP}/${INSTALL_PREFIX} -type l -printf "${INSTALL_PREFIX}/%P\n" >> ${LIB_FILE_LIST}
+#
 	printf "%s" "$${LIB_POST_SHELL_CONTEXT}" > ${LIB_POST_SHELL_FILE}
 	printf "%s" "$${LIB_POSTUN_SHELL_CONTEXT}" > ${LIB_POSTUN_SHELL_FILE}
 
@@ -134,6 +135,7 @@ prepare-dev:
 	find ${DEV_SYSROOT_TMP}/${INSTALL_PREFIX} -type l -printf "${INSTALL_PREFIX}/%P\n" >> ${DEV_FILE_LIST}
 #替换PC文件内部的路径为安装路径。
 	find ${DEV_SYSROOT_TMP}/${INSTALL_PREFIX} -type f -name "*.pc" -exec sed -i "s#${DEV_SYSROOT_TMP}/${INSTALL_PREFIX}#${INSTALL_PREFIX}#g" {} \;
+#
 	printf "%s" "$${DEV_POST_SHELL_CONTEXT}" > ${DEV_POST_SHELL_FILE}
 	printf "%s" "$${DEV_POSTUN_SHELL_CONTEXT}" > ${DEV_POSTUN_SHELL_FILE}
 	
@@ -146,6 +148,9 @@ ifeq (${INSTALL_NEEDED},yes)
 endif
 	find ${BIN_SYSROOT_TMP}/${INSTALL_PREFIX} -type f -printf "${INSTALL_PREFIX}/%P\n" > ${BIN_FILE_LIST}
 	find ${BIN_SYSROOT_TMP}/${INSTALL_PREFIX} -type l -printf "${INSTALL_PREFIX}/%P\n" >> ${BIN_FILE_LIST}
+#替换DESKTOP文件内部的路径为安装路径。
+	find ${BIN_SYSROOT_TMP}/${INSTALL_PREFIX} -type f -name "*.desktop.unused" -exec sed -i "s#${BIN_SYSROOT_TMP}/${INSTALL_PREFIX}#${INSTALL_PREFIX}#g" {} \;
+#
 	printf "%s" "$${BIN_POST_SHELL_CONTEXT}" > ${BIN_POST_SHELL_FILE}
 	printf "%s" "$${BIN_POSTUN_SHELL_CONTEXT}" > ${BIN_POSTUN_SHELL_FILE}
 
