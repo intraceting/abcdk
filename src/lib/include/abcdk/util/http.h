@@ -7,12 +7,7 @@
 #ifndef ABCDK_UTIL_HTTP_H
 #define ABCDK_UTIL_HTTP_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/string.h"
-#include "abcdk/util/option.h"
-#include "abcdk/util/md5.h"
-#include "abcdk/util/url.h"
-#include "abcdk/util/basecode.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

@@ -7,7 +7,7 @@
 #ifndef ABCDK_UTIL_ASIOEX_H
 #define ABCDK_UTIL_ASIOEX_H
 
-#include "abcdk/util/asio.h"
+#include "abcdk/util/defs.h"
 
 
 __BEGIN_DECLS

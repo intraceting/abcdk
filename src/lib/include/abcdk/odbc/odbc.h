@@ -7,7 +7,7 @@
 #ifndef ABCDK_ODBC_ODBC_H
 #define ABCDK_ODBC_ODBC_H
 
-#include "abcdk/util/general.h"
+#include "abcdk/util/defs.h"
 
 #ifdef HAVE_ODBC
 #include <sql.h>

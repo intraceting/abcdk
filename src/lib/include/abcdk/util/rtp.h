@@ -7,10 +7,7 @@
 #ifndef ABCDK_UTIL_RTP_H
 #define ABCDK_UTIL_RTP_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/queue.h"
-#include "abcdk/util/bloom.h"
-#include "abcdk/util/receiver.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

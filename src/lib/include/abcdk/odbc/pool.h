@@ -7,12 +7,7 @@
 #ifndef ABCDK_ODBC_POOL_H
 #define ABCDK_ODBC_POOL_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/time.h"
-#include "abcdk/util/thread.h"
-#include "abcdk/util/pool.h"
-#include "abcdk/odbc/easy.h"
-
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

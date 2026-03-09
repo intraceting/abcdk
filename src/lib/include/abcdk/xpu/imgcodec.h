@@ -8,7 +8,7 @@
 #define ABCDK_XPU_IMGCODEC_H
 
 #include "abcdk/xpu/image.h"
-#include "abcdk/curl/util.h"
+
 
 __BEGIN_DECLS
 

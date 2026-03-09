@@ -4,6 +4,7 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
+#include "abcdk/util/endian.h"
 #include "abcdk/util/bloom.h"
 
 int abcdk_bloom_mark(uint8_t *pool, size_t size, size_t index)

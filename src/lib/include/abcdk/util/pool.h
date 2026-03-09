@@ -7,9 +7,7 @@
 #ifndef ABCDK_UTIL_POOL_H
 #define ABCDK_UTIL_POOL_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/object.h"
-#include "abcdk/util/thread.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

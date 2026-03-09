@@ -4,6 +4,15 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/heap.h"
+#include "abcdk/util/time.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/tree.h"
+#include "abcdk/util/string.h"
+#include "abcdk/util/trace.h"
+#include "abcdk/util/io.h"
+#include "abcdk/util/basecode.h"
 #include "abcdk/util/sdp.h"
 
 void _abcdk_sdp_destroy_cb(abcdk_object_t *alloc, void *opaque)

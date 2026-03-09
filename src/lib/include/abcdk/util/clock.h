@@ -7,9 +7,7 @@
 #ifndef ABCDK_UTIL_CLOCK_H
 #define ABCDK_UTIL_CLOCK_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/thread.h"
-#include "abcdk/util/time.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

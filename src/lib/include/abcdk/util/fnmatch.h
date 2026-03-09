@@ -8,8 +8,6 @@
 #define ABCDK_UTIL_FNMATCH_H
 
 #include "abcdk/util/defs.h"
-#include "abcdk/util/heap.h"
-#include "abcdk/util/path.h"
 
 __BEGIN_DECLS
 

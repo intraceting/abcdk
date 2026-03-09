@@ -7,11 +7,7 @@
 #ifndef ABCDK_UTIL_WORKER_H
 #define ABCDK_UTIL_WORKER_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/atomic.h"
-#include "abcdk/util/queue.h"
-#include "abcdk/util/wred.h"
-#include "abcdk/util/trace.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

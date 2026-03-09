@@ -4,6 +4,7 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/general.h"
 #include "abcdk/util/charset.h"
 
 ssize_t abcdk_verify_utf8(const void *data, size_t max)

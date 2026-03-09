@@ -4,6 +4,7 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/object.h"
 #include "imgcodec.hxx"
 
 namespace abcdk_xpu

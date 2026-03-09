@@ -4,6 +4,17 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
+#include "abcdk/util/socket.h"
+#include "abcdk/util/path.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/tree.h"
+#include "abcdk/util/dirent.h"
+#include "abcdk/util/string.h"
+#include "abcdk/util/md5.h"
+#include "abcdk/util/trace.h"
+#include "abcdk/util/fnmatch.h"
+#include "abcdk/util/io.h"
+#include "abcdk/system/block.h"
 #include "abcdk/system/dmi.h"
 
 int _abcdk_dmi_hash_dump_cb(size_t depth, abcdk_tree_t *node, void *opaque)

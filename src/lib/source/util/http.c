@@ -4,6 +4,17 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/time.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/tree.h"
+#include "abcdk/util/string.h"
+#include "abcdk/util/trace.h"
+#include "abcdk/util/option.h"
+#include "abcdk/util/md5.h"
+#include "abcdk/util/url.h"
+#include "abcdk/util/basecode.h"
+#include "abcdk/util/object.h"
 #include "abcdk/util/http.h"
 
 /** HTTP状态码.*/

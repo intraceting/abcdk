@@ -8,8 +8,7 @@
 #define ABCDK_UTIL_RANDOM_H
 
 #include "abcdk/util/defs.h"
-#include "abcdk/util/atomic.h"
-#include "abcdk/util/io.h"
+
 
 __BEGIN_DECLS
 

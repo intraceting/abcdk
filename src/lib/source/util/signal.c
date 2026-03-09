@@ -4,6 +4,10 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
 */
+#include "abcdk/util/general.h"
+#include "abcdk/util/thread.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/string.h"
 #include "abcdk/util/signal.h"
 
 void abcdk_signal_set(sigset_t *sigs,int op, int sig,...)

@@ -7,10 +7,7 @@
 #ifndef ABCDK_UTIL_READER_H
 #define ABCDK_UTIL_READER_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/thread.h"
-#include "abcdk/util/tree.h"
-#include "abcdk/util/io.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

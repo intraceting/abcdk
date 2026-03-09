@@ -8,8 +8,7 @@
 #define ABCDK_UTIL_HEAP_H
 
 #include "abcdk/util/defs.h"
-#include "abcdk/util/atomic.h"
-#include "abcdk/util/time.h"
+
 
 __BEGIN_DECLS
 

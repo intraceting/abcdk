@@ -7,8 +7,7 @@
 #ifndef ABCDK_UTIL_MUTEX_H
 #define ABCDK_UTIL_MUTEX_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/heap.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

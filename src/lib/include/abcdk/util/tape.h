@@ -7,12 +7,7 @@
 #ifndef ABCDK_UTIL_TAPE_H
 #define ABCDK_UTIL_TAPE_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/object.h"
-#include "abcdk/util/scsi.h"
-#include "abcdk/util/iconv.h"
-#include "abcdk/util/endian.h"
-#include "abcdk/util/bit.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

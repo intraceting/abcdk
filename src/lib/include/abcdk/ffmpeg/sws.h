@@ -7,8 +7,7 @@
 #ifndef ABCDK_FFMPEG_SWS_H
 #define ABCDK_FFMPEG_SWS_H
 
-#include "abcdk/util/trace.h"
-#include "abcdk/ffmpeg/ffmpeg.h"
+#include "abcdk/util/defs.h"
 
 
 __BEGIN_DECLS

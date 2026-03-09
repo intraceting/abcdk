@@ -4,6 +4,7 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
+#include "abcdk/util/general.h"
 #include "abcdk/util/math.h"
 
 uint64_t abcdk_math_lcm(uint64_t a, uint64_t b)

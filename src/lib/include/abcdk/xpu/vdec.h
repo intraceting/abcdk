@@ -7,8 +7,10 @@
 #ifndef ABCDK_XPU_VDEC_H
 #define ABCDK_XPU_VDEC_H
 
-#include "abcdk/xpu/image.h"
+#include "abcdk/ffmpeg/ffmpeg.h"
 #include "abcdk/ffmpeg/decoder.h"
+#include "abcdk/xpu/image.h"
+
 
 __BEGIN_DECLS
 

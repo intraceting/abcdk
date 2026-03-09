@@ -8,7 +8,7 @@
 #define ABCDK_UTIL_H2645_H
 
 #include "abcdk/util/defs.h"
-#include "abcdk/util/bit.h"
+
 
 __BEGIN_DECLS
 

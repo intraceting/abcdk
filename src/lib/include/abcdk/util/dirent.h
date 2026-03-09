@@ -7,10 +7,7 @@
 #ifndef ABCDK_UTIL_DIRENT_H
 #define ABCDK_UTIL_DIRENT_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/tree.h"
-#include "abcdk/util/path.h"
-#include "abcdk/util/fnmatch.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

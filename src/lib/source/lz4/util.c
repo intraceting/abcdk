@@ -4,7 +4,10 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
 */
+#include "abcdk/util/trace.h"
+#include "abcdk/lz4/lz4.h"
 #include "abcdk/lz4/util.h"
+
 
 int abcdk_lz4_dec(void* plaintext, int plaintext_size, const void* ciphertext, int ciphertext_size)
 {

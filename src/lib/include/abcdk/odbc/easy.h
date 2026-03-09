@@ -7,10 +7,7 @@
 #ifndef ABCDK_ODBC_EASY_H
 #define ABCDK_ODBC_EASY_H
 
-#include "abcdk/odbc/odbc.h"
-#include "abcdk/util/object.h"
-#include "abcdk/util/string.h"
-#include "abcdk/util/trace.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

@@ -7,14 +7,7 @@
 #ifndef ABCDK_OPENSSL_DARKNET_H
 #define ABCDK_OPENSSL_DARKNET_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/object.h"
-#include "abcdk/util/stream.h"
-#include "abcdk/util/sha256.h"
-#include "abcdk/util/mmap.h"
-#include "abcdk/util/hash.h"
-#include "abcdk/util/receiver.h"
-#include "abcdk/openssl/cipher.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

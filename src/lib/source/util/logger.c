@@ -4,6 +4,13 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/time.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/uri.h"
+#include "abcdk/util/mutex.h"
+#include "abcdk/util/trace.h"
+#include "abcdk/util/string.h"
 #include "abcdk/util/logger.h"
 
 /** 日志接口.*/

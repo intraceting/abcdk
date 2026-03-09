@@ -7,12 +7,7 @@
 #ifndef ABCDK_UTIL_MEDIUMX_H
 #define ABCDK_UTIL_MEDIUMX_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/scsi.h"
-#include "abcdk/util/tree.h"
-#include "abcdk/util/endian.h"
-#include "abcdk/util/object.h"
-#include "abcdk/util/string.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

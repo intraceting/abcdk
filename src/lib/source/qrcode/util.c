@@ -4,6 +4,10 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
 */
+#include "abcdk/util/trace.h"
+#include "abcdk/util/bmp.h"
+#include "abcdk/util/object.h"
+#include "abcdk/qrcode/qrcode.h"
 #include "abcdk/qrcode/util.h"
 
 

@@ -4,6 +4,10 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/math.h"
+#include "abcdk/util/bloom.h"
+#include "abcdk/util/object.h"
 #include "abcdk/util/basecode.h"
 
 uint8_t _abcdk_basecode_en_table64(uint8_t n)

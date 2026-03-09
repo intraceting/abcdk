@@ -4,6 +4,10 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/queue.h"
+#include "abcdk/util/bloom.h"
+#include "abcdk/util/receiver.h"
 #include "abcdk/util/rtp.h"
 
 void abcdk_rtp_header_serialize(const abcdk_rtp_header_t *hdr, void *data, size_t size)

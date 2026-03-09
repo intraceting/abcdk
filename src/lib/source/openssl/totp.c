@@ -4,6 +4,10 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  * 
  */
+#include "abcdk/util/object.h"
+#include "abcdk/util/endian.h"
+#include "abcdk/openssl/openssl.h"
+#include "abcdk/openssl/util.h"
 #include "abcdk/openssl/totp.h"
 
 

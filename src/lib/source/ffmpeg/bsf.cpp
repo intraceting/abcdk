@@ -4,7 +4,15 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/heap.h"
+#include "abcdk/util/time.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/tree.h"
+#include "abcdk/util/string.h"
+#include "abcdk/util/trace.h"
+#include "abcdk/ffmpeg/ffmpeg.h"
 #include "abcdk/ffmpeg/bsf.h"
+
 
 struct _abcdk_ffmpeg_bsf
 {

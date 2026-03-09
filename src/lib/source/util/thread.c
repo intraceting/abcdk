@@ -4,6 +4,9 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/atomic.h"
+#include "abcdk/util/mutex.h"
 #include "abcdk/util/thread.h"
 
 int abcdk_thread_create(abcdk_thread_t *ctx,int joinable)

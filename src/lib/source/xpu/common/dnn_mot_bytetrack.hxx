@@ -7,6 +7,11 @@
 #ifndef ABCDK_XPU_COMMON_DNN_MOT_BYTETRACK_HXX
 #define ABCDK_XPU_COMMON_DNN_MOT_BYTETRACK_HXX
 
+#include "abcdk/util/atomic.h"
+#include "abcdk/util/option.h"
+#include "abcdk/util/trace.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/string.h"
 #include "abcdk/xpu/dnn_track.h"
 #include "../runtime.in.h"
 #include "util.hxx"

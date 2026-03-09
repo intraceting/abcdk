@@ -4,6 +4,13 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/heap.h"
+#include "abcdk/util/thread.h"
+#include "abcdk/util/mutex.h"
+#include "abcdk/util/atomic.h"
+#include "abcdk/util/time.h"
+#include "abcdk/util/trace.h"
 #include "abcdk/util/timer.h"
 
 /**简单的定时器.*/

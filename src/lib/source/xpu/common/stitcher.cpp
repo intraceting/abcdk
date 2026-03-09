@@ -4,6 +4,7 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/trace.h"
 #include "stitcher.hxx"
 
 namespace abcdk_xpu

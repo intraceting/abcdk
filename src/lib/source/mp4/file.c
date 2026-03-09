@@ -5,6 +5,9 @@
  * 
  */
 #include "abcdk/mp4/file.h"
+#include "abcdk/util/general.h"
+#include "abcdk/util/endian.h"
+#include "abcdk/util/io.h"
 
 int abcdk_mp4_size(int fd, uint64_t *size)
 {

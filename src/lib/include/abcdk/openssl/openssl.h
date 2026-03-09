@@ -7,7 +7,7 @@
 #ifndef ABCDK_OPENSSL_OPENSSL_H
 #define ABCDK_OPENSSL_OPENSSL_H
 
-#include "abcdk/util/general.h"
+#include "abcdk/util/defs.h"
 
 
 #ifdef HAVE_OPENSSL

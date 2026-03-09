@@ -8,9 +8,6 @@
 #define ABCDK_UTIL_PATH_H
 
 #include "abcdk/util/defs.h"
-#include "abcdk/util/heap.h"
-#include "abcdk/util/string.h"
-#include "abcdk/util/tree.h"
 
 __BEGIN_DECLS
 

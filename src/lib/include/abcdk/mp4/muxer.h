@@ -7,7 +7,7 @@
 #ifndef ABCDK_MP4_MUXER_H
 #define ABCDK_MP4_MUXER_H
 
-#include "abcdk/mp4/atom.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

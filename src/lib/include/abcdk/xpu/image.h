@@ -8,7 +8,7 @@
 #define ABCDK_XPU_IMAGE_H
 
 #include "abcdk/xpu/types.h"
-#include "abcdk/ffmpeg/util.h"
+
 
 __BEGIN_DECLS
 

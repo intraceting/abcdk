@@ -7,8 +7,7 @@
 #ifndef ABCDK_UTIL_GPIO_H
 #define ABCDK_UTIL_GPIO_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/trace.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

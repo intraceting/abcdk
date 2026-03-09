@@ -4,6 +4,10 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/io.h"
+#include "abcdk/util/path.h"
+#include "abcdk/util/endian.h"
 #include "abcdk/util/bmp.h"
 
 int abcdk_bmp_save_fd(int fd, const uint8_t *data, uint32_t stride, uint32_t width, int32_t height, uint8_t bits)

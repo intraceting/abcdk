@@ -4,6 +4,7 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
+
 #include "abcdk/util/hexdump.h"
 
 int _abcdk_hexdump_print(size_t *total, FILE *fd, const char *fmt, ...)

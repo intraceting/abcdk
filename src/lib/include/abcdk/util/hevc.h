@@ -7,10 +7,7 @@
 #ifndef ABCDK_UTIL_HEVC_H
 #define ABCDK_UTIL_HEVC_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/bit.h"
-#include "abcdk/util/object.h"
-#include "abcdk/util/h2645.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

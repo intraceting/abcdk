@@ -7,11 +7,7 @@
 #ifndef ABCDK_SYSTEM_FILE_H
 #define ABCDK_SYSTEM_FILE_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/popen.h"
-#include "abcdk/util/io.h"
-#include "abcdk/util/path.h"
-#include "abcdk/util/dirent.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

@@ -7,8 +7,7 @@
 #ifndef ABCDK_OPENSSL_TOTP_H
 #define ABCDK_OPENSSL_TOTP_H
 
-#include "abcdk/util/endian.h"
-#include "abcdk/openssl/util.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

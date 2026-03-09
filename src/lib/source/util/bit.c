@@ -4,6 +4,9 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/heap.h"
+#include "abcdk/util/bloom.h"
+#include "abcdk/util/object.h"
 #include "abcdk/util/bit.h"
 
 int abcdk_bit_eof(abcdk_bit_t *ctx)

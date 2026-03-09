@@ -4,6 +4,8 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
+#include "abcdk/util/time.h"
+#include "abcdk/util/clock.h"
 #include "abcdk/util/io.h"
 
 int abcdk_poll(int fd, int event, time_t timeout)

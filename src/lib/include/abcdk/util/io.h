@@ -8,7 +8,7 @@
 #define ABCDK_UTIL_IO_H
 
 #include "abcdk/util/defs.h"
-#include "abcdk/util/clock.h"
+
 
 __BEGIN_DECLS
 

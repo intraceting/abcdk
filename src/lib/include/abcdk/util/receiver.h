@@ -7,10 +7,7 @@
 #ifndef ABCDK_RECEIVER_H
 #define ABCDK_RECEIVER_H
 
-#include "abcdk/util/path.h"
-#include "abcdk/util/mmap.h"
-#include "abcdk/util/endian.h"
-#include "abcdk/util/bit.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

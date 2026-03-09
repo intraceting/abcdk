@@ -4,6 +4,7 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
+
 #include "abcdk/util/hash.h"
 
 uint32_t abcdk_hash_bkdr(const void* data,size_t size)

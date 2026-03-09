@@ -7,6 +7,8 @@
 #ifndef ABCDK_XPU_COMMON_IMGPROC_BRIGHTNESS_HXX
 #define ABCDK_XPU_COMMON_IMGPROC_BRIGHTNESS_HXX
 
+#include "abcdk/ffmpeg/ffmpeg.h"
+#include "abcdk/ffmpeg/util.h"
 #include "abcdk/xpu/imgproc.h"
 #include "../runtime.in.h"
 #include "util.hxx"

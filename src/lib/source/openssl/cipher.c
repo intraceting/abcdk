@@ -4,6 +4,16 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/heap.h"
+#include "abcdk/util/bloom.h"
+#include "abcdk/util/sha256.h"
+#include "abcdk/util/crc.h"
+#include "abcdk/util/spinlock.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/mmap.h"
+#include "abcdk/openssl/openssl.h"
+#include "abcdk/openssl/util.h"
 #include "abcdk/openssl/cipher.h"
 
 /**简单的加密接口. */

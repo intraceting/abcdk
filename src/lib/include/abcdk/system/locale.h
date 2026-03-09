@@ -7,8 +7,7 @@
 #ifndef ABCDK_SYSTEM_LOCALE_H
 #define ABCDK_SYSTEM_LOCALE_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/system/proc.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

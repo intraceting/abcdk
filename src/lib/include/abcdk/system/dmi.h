@@ -7,13 +7,7 @@
 #ifndef ABCDK_SYSTEM_DMI_H
 #define ABCDK_SYSTEM_DMI_H
 
-#include "abcdk/system/block.h"
-#include "abcdk/util/socket.h"
-#include "abcdk/util/path.h"
-#include "abcdk/util/dirent.h"
-#include "abcdk/util/md5.h"
-#include "abcdk/util/trace.h"
-#include "abcdk/util/fnmatch.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

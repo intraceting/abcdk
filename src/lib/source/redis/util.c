@@ -4,6 +4,8 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
 */
+#include "abcdk/util/trace.h"
+#include "abcdk/redis/redis.h"
 #include "abcdk/redis/util.h"
 
 void abcdk_redis_reply_dump(FILE *fp, redisReply *reply)

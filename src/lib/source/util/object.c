@@ -4,6 +4,12 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/atomic.h"
+#include "abcdk/util/heap.h"
+#include "abcdk/util/io.h"
+#include "abcdk/util/shm.h"
+#include "abcdk/util/trace.h"
 #include "abcdk/util/object.h"
 
 /**

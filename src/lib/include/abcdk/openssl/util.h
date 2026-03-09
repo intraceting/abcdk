@@ -7,13 +7,7 @@
 #ifndef ABCDK_OPENSSL_UTIL_H
 #define ABCDK_OPENSSL_UTIL_H
 
-#include "abcdk/util/tree.h"
-#include "abcdk/util/io.h"
-#include "abcdk/util/trace.h"
-#include "abcdk/util/object.h"
-#include "abcdk/util/dirent.h"
-#include "abcdk/util/getpass.h"
-#include "abcdk/openssl/openssl.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

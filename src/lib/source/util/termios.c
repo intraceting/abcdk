@@ -4,6 +4,8 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
 */
+#include "abcdk/util/general.h"
+#include "abcdk/util/io.h"
 #include "abcdk/util/termios.h"
 
 int abcdk_tcattr_option(int fd, const struct termios *now, struct termios *old)

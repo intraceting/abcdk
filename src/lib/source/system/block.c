@@ -4,6 +4,15 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/io.h"
+#include "abcdk/util/path.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/tree.h"
+#include "abcdk/util/dirent.h"
+#include "abcdk/util/string.h"
+#include "abcdk/system/mmc.h"
+#include "abcdk/system/scsi.h"
 #include "abcdk/system/block.h"
 
 int abcdk_block_find_device(const char *name, char devpath[PATH_MAX])

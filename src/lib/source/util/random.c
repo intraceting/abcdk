@@ -4,6 +4,8 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
+#include "abcdk/util/atomic.h"
+#include "abcdk/util/io.h"
 #include "abcdk/util/random.h"
 
 static pid_t _abcdk_rand_globe_pid = -1;

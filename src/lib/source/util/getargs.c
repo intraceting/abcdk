@@ -4,6 +4,11 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/option.h"
+#include "abcdk/util/io.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/string.h"
 #include "abcdk/util/getargs.h"
 
 void abcdk_getargs(abcdk_option_t *opt, int argc, char *argv[])

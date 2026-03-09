@@ -7,11 +7,7 @@
 #ifndef ABCDK_OPENSSL_CIPHER_H
 #define ABCDK_OPENSSL_CIPHER_H
 
-#include "abcdk/util/bloom.h"
-#include "abcdk/util/sha256.h"
-#include "abcdk/util/crc.h"
-#include "abcdk/util/spinlock.h"
-#include "abcdk/openssl/util.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

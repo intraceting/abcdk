@@ -7,7 +7,7 @@
 #ifndef ABCDK_QRCODE_QRCODE_H
 #define ABCDK_QRCODE_QRCODE_H
 
-#include "abcdk/util/general.h"
+#include "abcdk/util/defs.h"
 
 #ifdef HAVE_QRENCODE
 #include <qrencode.h>

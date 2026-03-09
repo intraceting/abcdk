@@ -7,16 +7,7 @@
 #ifndef ABCDK_UTIL_ASIO_H
 #define ABCDK_UTIL_ASIO_H
 
-#include "abcdk/util/map.h"
-#include "abcdk/util/pool.h"
-#include "abcdk/util/thread.h"
-#include "abcdk/util/clock.h"
-#include "abcdk/util/epoll.h"
-#include "abcdk/util/socket.h"
-#include "abcdk/util/mutex.h"
-#include "abcdk/util/spinlock.h"
-#include "abcdk/util/rwlock.h"
-#include "abcdk/util/context.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

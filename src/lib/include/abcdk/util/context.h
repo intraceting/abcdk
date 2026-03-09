@@ -7,11 +7,7 @@
 #ifndef ABCDK_UTIL_CONTEXT_H
 #define ABCDK_UTIL_CONTEXT_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/heap.h"
-#include "abcdk/util/object.h"
-#include "abcdk/util/io.h"
-#include "abcdk/util/rwlock.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

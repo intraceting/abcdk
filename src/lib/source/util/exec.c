@@ -4,6 +4,9 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/io.h"
 #include "abcdk/util/exec.h"
 
 pid_t abcdk_fork(abcdk_fork_process_cb process_cb, void *opaque,

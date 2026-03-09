@@ -7,9 +7,7 @@
 #ifndef ABCDK_MP4_FILE_H
 #define ABCDK_MP4_FILE_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/endian.h"
-#include "abcdk/util/io.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

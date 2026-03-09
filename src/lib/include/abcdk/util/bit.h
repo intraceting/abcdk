@@ -8,9 +8,7 @@
 #define ABCDK_UTIL_BIT_H
 
 #include "abcdk/util/defs.h"
-#include "abcdk/util/heap.h"
-#include "abcdk/util/bloom.h"
-#include "abcdk/util/object.h"
+
 
 __BEGIN_DECLS
 

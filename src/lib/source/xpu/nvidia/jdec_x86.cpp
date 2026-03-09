@@ -4,6 +4,9 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/object.h"
+#include "abcdk/util/string.h"
+#include "abcdk/util/trace.h"
 #include "jdec.hxx"
 
 #ifdef __x86_64__

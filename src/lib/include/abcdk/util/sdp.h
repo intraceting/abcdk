@@ -7,12 +7,7 @@
 #ifndef ABCDK_UTIL_SDP_H
 #define ABCDK_UTIL_SDP_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/tree.h"
-#include "abcdk/util/io.h"
-#include "abcdk/util/basecode.h"
-#include "abcdk/util/object.h"
-#include "abcdk/util/string.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

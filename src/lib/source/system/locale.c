@@ -4,6 +4,9 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/exec.h"
+#include "abcdk/system/proc.h"
 #include "abcdk/system/locale.h"
 
 int abcdk_locale_setup(const char *lang_codeset, const char *domain_name, const char *domain_path)

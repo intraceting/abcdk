@@ -4,6 +4,9 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/io.h"
 #include "abcdk/util/fnmatch.h"
 
 int abcdk_fnmatch(const char *str,const char *pattern,int caseAb,int ispath)

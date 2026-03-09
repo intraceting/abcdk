@@ -7,20 +7,7 @@
 #ifndef ABCDK_NET_STCP_H
 #define ABCDK_NET_STCP_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/getargs.h"
-#include "abcdk/util/socket.h"
-#include "abcdk/util/asioex.h"
-#include "abcdk/util/thread.h"
-#include "abcdk/util/tree.h"
-#include "abcdk/util/map.h"
-#include "abcdk/util/time.h"
-#include "abcdk/util/trace.h"
-#include "abcdk/util/spinlock.h"
-#include "abcdk/util/worker.h"
-#include "abcdk/util/wred.h"
-#include "abcdk/util/nonce.h"
-#include "abcdk/openssl/bio.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

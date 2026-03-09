@@ -7,7 +7,7 @@
 #ifndef ABCDK_FFMPEG_FFMPEG_H
 #define ABCDK_FFMPEG_FFMPEG_H
 
-#include "abcdk/util/general.h"
+#include "abcdk/util/defs.h"
 
 #ifdef HAVE_FFMPEG
 __BEGIN_DECLS

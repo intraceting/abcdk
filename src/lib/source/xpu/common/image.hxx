@@ -7,6 +7,8 @@
 #ifndef ABCDK_XPU_COMMON_IMAGE_HXX
 #define ABCDK_XPU_COMMON_IMAGE_HXX
 
+#include "abcdk/ffmpeg/ffmpeg.h"
+#include "abcdk/ffmpeg/util.h"
 #include "abcdk/xpu/image.h"
 #include "../runtime.in.h"
 

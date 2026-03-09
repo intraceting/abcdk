@@ -4,6 +4,7 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
+#include "abcdk/util/atomic.h"
 #include "abcdk/util/general.h"
 
 size_t abcdk_align(size_t size, size_t align)

@@ -8,7 +8,6 @@
 #define ABCDK_UTIL_ATOMIC_H
 
 #include "abcdk/util/defs.h"
-#include "abcdk/util/mutex.h"
 
 /** 加锁.*/
 void abcdk_atomic_lock(void);

@@ -7,8 +7,8 @@
 #ifndef ABCDK_UTIL_LZ4_H
 #define ABCDK_UTIL_LZ4_H
 
-#include "abcdk/lz4/lz4.h"
-#include "abcdk/util/trace.h"
+
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

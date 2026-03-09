@@ -4,6 +4,10 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/endian.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/string.h"
 #include "abcdk/util/scsi.h"
 
 const char *abcdk_scsi_type2string(uint8_t type, int longname)

@@ -7,8 +7,7 @@
 #ifndef ABCDK_SYSTEM_MEDIUMX_H
 #define ABCDK_SYSTEM_MEDIUMX_H
 
-#include "abcdk/system/scsi.h"
-#include "abcdk/util/mediumx.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

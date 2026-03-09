@@ -7,7 +7,7 @@
 #ifndef ABCDK_CURL_UTIL_H
 #define ABCDK_CURL_UTIL_H
 
-#include "abcdk/curl/curl.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

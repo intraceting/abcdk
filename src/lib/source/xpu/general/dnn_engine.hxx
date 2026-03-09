@@ -7,6 +7,7 @@
 #ifndef ABCDK_XPU_GENERAL_DNN_ENGINE_HXX
 #define ABCDK_XPU_GENERAL_DNN_ENGINE_HXX
 
+#include "abcdk/util/object.h"
 #include "abcdk/xpu/types.h"
 #include "../runtime.in.h"
 #include "../common/util.hxx"

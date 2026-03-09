@@ -7,11 +7,7 @@
 #ifndef ABCDK_UTIL_IPOOL_H
 #define ABCDK_UTIL_IPOOL_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/bloom.h"
-#include "abcdk/util/object.h"
-#include "abcdk/util/socket.h"
-#include "abcdk/util/rwlock.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

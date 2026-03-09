@@ -7,9 +7,8 @@
 #ifndef ABCDK_UTIL_QUEUE_H
 #define ABCDK_UTIL_QUEUE_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/thread.h"
-#include "abcdk/util/tree.h"
+#include "abcdk/util/defs.h"
+
 
 __BEGIN_DECLS
 

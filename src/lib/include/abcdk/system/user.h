@@ -7,9 +7,7 @@
 #ifndef ABCDK_SYSTEM_USER_H
 #define ABCDK_SYSTEM_USER_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/io.h"
-#include "abcdk/util/path.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

@@ -4,6 +4,14 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/io.h"
+#include "abcdk/util/path.h"
+#include "abcdk/util/signal.h"
+#include "abcdk/util/exec.h"
+#include "abcdk/util/thread.h"
+#include "abcdk/util/popen.h"
+#include "abcdk/util/trace.h"
 #include "abcdk/system/proc.h"
 
 char *abcdk_proc_pathfile(char *buf)

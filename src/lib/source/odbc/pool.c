@@ -4,6 +4,15 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/heap.h"
+#include "abcdk/util/time.h"
+#include "abcdk/util/thread.h"
+#include "abcdk/util/pool.h"
+#include "abcdk/util/mutex.h"
+#include "abcdk/util/trace.h"
+#include "abcdk/odbc/odbc.h"
+#include "abcdk/odbc/easy.h"
 #include "abcdk/odbc/pool.h"
 
 

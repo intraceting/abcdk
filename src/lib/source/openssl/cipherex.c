@@ -4,6 +4,11 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/atomic.h"
+#include "abcdk/util/heap.h"
+#include "abcdk/util/object.h"
+#include "abcdk/openssl/openssl.h"
+#include "abcdk/openssl/cipher.h"
 #include "abcdk/openssl/cipherex.h"
 
 

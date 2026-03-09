@@ -7,8 +7,7 @@
 #ifndef ABCDK_UTIL_AAC_H
 #define ABCDK_UTIL_AAC_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/bloom.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

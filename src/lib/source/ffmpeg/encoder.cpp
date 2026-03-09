@@ -4,6 +4,10 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/trace.h"
+#include "abcdk/ffmpeg/ffmpeg.h"
+#include "abcdk/ffmpeg/sws.h"
+#include "abcdk/ffmpeg/util.h"
 #include "abcdk/ffmpeg/encoder.h"
 
 struct _abcdk_ffmpeg_encoder

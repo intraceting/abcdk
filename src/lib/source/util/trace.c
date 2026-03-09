@@ -4,6 +4,8 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/thread.h"
 #include "abcdk/util/trace.h"
 
 static void *g_trace_dump_cb_opaque = NULL;

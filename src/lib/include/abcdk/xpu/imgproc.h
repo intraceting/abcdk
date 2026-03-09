@@ -8,7 +8,7 @@
 #define ABCDK_XPU_IMGPROC_H
 
 #include "abcdk/xpu/image.h"
-#include "abcdk/ffmpeg/sws.h"
+
 
 __BEGIN_DECLS
 

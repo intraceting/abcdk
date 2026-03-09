@@ -7,11 +7,7 @@
 #ifndef ABCDK_MP4_ATOM_H
 #define ABCDK_MP4_ATOM_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/object.h"
-#include "abcdk/util/tree.h"
-#include "abcdk/util/time.h"
-#include "abcdk/util/endian.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

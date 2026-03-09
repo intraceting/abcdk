@@ -7,6 +7,7 @@
 #ifndef ABCDK_XPU_COMMON_DNN_MODEL_HXX
 #define ABCDK_XPU_COMMON_DNN_MODEL_HXX
 
+#include "abcdk/util/trace.h"
 #include "abcdk/xpu/dnn_post.h"
 #include "../runtime.in.h"
 #include "util.hxx"

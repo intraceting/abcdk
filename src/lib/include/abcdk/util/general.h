@@ -8,7 +8,7 @@
 #define ABCDK_UTIL_GENERAL_H
 
 #include "abcdk/util/defs.h"
-#include "abcdk/util/atomic.h"
+
 
 __BEGIN_DECLS
 

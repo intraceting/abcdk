@@ -7,7 +7,7 @@
 #ifndef ABCDK_UTIL_CPU_H
 #define ABCDK_UTIL_CPU_H
 
-#include "abcdk/util/general.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

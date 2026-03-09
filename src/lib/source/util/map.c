@@ -4,6 +4,14 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
 */
+#include "abcdk/util/general.h"
+#include "abcdk/util/heap.h"
+#include "abcdk/util/time.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/tree.h"
+#include "abcdk/util/string.h"
+#include "abcdk/util/trace.h"
+#include "abcdk/util/hash.h"
 #include "abcdk/util/map.h"
 
 static uint64_t _abcdk_map_hash(const void *data, size_t size, void *opaque)

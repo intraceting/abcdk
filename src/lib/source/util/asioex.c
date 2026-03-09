@@ -4,6 +4,10 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/heap.h"
+#include "abcdk/util/epoll.h"
+#include "abcdk/util/asio.h"
 #include "abcdk/util/asioex.h"
 
 /**异步IO对象扩展.*/

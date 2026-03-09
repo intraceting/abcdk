@@ -7,13 +7,7 @@
 #ifndef ABCDK_FFMPEG_EDITOR_H
 #define ABCDK_FFMPEG_EDITOR_H
 
-#include "abcdk/util/trace.h"
-#include "abcdk/util/time.h"
-#include "abcdk/ffmpeg/ffmpeg.h"
-#include "abcdk/ffmpeg/util.h"
-#include "abcdk/ffmpeg/encoder.h"
-#include "abcdk/ffmpeg/decoder.h"
-#include "abcdk/ffmpeg/bsf.h"
+#include "abcdk/util/defs.h"
 
 
 __BEGIN_DECLS

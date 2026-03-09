@@ -4,6 +4,7 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/mutex.h"
 #include "abcdk/util/atomic.h"
 
 static pthread_mutex_t g_atomic_lock = PTHREAD_MUTEX_INITIALIZER;

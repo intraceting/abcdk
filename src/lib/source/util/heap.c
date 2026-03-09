@@ -4,6 +4,7 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
+
 #include "abcdk/util/heap.h"
 
 void abcdk_heap_trim (size_t pad)

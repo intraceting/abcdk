@@ -4,6 +4,12 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/object.h"
+#include "abcdk/util/tree.h"
+#include "abcdk/util/string.h"
+#include "abcdk/util/scsi.h"
+#include "abcdk/util/mediumx.h"
+#include "abcdk/system/scsi.h"
 #include "abcdk/system/mediumx.h"
 
 

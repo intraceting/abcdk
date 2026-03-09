@@ -7,8 +7,7 @@
 #ifndef ABCDK_JSON_UTIL_H
 #define ABCDK_JSON_UTIL_H
 
-#include "abcdk/json/json.h"
-#include "abcdk/util/trace.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

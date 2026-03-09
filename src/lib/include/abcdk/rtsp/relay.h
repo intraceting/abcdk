@@ -7,10 +7,7 @@
 #ifndef ABCDK_RTSP_RELAY_H
 #define ABCDK_RTSP_RELAY_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/thread.h"
-#include "abcdk/ffmpeg/editor.h"
-#include "abcdk/rtsp/server.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

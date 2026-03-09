@@ -7,9 +7,7 @@
 #ifndef ABCDK_UTIL_MAP_H
 #define ABCDK_UTIL_MAP_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/tree.h"
-#include "abcdk/util/hash.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

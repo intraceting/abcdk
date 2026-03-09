@@ -4,6 +4,9 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/io.h"
+#include "abcdk/util/path.h"
 #include "abcdk/system/user.h"
 
 char *abcdk_user_dir_run(char *buf, const char *append)

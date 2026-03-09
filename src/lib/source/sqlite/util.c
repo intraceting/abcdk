@@ -4,7 +4,13 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/string.h"
+#include "abcdk/util/trace.h"
+#include "abcdk/sqlite/sqlite.h"
 #include "abcdk/sqlite/util.h"
+
 
 int abcdk_sqlite_backup(abcdk_sqlite_backup_param *param)
 {

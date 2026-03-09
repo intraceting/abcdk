@@ -7,8 +7,8 @@
 #ifndef ABCDK_UTIL_ICONV_H
 #define ABCDK_UTIL_ICONV_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/trace.h"
+#include "abcdk/util/defs.h"
+
 
 #ifndef HAVE_ICONV_H
 typedef void *iconv_t;

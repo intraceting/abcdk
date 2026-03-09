@@ -4,6 +4,8 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/ffmpeg/ffmpeg.h"
+#include "abcdk/ffmpeg/util.h"
 #include "abcdk/xpu/image.h"
 #include "runtime.in.h"
 #include "context.in.h"

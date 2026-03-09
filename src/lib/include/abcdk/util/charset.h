@@ -7,7 +7,7 @@
 #ifndef ABCDK_UTIL_CHARSET_H
 #define ABCDK_UTIL_CHARSET_H
 
-#include "abcdk/util/general.h"
+#include "abcdk/util/defs.h"
 
 
 __BEGIN_DECLS

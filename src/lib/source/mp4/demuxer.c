@@ -4,6 +4,11 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
+#include "abcdk/util/object.h"
+#include "abcdk/util/tree.h"
+#include "abcdk/util/heap.h"
+#include "abcdk/mp4/atom.h"
+#include "abcdk/mp4/file.h"
 #include "abcdk/mp4/demuxer.h"
 
 /*

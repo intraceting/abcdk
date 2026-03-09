@@ -7,11 +7,7 @@
 #ifndef ABCDK_UTIL_NONCE_H
 #define ABCDK_UTIL_NONCE_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/registry.h"
-#include "abcdk/util/timer.h"
-#include "abcdk/util/bloom.h"
-#include "abcdk/util/random.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

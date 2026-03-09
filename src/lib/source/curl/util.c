@@ -4,6 +4,12 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/io.h"
+#include "abcdk/util/uri.h"
+#include "abcdk/util/trace.h"
+#include "abcdk/curl/curl.h"
 #include "abcdk/curl/util.h"
 
 static size_t _abcdk_curl_download_write_cb(void *buffer, size_t size, size_t nmemb, void *user_p)

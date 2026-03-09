@@ -4,6 +4,8 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/ffmpeg/ffmpeg.h"
+#include "abcdk/ffmpeg/sws.h"
 #include "abcdk/xpu/pixfmt.h"
 #include "runtime.in.h"
 

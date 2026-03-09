@@ -4,6 +4,7 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/io.h"
 #include "abcdk/xpu/stitcher.h"
 #include "runtime.in.h"
 #include "context.in.h"

@@ -4,6 +4,15 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/io.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/tree.h"
+#include "abcdk/util/string.h"
+#include "abcdk/util/socket.h"
+#include "abcdk/util/exec.h"
+#include "abcdk/util/trace.h"
+#include "abcdk/system/proc.h"
 #include "abcdk/system/net.h"
 
 int abcdk_net_get_link_state(const char *ifname)

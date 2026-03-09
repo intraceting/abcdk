@@ -7,10 +7,7 @@
 #ifndef ABCDK_UTIL_REGISTRY_H
 #define ABCDK_UTIL_REGISTRY_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/map.h"
-#include "abcdk/util/rwlock.h"
-#include "abcdk/util/context.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

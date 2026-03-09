@@ -7,13 +7,7 @@
 #ifndef ABCDK_NET_SRPC_H
 #define ABCDK_NET_SRPC_H
 
-#include "abcdk/util/trace.h"
-#include "abcdk/util/receiver.h"
-#include "abcdk/util/waiter.h"
-#include "abcdk/util/bit.h"
-#include "abcdk/util/random.h"
-#include "abcdk/util/timer.h"
-#include "abcdk/net/stcp.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

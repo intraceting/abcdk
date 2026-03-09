@@ -4,6 +4,12 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/general.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/scsi.h"
+#include "abcdk/util/iconv.h"
+#include "abcdk/util/endian.h"
+#include "abcdk/util/bit.h"
 #include "abcdk/util/tape.h"
 
 

@@ -7,13 +7,7 @@
 #ifndef ABCDK_UTIL_LOGGER_H
 #define ABCDK_UTIL_LOGGER_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/time.h"
-#include "abcdk/util/object.h"
-#include "abcdk/util/uri.h"
-#include "abcdk/util/mutex.h"
-#include "abcdk/util/trace.h"
-#include "abcdk/util/string.h"
+#include "abcdk/util/defs.h"
 
 
 __BEGIN_DECLS
