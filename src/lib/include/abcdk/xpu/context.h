@@ -8,8 +8,7 @@
 #define ABCDK_XPU_CONTEXT_H
 
 #include "abcdk/xpu/types.h"
-#include "abcdk/util/trace.h"
-#include "abcdk/util/atomic.h"
+
 
 __BEGIN_DECLS
 

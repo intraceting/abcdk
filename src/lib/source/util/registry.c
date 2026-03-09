@@ -14,6 +14,7 @@
 #include "abcdk/util/map.h"
 #include "abcdk/util/rwlock.h"
 #include "abcdk/util/context.h"
+#include "abcdk/util/hash.h"
 #include "abcdk/util/registry.h"
 
 /**简单的注册表. */

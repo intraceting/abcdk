@@ -13,6 +13,7 @@
 #include "abcdk/util/pool.h"
 #include "abcdk/util/thread.h"
 #include "abcdk/util/clock.h"
+#include "abcdk/util/io.h"
 #include "abcdk/util/epoll.h"
 #include "abcdk/util/socket.h"
 #include "abcdk/util/mutex.h"

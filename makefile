@@ -23,7 +23,8 @@ VERSION_STR_FULL = ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}
 
 #
 C_FLAGS += -std=${C_STD} 
-C_FLAGS += -fPIC 
+C_FLAGS += -fPIC
+C_FLAGS += -Werror 
 C_FLAGS += -Wno-unused-result
 C_FLAGS += -Wno-unused-variable 
 C_FLAGS += -Wno-pointer-sign 
@@ -45,6 +46,7 @@ C_FLAGS += -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
 #
 CXX_FLAGS += -std=${CXX_STD}
 CXX_FLAGS += -fPIC 
+CXX_FLAGS += -Werror 
 CXX_FLAGS += -Wno-unused-result
 CXX_FLAGS += -Wno-unused-variable 
 #CXX_FLAGS += -Wno-pointer-sign 

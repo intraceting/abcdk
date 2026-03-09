@@ -5,6 +5,7 @@
  *
  */
 #include "abcdk/util/general.h"
+#include "abcdk/util/heap.h"
 #include "abcdk/util/wred.h"
 
 /**简单的WRED(加权随机早期检测)算法. */

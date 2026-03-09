@@ -8,8 +8,6 @@
 #define ABCDK_XPU_CALIBRATE_H
 
 #include "abcdk/xpu/image.h"
-#include "abcdk/util/object.h"
-#include "abcdk/util/mmap.h"
 
 __BEGIN_DECLS
 

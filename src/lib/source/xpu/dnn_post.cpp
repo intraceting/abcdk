@@ -7,6 +7,7 @@
 #include "abcdk/util/trace.h"
 #include "abcdk/util/object.h"
 #include "abcdk/util/string.h"
+#include "abcdk/util/option.h"
 #include "abcdk/xpu/dnn_post.h"
 #include "runtime.in.h"
 

@@ -7,9 +7,7 @@
 #ifndef ABCDK_XPU_VENC_H
 #define ABCDK_XPU_VENC_H
 
-#include "abcdk/ffmpeg/ffmpeg.h"
-#include "abcdk/ffmpeg/encoder.h"
-#include "abcdk/xpu/image.h"
+#include "abcdk/xpu/types.h"
 
 
 __BEGIN_DECLS

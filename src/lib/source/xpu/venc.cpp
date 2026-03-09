@@ -4,8 +4,11 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
-#include "abcdk/util/trace.h"
+#include "abcdk/util/atomic.h"
 #include "abcdk/util/object.h"
+#include "abcdk/util/option.h"
+#include "abcdk/util/trace.h"
+#include "abcdk/xpu/image.h"
 #include "abcdk/xpu/venc.h"
 #include "runtime.in.h"
 #include "context.in.h"

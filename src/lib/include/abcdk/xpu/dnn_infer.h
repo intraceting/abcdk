@@ -8,8 +8,8 @@
 #define ABCDK_XPU_DNN_INFER_H
 
 #include "abcdk/xpu/types.h"
-#include "abcdk/xpu/image.h"
-#include "abcdk/util/option.h"
+
+
 
 __BEGIN_DECLS
 

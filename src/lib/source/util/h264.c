@@ -10,6 +10,8 @@
 #include "abcdk/util/string.h"
 #include "abcdk/util/trace.h"
 #include "abcdk/util/bit.h"
+#include "abcdk/util/bloom.h"
+#include "abcdk/util/h2645.h"
 #include "abcdk/util/h264.h"
 
 void abcdk_h264_extradata_clean(abcdk_h264_extradata_t *extdata)

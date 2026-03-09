@@ -4,6 +4,13 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/atomic.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/option.h"
+#include "abcdk/util/trace.h"
+#include "abcdk/ffmpeg/ffmpeg.h"
+#include "abcdk/ffmpeg/decoder.h"
+#include "abcdk/xpu/image.h"
 #include "vdec.hxx"
 
 namespace abcdk_xpu

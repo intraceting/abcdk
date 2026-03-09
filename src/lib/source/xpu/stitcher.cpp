@@ -4,8 +4,12 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/util/atomic.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/option.h"
 #include "abcdk/util/trace.h"
 #include "abcdk/util/io.h"
+#include "abcdk/util/mmap.h"
 #include "abcdk/xpu/stitcher.h"
 #include "runtime.in.h"
 #include "context.in.h"

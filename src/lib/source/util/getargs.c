@@ -5,6 +5,7 @@
  * 
  */
 #include "abcdk/util/general.h"
+#include "abcdk/util/heap.h"
 #include "abcdk/util/option.h"
 #include "abcdk/util/io.h"
 #include "abcdk/util/object.h"

@@ -5,10 +5,13 @@
  * 
  */
 #include "abcdk/util/general.h"
+#include "abcdk/util/heap.h"
 #include "abcdk/util/path.h"
 #include "abcdk/util/io.h"
 #include "abcdk/util/endian.h"
 #include "abcdk/util/bloom.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/string.h"
 #include "abcdk/util/socket.h"
 
 void abcdk_sockaddr_copy(const abcdk_sockaddr_t *src, abcdk_sockaddr_t *dst)
