@@ -7,7 +7,7 @@
 #ifndef ABCDK_UTIL_SDP_H
 #define ABCDK_UTIL_SDP_H
 
-#include "abcdk/util/defs.h"
+#include "abcdk/util/object.h"
 
 __BEGIN_DECLS
 

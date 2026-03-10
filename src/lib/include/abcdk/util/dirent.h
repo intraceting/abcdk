@@ -7,7 +7,7 @@
 #ifndef ABCDK_UTIL_DIRENT_H
 #define ABCDK_UTIL_DIRENT_H
 
-#include "abcdk/util/defs.h"
+#include "abcdk/util/tree.h"
 
 __BEGIN_DECLS
 

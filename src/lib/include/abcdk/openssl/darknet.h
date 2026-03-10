@@ -7,7 +7,7 @@
 #ifndef ABCDK_OPENSSL_DARKNET_H
 #define ABCDK_OPENSSL_DARKNET_H
 
-#include "abcdk/util/defs.h"
+#include "abcdk/openssl/openssl.h"
 
 __BEGIN_DECLS
 

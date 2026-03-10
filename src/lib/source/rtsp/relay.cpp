@@ -14,6 +14,7 @@
 #include "abcdk/util/trace.h"
 #include "abcdk/ffmpeg/ffmpeg.h"
 #include "abcdk/ffmpeg/editor.h"
+#include "abcdk/rtsp/rtsp.h"
 #include "abcdk/rtsp/server.h"
 #include "abcdk/rtsp/relay.h"
 

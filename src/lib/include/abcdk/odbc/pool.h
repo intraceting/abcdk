@@ -7,7 +7,7 @@
 #ifndef ABCDK_ODBC_POOL_H
 #define ABCDK_ODBC_POOL_H
 
-#include "abcdk/util/defs.h"
+#include "abcdk/odbc/easy.h"
 
 __BEGIN_DECLS
 

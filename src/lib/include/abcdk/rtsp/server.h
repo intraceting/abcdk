@@ -7,9 +7,7 @@
 #ifndef ABCDK_RTSP_SERVER_H
 #define ABCDK_RTSP_SERVER_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/object.h"
-#include "abcdk/rtsp/rtsp.h"
+#include "abcdk/util/defs.h"
 
 __BEGIN_DECLS
 

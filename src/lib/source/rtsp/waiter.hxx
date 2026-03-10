@@ -7,7 +7,7 @@
 #ifndef ABCDK_RTSP_WAITER_HXX
 #define ABCDK_RTSP_WAITER_HXX
 
-#include "abcdk/rtsp/rtsp.h"
+#include "abcdk/util/general.h"
 #include "abcdk/util/waiter.h"
 
 namespace abcdk

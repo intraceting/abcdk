@@ -7,7 +7,7 @@
 #ifndef ABCDK_OPENSSL_CIPHEREX_H
 #define ABCDK_OPENSSL_CIPHEREX_H
 
-#include "abcdk/util/defs.h"
+#include "abcdk/util/object.h"
 
 __BEGIN_DECLS
 

@@ -7,7 +7,7 @@
 #ifndef ABCDK_REDIS_UTIL_H
 #define ABCDK_REDIS_UTIL_H
 
-#include "abcdk/util/defs.h"
+#include "abcdk/redis/redis.h"
 
 __BEGIN_DECLS
 

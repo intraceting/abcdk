@@ -7,7 +7,7 @@
 #ifndef ABCDK_SYSTEM_PROC_H
 #define ABCDK_SYSTEM_PROC_H
 
-#include "abcdk/util/defs.h"
+#include "abcdk/util/exec.h"
 
 __BEGIN_DECLS
 

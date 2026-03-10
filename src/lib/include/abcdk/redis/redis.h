@@ -7,7 +7,7 @@
 #ifndef ABCDK_REDIS_REDIS_H
 #define ABCDK_REDIS_REDIS_H
 
-#include "abcdk/util/general.h"
+#include "abcdk/util/defs.h"
 
 #ifdef HAVE_HIREDIS
 #include <hiredis/hiredis.h>

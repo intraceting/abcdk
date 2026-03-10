@@ -7,9 +7,7 @@
 #ifndef ABCDK_UTIL_HEXDUMP_H
 #define ABCDK_UTIL_HEXDUMP_H
 
-#include "abcdk/util/general.h"
 #include "abcdk/util/object.h"
-#include "abcdk/util/tree.h"
 
 __BEGIN_DECLS
 

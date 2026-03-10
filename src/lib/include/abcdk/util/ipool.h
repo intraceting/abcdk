@@ -7,7 +7,7 @@
 #ifndef ABCDK_UTIL_IPOOL_H
 #define ABCDK_UTIL_IPOOL_H
 
-#include "abcdk/util/defs.h"
+#include "abcdk/util/socket.h"
 
 __BEGIN_DECLS
 

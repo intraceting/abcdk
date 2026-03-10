@@ -7,7 +7,7 @@
 #ifndef ABCDK_UTIL_RTP_H
 #define ABCDK_UTIL_RTP_H
 
-#include "abcdk/util/defs.h"
+#include "abcdk/util/queue.h"
 
 __BEGIN_DECLS
 

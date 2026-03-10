@@ -7,7 +7,7 @@
 #ifndef ABCDK_SYSTEM_MEDIUMX_H
 #define ABCDK_SYSTEM_MEDIUMX_H
 
-#include "abcdk/util/defs.h"
+#include "abcdk/util/tree.h"
 
 __BEGIN_DECLS
 

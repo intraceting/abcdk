@@ -7,7 +7,8 @@
 #ifndef ABCDK_QRCODE_UTIL_H
 #define ABCDK_QRCODE_UTIL_H
 
-#include "abcdk/util/defs.h"
+#include "abcdk/qrcode/qrcode.h"
+#include "abcdk/util/object.h"
 
 __BEGIN_DECLS
 

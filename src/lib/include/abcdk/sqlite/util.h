@@ -7,7 +7,7 @@
 #ifndef ABCDK_SQLITE_UTIL_H
 #define ABCDK_SQLITE_UTIL_H
 
-#include "abcdk/util/defs.h"
+#include "abcdk/sqlite/sqlite.h"
 
 __BEGIN_DECLS
 

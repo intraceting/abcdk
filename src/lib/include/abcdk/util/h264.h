@@ -7,7 +7,7 @@
 #ifndef ABCDK_UTIL_H264_H
 #define ABCDK_UTIL_H264_H
 
-#include "abcdk/util/defs.h"
+#include "abcdk/util/object.h"
 
 __BEGIN_DECLS
 

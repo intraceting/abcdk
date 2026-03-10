@@ -7,7 +7,7 @@
 #ifndef ABCDK_UTIL_GETARGS_H
 #define ABCDK_UTIL_GETARGS_H
 
-#include "abcdk/util/defs.h"
+#include "abcdk/util/option.h"
 
 __BEGIN_DECLS
 
