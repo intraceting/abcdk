@@ -8,6 +8,7 @@
 #define ABCDK_UTIL_TREE_H
 
 #include "abcdk/util/defs.h"
+#include "abcdk/util/object.h"
 
 __BEGIN_DECLS
 

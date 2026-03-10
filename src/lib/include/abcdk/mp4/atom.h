@@ -8,6 +8,7 @@
 #define ABCDK_MP4_ATOM_H
 
 #include "abcdk/util/defs.h"
+#include "abcdk/util/tree.h"
 
 __BEGIN_DECLS
 

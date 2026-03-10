@@ -7,6 +7,8 @@
 #ifndef ABCDK_CURL_CURL_H
 #define ABCDK_CURL_CURL_H
 
+#include "abcdk/util/defs.h"
+
 #ifdef HAVE_CURL
 #include <curl/curl.h>
 #endif // HAVE_CURL
