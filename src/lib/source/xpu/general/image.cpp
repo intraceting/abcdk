@@ -29,6 +29,22 @@ namespace abcdk_xpu
                 common::image::clear(ctx);
             }
 
+            void zero(metadata_t *ctx)
+            {
+                int real_height[4] = {0};
+                int chk_height;
+
+                chk_height = abcdk_ffmpeg_image_fill_height(real_height, ctx->height, (AVPixelFormat)ctx->format);
+
+                for (int i = 0; i < 4; i++)
+                {
+                    if (ctx->data[i] == NULL || ctx->linesize[i] <= 0)
+                        break;
+
+                    memset(ctx->data[i], 0, ctx->linesize[i] * real_height[i]);
+                }
+            }
+
             int _get_buffer(AVFrame *ctx, int width, int height, AVPixelFormat pixfmt, int align)
             {
                 ctx->width = width;
@@ -99,7 +115,7 @@ namespace abcdk_xpu
                         break;
 
                     if (new_stride[i] != ctx_p->linesize[i])
-                        break;
+                        goto NEW;
                 }
 
                 for (int i = 0; i < 4; i++)
@@ -108,8 +124,9 @@ namespace abcdk_xpu
                         break;
 
                     if (new_height[i] != old_height[i])
-                        break;
+                        goto NEW;
                 }
+
 
                 return 0;
 

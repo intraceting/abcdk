@@ -27,6 +27,8 @@ namespace abcdk_xpu
 
             void clear(metadata_t *ctx);
 
+            void zero(metadata_t *ctx);
+
             int get_buffer(metadata_t *ctx, int width, int height, abcdk_xpu_pixfmt_t pixfmt, int align);
 
             metadata_t *create(int width, int height, abcdk_xpu_pixfmt_t pixfmt, int align);

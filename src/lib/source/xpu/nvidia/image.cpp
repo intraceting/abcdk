@@ -28,6 +28,22 @@ namespace abcdk_xpu
                 common::image::clear(ctx);
             }
 
+            void zero(metadata_t *ctx)
+            {
+                int real_height[4] = {0};
+                int chk_height;
+
+                chk_height = abcdk_ffmpeg_image_fill_height(real_height, ctx->height, (AVPixelFormat)ctx->format);
+
+                for (int i = 0; i < 4; i++)
+                {
+                    if (ctx->data[i] == NULL || ctx->linesize[i] <= 0)
+                        break;
+
+                    memory::memset(ctx->data[i], 0, ctx->linesize[i] * real_height[i]);
+                }
+            }
+
             static void _free_buffer(void *opaque, uint8_t *data)
             {
                 int in_host = (size_t)opaque;
@@ -136,7 +152,7 @@ namespace abcdk_xpu
                         break;
 
                     if (new_stride[i] != ctx_p->linesize[i])
-                        break;
+                        goto NEW;
                 }
 
                 for (int i = 0; i < 4; i++)
@@ -145,7 +161,7 @@ namespace abcdk_xpu
                         break;
 
                     if (new_height[i] != old_height[i])
-                        break;
+                        goto NEW;
                 }
 
                 return 0;

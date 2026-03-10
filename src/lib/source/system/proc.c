@@ -5,6 +5,9 @@
  * 
  */
 #include "abcdk/util/general.h"
+#include "abcdk/util/heap.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/string.h"
 #include "abcdk/util/io.h"
 #include "abcdk/util/path.h"
 #include "abcdk/util/signal.h"

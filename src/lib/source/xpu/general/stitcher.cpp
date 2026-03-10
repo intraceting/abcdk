@@ -212,6 +212,8 @@ namespace abcdk_xpu
                 if (chk != 0)
                     return chk;
 
+                image::zero(*out);//set 0.
+
                 for (int i = 0; i < ctx->co_ctx->m_blend_idxs.size(); i++)
                 {
                     int idx = ctx->co_ctx->m_blend_idxs[i];

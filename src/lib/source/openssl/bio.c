@@ -8,6 +8,7 @@
 #include "abcdk/util/object.h"
 #include "abcdk/openssl/openssl.h"
 #include "abcdk/openssl/darknet.h"
+#include "abcdk/openssl/util.h"
 #include "abcdk/openssl/bio.h"
 
 #ifdef HAVE_OPENSSL
