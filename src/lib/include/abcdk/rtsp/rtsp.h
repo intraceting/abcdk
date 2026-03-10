@@ -7,7 +7,7 @@
 #ifndef ABCDK_RTSP_RTSP_H
 #define ABCDK_RTSP_RTSP_H
 
-#include "abcdk/openssl/openssl.h"
+#include "abcdk/util/defs.h"
 
 #ifdef HAVE_LIVE555
 #ifdef __cplusplus
