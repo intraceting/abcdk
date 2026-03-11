@@ -7,7 +7,8 @@
 #ifndef ABCDK_NET_STCP_H
 #define ABCDK_NET_STCP_H
 
-#include "abcdk/util/defs.h"
+#include "abcdk/openssl/openssl.h"
+#include "abcdk/util/socket.h"
 
 __BEGIN_DECLS
 

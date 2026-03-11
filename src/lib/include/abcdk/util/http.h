@@ -8,6 +8,8 @@
 #define ABCDK_UTIL_HTTP_H
 
 #include "abcdk/util/object.h"
+#include "abcdk/util/option.h"
+#include "abcdk/util/md5.h"
 
 __BEGIN_DECLS
 

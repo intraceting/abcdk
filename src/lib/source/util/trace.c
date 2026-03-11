@@ -39,7 +39,7 @@ void abcdk_trace_output(int type, const char *str)
     abcdk_thread_getname(pthread_self(), name);
 
     /*格式化行的头部: TIME, PID, TYPE, NAME*/
-    hdrlen = snprintf(buf, sizeof(buf), "[%04d%02d%02dT%02d%02d%02d.%06llu][%d][%d][%s]: ",
+    hdrlen = snprintf(buf, sizeof(buf), "[%04d-%02d-%02dT%02d:%02d:%02d.%06llu][%d][%d][%s]: ",
                       tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, ts % 1000000UL, getpid(), type, name);
 
 next_line:

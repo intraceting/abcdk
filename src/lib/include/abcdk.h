@@ -114,6 +114,7 @@
 #include "abcdk/net/stcp.h"
 #include "abcdk/net/sudp.h"
 #include "abcdk/net/srpc.h"
+#include "abcdk/net/hsvr.h"
 
 #include "abcdk/lz4/lz4.h"
 #include "abcdk/lz4/util.h"

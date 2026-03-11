@@ -7,7 +7,7 @@
 #ifndef ABCDK_NET_SUDP_H
 #define ABCDK_NET_SUDP_H
 
-#include "abcdk/util/defs.h"
+#include "abcdk/util/socket.h"
 
 __BEGIN_DECLS
 

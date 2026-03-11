@@ -32,6 +32,7 @@ static struct _abcdk_tool_entry
     {"basecode",abcdk_tool_basecode},
     {"mcdump",abcdk_tool_mcdump},
     {"uart",abcdk_tool_uart},
+    {"httpd",abcdk_tool_httpd},
     {"calibrate",abcdk_tool_calibrate},
     {"stitcher",abcdk_tool_stitcher},
     {"undistort",abcdk_tool_undistort}
