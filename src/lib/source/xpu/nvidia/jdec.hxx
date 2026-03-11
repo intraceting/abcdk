@@ -7,7 +7,7 @@
 #ifndef ABCDK_XPU_NVIDIA_JDEC_HXX
 #define ABCDK_XPU_NVIDIA_JDEC_HXX
 
-#include "../runtime.in.h"
+#include "../base.in.h"
 #include "../common/imgproc.hxx"
 #include "image.hxx"
 #include "imgproc.hxx"

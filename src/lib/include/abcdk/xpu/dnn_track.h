@@ -7,6 +7,7 @@
 #ifndef ABCDK_XPU_DNN_TRACK_H
 #define ABCDK_XPU_DNN_TRACK_H
 
+#include "abcdk/util/atomic.h"
 #include "abcdk/xpu/types.h"
 
 __BEGIN_DECLS

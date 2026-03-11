@@ -8,7 +8,7 @@
 #define ABCDK_XPU_COMMON_IMGPROC_HXX
 
 #include "abcdk/xpu/imgproc.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 #include "imgproc_brightness.hxx"
 #include "imgproc_compose.hxx"
 #include "imgproc_rectangle.hxx"

@@ -8,7 +8,7 @@
 #define ABCDK_XPU_NVIDIA_RUNTIME_HXX
 
 #include "abcdk/xpu/runtime.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 
 namespace abcdk_xpu
 {

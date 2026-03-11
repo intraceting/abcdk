@@ -8,7 +8,7 @@
 #define ABCDK_XPU_GENERAL_IMGPROC_HXX
 
 #include "abcdk/xpu/imgproc.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 #include "../common/imgproc.hxx"
 #include "../common/util.hxx"
 #include "image.hxx"

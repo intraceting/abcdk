@@ -8,7 +8,7 @@
 #define ABCDK_XPU_NVIDIA_MEMORY_HXX
 
 #include "abcdk/xpu/runtime.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 #include "../common/imgproc.hxx"
 
 namespace abcdk_xpu

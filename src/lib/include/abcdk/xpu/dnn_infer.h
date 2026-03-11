@@ -7,8 +7,8 @@
 #ifndef ABCDK_XPU_DNN_INFER_H
 #define ABCDK_XPU_DNN_INFER_H
 
+#include "abcdk/util/option.h"
 #include "abcdk/xpu/types.h"
-
 
 
 __BEGIN_DECLS

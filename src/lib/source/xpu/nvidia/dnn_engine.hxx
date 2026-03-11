@@ -8,7 +8,7 @@
 #define ABCDK_XPU_NVIDIA_DNN_ENGINE_HXX
 
 #include "abcdk/xpu/types.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 #include "../common/util.hxx"
 #include "dnn_logger.hxx"
 #include "dnn_tensor.hxx"

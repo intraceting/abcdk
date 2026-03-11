@@ -13,7 +13,7 @@
 #include "abcdk/util/object.h"
 #include "abcdk/util/string.h"
 #include "abcdk/xpu/dnn_track.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 #include "util.hxx"
 #include "dnn_mot.hxx"
 #include "bytetrack/BYTETracker.h"

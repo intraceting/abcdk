@@ -40,7 +40,7 @@ namespace abcdk_xpu
                     if (ctx->data[i] == NULL || ctx->linesize[i] <= 0)
                         break;
 
-                    memory::memset(ctx->data[i], 0, ctx->linesize[i] * real_height[i]);
+                    memory::memset(ctx->data[i], 0, ctx->linesize[i] * real_height[i], 0);
                 }
             }
 

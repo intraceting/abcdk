@@ -7,6 +7,7 @@
 #ifndef ABCDK_XPU_STITCHER_H
 #define ABCDK_XPU_STITCHER_H
 
+#include "abcdk/util/object.h"
 #include "abcdk/xpu/image.h"
 
 __BEGIN_DECLS

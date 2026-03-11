@@ -8,7 +8,7 @@
 #define ABCDK_XPU_COMMON_DNN_MOT_HXX
 
 #include "abcdk/xpu/dnn_track.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 
 namespace abcdk_xpu
 {

@@ -8,7 +8,7 @@
 #define ABCDK_XPU_GENERAL_VCODEC_UTIL_HXX
 
 #include "abcdk/xpu/types.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 
 namespace abcdk_xpu
 {

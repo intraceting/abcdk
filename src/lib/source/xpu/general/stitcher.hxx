@@ -8,7 +8,7 @@
 #define ABCDK_XPU_GENERAL_STITCHER_HXX
 
 #include "abcdk/xpu/stitcher.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 #include "../common/stitcher.hxx"
 #include "../common/util.hxx"
 #include "image.hxx"

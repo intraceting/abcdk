@@ -9,7 +9,7 @@
 
 #include "abcdk/util/trace.h"
 #include "abcdk/xpu/dnn_post.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 #include "util.hxx"
 #include "ndarray.hxx"
 #include "dnn_object.hxx"

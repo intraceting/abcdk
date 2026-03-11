@@ -7,8 +7,10 @@
 #ifndef ABCDK_XPU_NVIDIA_COMTEXT_HXX
 #define ABCDK_XPU_NVIDIA_COMTEXT_HXX
 
+#include "abcdk/util/trace.h"
+#include "abcdk/util/atomic.h"
 #include "abcdk/xpu/context.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 
 namespace abcdk_xpu
 {

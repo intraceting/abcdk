@@ -8,7 +8,7 @@
 #define ABCDK_XPU_COMMON_CALIBRATE_HXX
 
 #include "abcdk/xpu/calibrate.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 #include "util.hxx"
 #include "imgproc.hxx"
 

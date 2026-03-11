@@ -8,7 +8,7 @@
 #define ABCDK_XPU_NVIDIA_CALIBRATE_HXX
 
 #include "abcdk/xpu/calibrate.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 #include "../common/calibrate.hxx"
 #include "../common/util.hxx"
 #include "image.hxx"

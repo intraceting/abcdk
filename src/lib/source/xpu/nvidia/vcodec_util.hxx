@@ -8,7 +8,7 @@
 #define ABCDK_XPU_NVIDIA_VCODEC_UTIL_HXX
 
 #include "abcdk/xpu/types.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 
 #ifdef __x86_64__
 #include "ffnvcodec/dynlink_loader.h"

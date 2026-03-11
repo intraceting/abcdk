@@ -9,7 +9,7 @@
 
 #include "abcdk/util/object.h"
 #include "abcdk/xpu/types.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 #include "../common/util.hxx"
 #include "../common/dnn_yolo_v11.hxx"
 #include "image.hxx"

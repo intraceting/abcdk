@@ -7,6 +7,7 @@
 #ifndef ABCDK_XPU_DNN_POST_H
 #define ABCDK_XPU_DNN_POST_H
 
+#include "abcdk/util/atomic.h"
 #include "abcdk/xpu/types.h"
 
 

@@ -10,7 +10,7 @@
 #include "abcdk/ffmpeg/ffmpeg.h"
 #include "abcdk/ffmpeg/util.h"
 #include "abcdk/xpu/imgproc.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 #include "util.hxx"
 
 namespace abcdk_xpu

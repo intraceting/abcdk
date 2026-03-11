@@ -8,7 +8,7 @@
 #define ABCDK_XPU_COMMON_DNN_OBJECT_HXX
 
 #include "abcdk/xpu/dnn_post.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 
 namespace abcdk_xpu
 {

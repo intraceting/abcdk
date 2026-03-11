@@ -7,8 +7,9 @@
 #ifndef ABCDK_XPU_NVIDIA_DNN_TENSOR_HXX
 #define ABCDK_XPU_NVIDIA_DNN_TENSOR_HXX
 
+#include "abcdk/util/option.h"
 #include "abcdk/xpu/types.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 #include "image.hxx"
 #include "memory.hxx"
 #include "imgproc.hxx"

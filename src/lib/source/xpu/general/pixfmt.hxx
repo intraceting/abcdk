@@ -8,7 +8,7 @@
 #define ABCDK_XPU_GENERAL_PIXFMT_HXX
 
 #include "abcdk/xpu/pixfmt.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 #include "../common/pixfmt.hxx"
 
 namespace abcdk_xpu

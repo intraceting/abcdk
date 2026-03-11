@@ -8,7 +8,7 @@
 #define ABCDK_XPU_GENERAL_DNN_TENSOR_HXX
 
 #include "abcdk/xpu/types.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 #include "../common/util.hxx"
 #include "image.hxx"
 #include "imgproc.hxx"

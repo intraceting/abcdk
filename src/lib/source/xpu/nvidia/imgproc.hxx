@@ -8,7 +8,7 @@
 #define ABCDK_XPU_NVIDIA_IMGPROC_HXX
 
 #include "abcdk/xpu/imgproc.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 #include "../common/imgproc.hxx"
 #include "image.hxx"
 

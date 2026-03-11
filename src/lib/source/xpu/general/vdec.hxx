@@ -8,7 +8,7 @@
 #define ABCDK_XPU_GENERAL_VDEC_HXX
 
 #include "abcdk/xpu/vdec.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 #include "vcodec_util.hxx"
 #include "context.hxx"
 #include "image.hxx"

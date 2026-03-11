@@ -8,7 +8,7 @@
 #define ABCDK_XPU_COMMON_IMGCODEC_HXX
 
 #include "abcdk/xpu/imgcodec.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 #include "util.hxx"
 
 namespace abcdk_xpu

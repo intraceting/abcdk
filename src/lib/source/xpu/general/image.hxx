@@ -8,7 +8,7 @@
 #define ABCDK_XPU_GENERAL_IMAGE_HXX
 
 #include "abcdk/xpu/image.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 #include "../common/image.hxx"
 #include "pixfmt.hxx"
 

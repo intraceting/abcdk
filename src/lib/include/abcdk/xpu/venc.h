@@ -7,7 +7,7 @@
 #ifndef ABCDK_XPU_VENC_H
 #define ABCDK_XPU_VENC_H
 
-#include "abcdk/xpu/types.h"
+#include "abcdk/xpu/image.h"
 
 
 __BEGIN_DECLS

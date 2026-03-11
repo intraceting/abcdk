@@ -8,7 +8,7 @@
 #define ABCDK_XPU_NVIDIA_DNN_INFER_HXX
 
 #include "abcdk/xpu/image.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 #include "../common/util.hxx"
 #include "dnn_engine.hxx"
 

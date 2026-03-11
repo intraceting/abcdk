@@ -7,8 +7,9 @@
 #ifndef ABCDK_XPU_GENERAL_COMTEXT_HXX
 #define ABCDK_XPU_GENERAL_COMTEXT_HXX
 
+#include "abcdk/util/atomic.h"
 #include "abcdk/xpu/context.h"
-#include "../runtime.in.h"
+#include "../base.in.h"
 
 namespace abcdk_xpu
 {

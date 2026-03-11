@@ -7,7 +7,7 @@
 #ifndef ABCDK_XPU_COMMON_UTIL_HXX
 #define ABCDK_XPU_COMMON_UTIL_HXX
 
-#include "../runtime.in.h"
+#include "../base.in.h"
 
 namespace abcdk_xpu
 {
