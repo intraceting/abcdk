@@ -4,6 +4,7 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  * 
  */
+#include "abcdk/util/trace.h"
 #include "abcdk/util/object.h"
 #include "abcdk/util/endian.h"
 #include "abcdk/openssl/openssl.h"

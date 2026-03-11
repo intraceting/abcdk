@@ -5,6 +5,7 @@
  *
  */
 #include "abcdk/util/general.h"
+#include "abcdk/util/trace.h"
 #include "abcdk/util/heap.h"
 #include "abcdk/util/object.h"
 #include "abcdk/util/stream.h"

@@ -1008,6 +1008,7 @@ static int _test_xpu_12(abcdk_option_t *args)
 
 static int _test_xpu_13(abcdk_option_t *args)
 {
+#ifdef HAVE_FFMPEG
     const char *dst_file_p = NULL;
 
     int src_file_max = 4;
@@ -1157,6 +1158,7 @@ static int _test_xpu_13(abcdk_option_t *args)
         if (src_recv_count == src_file_num)
             break;
     }
+#endif //#ifdef HAVE_FFMPEG
 }
 
 int abcdk_test_xpu(abcdk_option_t *args)

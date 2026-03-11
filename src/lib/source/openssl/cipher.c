@@ -5,6 +5,7 @@
  *
  */
 #include "abcdk/util/general.h"
+#include "abcdk/util/trace.h"
 #include "abcdk/util/heap.h"
 #include "abcdk/util/bloom.h"
 #include "abcdk/util/sha256.h"

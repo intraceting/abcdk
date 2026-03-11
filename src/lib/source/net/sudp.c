@@ -24,6 +24,7 @@
 #include "abcdk/util/nonce.h"
 #include "abcdk/util/bit.h"
 #include "abcdk/util/io.h"
+#include "abcdk/util/random.h"
 #include "abcdk/openssl/openssl.h"
 #include "abcdk/openssl/cipher.h"
 #include "abcdk/openssl/cipherex.h"
