@@ -30,8 +30,6 @@ void _undistort_print_usage(abcdk_option_t *args)
     fprintf(stderr, ABCDK_GETTEXT("\t 硬件加速供应商. 默认: %d\n"), ABCDK_XPU_HWACCEL_NONE);
     fprintf(stderr, ABCDK_GETTEXT("\t %d: 无\n"), ABCDK_XPU_HWACCEL_NONE);
     fprintf(stderr, ABCDK_GETTEXT("\t %d: 英伟达\n"), ABCDK_XPU_HWACCEL_NVIDIA);
-    fprintf(stderr, ABCDK_GETTEXT("\t %d: 算能\n"), ABCDK_XPU_HWACCEL_SOPHON);
-    fprintf(stderr, ABCDK_GETTEXT("\t %d: 瑞芯微\n"), ABCDK_XPU_HWACCEL_ROCKCHIP);
 
     fprintf(stderr, "\n\t--undistort-param-file < FILE >\n");
     fprintf(stderr, ABCDK_GETTEXT("\t 矫正参数文件.\n"));

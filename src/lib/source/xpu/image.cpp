@@ -285,3 +285,15 @@ int abcdk_xpu_image_download(const abcdk_xpu_image_t *src, uint8_t *dst_data[4],
 
     return -1;
 }
+
+int abcdk_xpu_image_empty(const abcdk_xpu_image_t *src)
+{
+    int w, h;
+
+    assert(src != NULL);
+
+    w = abcdk_xpu_image_get_width(src);
+    h = abcdk_xpu_image_get_height(src);
+
+    return ((w * h <= 0) ? 1 : 0);
+}

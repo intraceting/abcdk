@@ -35,7 +35,8 @@ static struct _abcdk_tool_entry
     {"httpd",abcdk_tool_httpd},
     {"calibrate",abcdk_tool_calibrate},
     {"stitcher",abcdk_tool_stitcher},
-    {"undistort",abcdk_tool_undistort}
+    {"undistort",abcdk_tool_undistort},
+    {"videostitcher", abcdk_tool_videostitcher}
 };
 
 void _abcdk_tool_print_usage()

@@ -38,8 +38,6 @@ void _stitcher_print_usage(abcdk_option_t *args)
     fprintf(stderr, ABCDK_GETTEXT("\t 硬件加速供应商. 默认: %d\n"), ABCDK_XPU_HWACCEL_NONE);
     fprintf(stderr, ABCDK_GETTEXT("\t %d: 无\n"), ABCDK_XPU_HWACCEL_NONE);
     fprintf(stderr, ABCDK_GETTEXT("\t %d: 英伟达\n"), ABCDK_XPU_HWACCEL_NVIDIA);
-    fprintf(stderr, ABCDK_GETTEXT("\t %d: 算能\n"), ABCDK_XPU_HWACCEL_SOPHON);
-    fprintf(stderr, ABCDK_GETTEXT("\t %d: 瑞芯微\n"), ABCDK_XPU_HWACCEL_ROCKCHIP);
 
     fprintf(stderr, "\n\t--device-id < ID > \n");
     fprintf(stderr, ABCDK_GETTEXT("\t 设备ID. 默认: 0\n"));
@@ -283,7 +281,9 @@ END:
 
     abcdk_xpu_stitcher_free(&ctx->ctx);
 
+    abcdk_xpu_context_current_set(NULL);
     abcdk_xpu_context_unref(&ctx->dev_ctx);
+    
     abcdk_xpu_runtime_deinit();
 
     return;

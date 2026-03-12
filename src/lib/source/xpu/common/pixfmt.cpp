@@ -86,8 +86,6 @@ namespace abcdk_xpu
             {
                 struct _ffmpeg_dict *p;
 
-                assert(format > AV_PIX_FMT_NONE);
-
                 for (int i = 0; i < ABCDK_ARRAY_SIZE(ffmpeg_dict); i++)
                 {
                     p = &ffmpeg_dict[i];

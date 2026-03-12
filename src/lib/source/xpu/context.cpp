@@ -46,7 +46,9 @@ abcdk_xpu_context_t *_abcdk_xpu_context_current_get()
     ABCDK_TRACE_ASSERT(old_ctx != NULL, ABCDK_GETTEXT("当前线程未绑定设备环境."));
 
     if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NONE)
+    {
         return (abcdk_xpu_context_t *)abcdk_xpu::general::context::refer((abcdk_xpu::general::context::metadata_t *)old_ctx);
+    }
     else if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NVIDIA)
     {
 #if !defined(__XPU_NVIDIA__)
@@ -106,7 +108,9 @@ void abcdk_xpu_context_unref(abcdk_xpu_context_t **ctx)
     _abcdk_xpu_context_current_init();
 
     if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NONE)
+    {
         abcdk_xpu::general::context::unref((abcdk_xpu::general::context::metadata_t **)ctx);
+    }
     else if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NVIDIA)
     {
 #if !defined(__XPU_NVIDIA__)
@@ -128,7 +132,9 @@ abcdk_xpu_context_t *abcdk_xpu_context_refer(abcdk_xpu_context_t *ctx)
     _abcdk_xpu_context_current_init();
 
     if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NONE)
+    {
         return (abcdk_xpu_context_t *)abcdk_xpu::general::context::refer((abcdk_xpu::general::context::metadata_t *)ctx);
+    }
     else if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NVIDIA)
     {
 #if !defined(__XPU_NVIDIA__)
@@ -151,7 +157,9 @@ abcdk_xpu_context_t *abcdk_xpu_context_alloc(int id)
     _abcdk_xpu_context_current_init();
 
     if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NONE)
+    {
         return (abcdk_xpu_context_t *)abcdk_xpu::general::context::alloc(id);
+    }
     else if (_abcdk_xpu_hwaccel_get() == ABCDK_XPU_HWACCEL_NVIDIA)
     {
 #if !defined(__XPU_NVIDIA__)
