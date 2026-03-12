@@ -297,7 +297,7 @@ namespace abcdk_xpu
                     return _convert_cpu(dst, src);
                 }
 
-                if (npp_chk != NPP_SUCCESS)
+                if (npp_chk != NPP_SUCCESS && npp_chk != NPP_DOUBLE_SIZE_WARNING)
                     return -1;
 
                 return 0;

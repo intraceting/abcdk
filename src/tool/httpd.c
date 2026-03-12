@@ -148,7 +148,7 @@ void _abcdk_httpd_print_usage(abcdk_option_t *args)
 #endif // HEADER_SSL_H
 
     fprintf(stderr, "\n\t--root-path < PATH >\n");
-    fprintf(stderr, "\t\t服务器根据路径.默认: /var/abcdk/\n");
+    fprintf(stderr, "\t\t服务器根据路径.默认: ./\n");
 
     fprintf(stderr, "\n\t--up-max-size < SIZE >\n");
     fprintf(stderr, "\t\t上行数据最大长度(字节).默认: %d\n", 4 * 1024 * 1024);
@@ -596,7 +596,7 @@ static void _abcdk_httpd_process(abcdk_httpd_t *ctx)
     ctx->cert_file_p = abcdk_option_get(ctx->args, "--cert-file", 0, NULL);
     ctx->key_file_p = abcdk_option_get(ctx->args, "--key-file", 0, NULL);
 #endif // HAVE_OPENSSL
-    ctx->root_path_p = abcdk_option_get(ctx->args, "--root-path", 0, "/var/abcdk/");
+    ctx->root_path_p = abcdk_option_get(ctx->args, "--root-path", 0, "./");
     ctx->up_max_size = abcdk_option_get_llong(ctx->args, "--up-max-size", 0, 4 * 1024 * 1024);
     ctx->up_tmp_path_p = abcdk_option_get(ctx->args, "--up-tmp-path", 0, NULL);
     ctx->auto_index = abcdk_option_get_int(ctx->args, "--auto-index",0,0);
