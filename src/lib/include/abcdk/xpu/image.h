@@ -68,6 +68,13 @@ int abcdk_xpu_image_download(const abcdk_xpu_image_t *src,  uint8_t *dst_data[4]
  */
 int abcdk_xpu_image_empty(const abcdk_xpu_image_t *src);
 
+/**
+ * 克隆.
+ * 
+ * @return 0 成功, < 0 失败.
+ */
+int abcdk_xpu_image_clone(const abcdk_xpu_image_t *src, abcdk_xpu_image_t **dst, int dst_align);
+
 
 __END_DECLS
 

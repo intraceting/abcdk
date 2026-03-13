@@ -85,6 +85,7 @@
 #include "abcdk/util/sdp.h"
 #include "abcdk/util/http.h"
 #include "abcdk/util/logger.h"
+#include "abcdk/util/barrier.h"
 
 #include "abcdk/system/scsi.h"
 #include "abcdk/system/mtab.h"

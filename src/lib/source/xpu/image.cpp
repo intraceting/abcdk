@@ -297,3 +297,29 @@ int abcdk_xpu_image_empty(const abcdk_xpu_image_t *src)
 
     return ((w * h <= 0) ? 1 : 0);
 }
+
+int abcdk_xpu_image_clone(const abcdk_xpu_image_t *src, abcdk_xpu_image_t **dst, int dst_align)
+{
+    abcdk_xpu_pixfmt_t f;
+    int w, h;
+    int chk;
+
+    assert(src != NULL && dst != NULL && dst_align >= 0);
+
+    if (!abcdk_xpu_image_empty(src))
+        return -1;
+
+    w = abcdk_xpu_image_get_width(src);
+    h = abcdk_xpu_image_get_height(src);
+    f = abcdk_xpu_image_get_pixfmt(src);
+
+    chk = abcdk_xpu_image_reset(dst, w, h, f, dst_align);
+    if (chk != 0)
+        return chk;
+
+    chk = abcdk_xpu_image_copy(src, *dst);
+    if (chk != 0)
+        return chk;
+
+    return 0;
+}

@@ -28,6 +28,7 @@ void abcdk_rwlock_destroy(abcdk_rwlock_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
+    pthread_rwlockattr_destroy(&ctx_p->rwattr);
     pthread_rwlock_destroy(&ctx_p->rwlock);
     abcdk_heap_free(ctx_p);
     

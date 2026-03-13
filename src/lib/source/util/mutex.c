@@ -13,24 +13,10 @@
 */
 struct _abcdk_mutex
 {
-    /**
-     * 事件属性.
-    */
     pthread_condattr_t condattr;
-
-    /**
-     * 事件.
-    */
     pthread_cond_t cond;
 
-    /**
-     * 互斥量属性.
-    */
     pthread_mutexattr_t mutexattr;
-
-    /**
-     * 互斥量.
-    */
     pthread_mutex_t mutex;
 
 } ;//abcdk_mutex_t;
