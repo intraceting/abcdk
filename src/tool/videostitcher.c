@@ -561,8 +561,8 @@ void _videostitcher_work(videostitcher_t *ctx)
     for (int i = 0; i < ABCDK_ARRAY_SIZE(ctx->src_file_p); i++)
     {
         ctx->src_file_p[i] = abcdk_option_get(ctx->args, "--src-video-file", i, NULL);
-        ctx->src_undistort_param_magic_p[i] = abcdk_option_get(ctx->args, "--src-undistort-param-magic", i, NULL);
-        ctx->src_undistort_param_file_p[i] = abcdk_option_get(ctx->args, "--src-undistort-param-file", i, "ABCDK");
+        ctx->src_undistort_param_magic_p[i] = abcdk_option_get(ctx->args, "--src-undistort-param-magic", i, "ABCDK");
+        ctx->src_undistort_param_file_p[i] = abcdk_option_get(ctx->args, "--src-undistort-param-file", i, NULL);
 
         if (!ctx->src_file_p[i])
             break;
