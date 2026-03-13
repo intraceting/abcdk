@@ -261,7 +261,7 @@ int abcdk_xpu_stitcher_load_parameters_from_file(abcdk_xpu_stitcher_t *ctx, cons
 
     assert(ctx != NULL && src != NULL);
 
-    tmp_src = abcdk_mmap_filename(src, 0, 0, 0, 0);
+    tmp_src = abcdk_object_copyfrom_file(src);
     if (!tmp_src)
         return -1;
 
