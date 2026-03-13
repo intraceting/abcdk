@@ -306,7 +306,7 @@ int abcdk_xpu_image_clone(const abcdk_xpu_image_t *src, abcdk_xpu_image_t **dst,
 
     assert(src != NULL && dst != NULL && dst_align >= 0);
 
-    if (!abcdk_xpu_image_empty(src))
+    if (abcdk_xpu_image_empty(src))
         return -1;
 
     w = abcdk_xpu_image_get_width(src);

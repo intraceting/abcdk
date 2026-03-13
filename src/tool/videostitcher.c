@@ -163,13 +163,14 @@ void _videostitcher_reader(videostitcher_t *ctx, int id)
                 break;
 
             abcdk_rwlock_wrlock(ctx->src_locker[id], 1); // lock
+
             /*先从解码器中取出图像, 以便释放解码空间.*/
             chk = abcdk_xpu_vdec_recv_frame(dec_ctx, &ctx->src_img[id], &ctx->src_pts[id]);
             /*统一图像格式.*/
             if (chk > 0)
                 chk = abcdk_xpu_imgproc_convert2(&ctx->src_img[id], ABCDK_XPU_PIXFMT_RGB24);
-            abcdk_rwlock_unlock(ctx->src_locker[id]); // unlock.
 
+            abcdk_rwlock_unlock(ctx->src_locker[id]); // unlock.
             if (chk < 0)
                 break;
 
@@ -178,7 +179,7 @@ void _videostitcher_reader(videostitcher_t *ctx, int id)
             if (chk < 0)
                 break;
 
-            abcdk_trace_printf(LOG_DEBUG, "SRC[%d],PTS[%.3f]", id, abcdk_ffmpeg_editor_stream_ts2sec(ff_ctx, ff_pkt->stream_index, ctx->src_pts[id]));
+            abcdk_trace_printf(LOG_DEBUG, "READER[%d],PTS[%.3f]", id, abcdk_ffmpeg_editor_stream_ts2sec(ff_ctx, ff_pkt->stream_index, ctx->src_pts[id]));
         }
     }
 
@@ -208,7 +209,7 @@ void _videostitcher_stitching(videostitcher_t *ctx)
 
         for (int i = 0; i < ctx->src_count; i++)
         {
-            abcdk_rwlock_rdlock(ctx->src_locker[i], 1);
+            abcdk_rwlock_rdlock(ctx->src_locker[i], 1);//lock.
 
             if (ctx->src_img[i] && !abcdk_xpu_image_empty(ctx->src_img[i]))
             {
@@ -216,7 +217,7 @@ void _videostitcher_stitching(videostitcher_t *ctx)
                 abcdk_xpu_image_clone(ctx->src_img[i], &src_img[i], 16); // clone
             }
 
-            abcdk_rwlock_unlock(ctx->src_locker[i]);
+            abcdk_rwlock_unlock(ctx->src_locker[i]);//unlock.
         }
 
         src_count = 0; // set to 0.
@@ -229,7 +230,7 @@ void _videostitcher_stitching(videostitcher_t *ctx)
         if (src_count != ctx->src_count)
             continue;
 
-        abcdk_rwlock_wrlock(ctx->dst_locker, 1);
+        abcdk_rwlock_wrlock(ctx->dst_locker, 1);//lock.
 
         /*拼接.*/
         chk = abcdk_xpu_stitcher_compose(ctx->ctx, src_count, (const abcdk_xpu_image_t **)src_img, &ctx->dst_img, ctx->optimize_seam);
@@ -237,7 +238,7 @@ void _videostitcher_stitching(videostitcher_t *ctx)
         if (chk == 0)
             ctx->dst_dts += 1;
 
-        abcdk_rwlock_unlock(ctx->dst_locker);
+        abcdk_rwlock_unlock(ctx->dst_locker);//unlock.
         if (chk != 0)
         {
             abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("全景拼接失败, 内存不足或其它错误."));
@@ -256,8 +257,9 @@ void _videostitcher_writer(videostitcher_t *ctx)
     abcdk_xpu_venc_t *enc_ctx = NULL;
     abcdk_xpu_vcodec_params_t enc_params = {0};
     abcdk_xpu_vcodec_params_t enc_params2 = {0};
-    abcdk_rtsp_server_t *rtsp_sever_ctx = NULL;
-    int rtsp_server_stream_id = -1;
+    abcdk_rtsp_server_t *rtsp_ctx = NULL;
+    const char *rtsp_name = "video";
+    int rtsp_stream_id = -1;
     int64_t dst_dts = INT64_MIN;
     int64_t dst_dts2 = INT64_MIN;
     int64_t dst_pts = INT64_MIN;
@@ -296,26 +298,26 @@ void _videostitcher_writer(videostitcher_t *ctx)
     chk = abcdk_xpu_venc_get_params(enc_ctx, &enc_params2);
     assert(chk == 0);
 
-    rtsp_sever_ctx = abcdk_rtsp_server_create(8554, 0x01 | 0x02 | 0x10);
-    if (!rtsp_sever_ctx)
+    rtsp_ctx = abcdk_rtsp_server_create(8554, 0x01 | 0x02 | 0x10);
+    if (!rtsp_ctx)
     {
         abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("流媒体服务无法启动, 端口(%hu)被占用或无权限."), 8554);
         goto END;
     }
 
-    chk = abcdk_rtsp_server_start(rtsp_sever_ctx);
+    chk = abcdk_rtsp_server_start(rtsp_ctx);
     assert(chk == 0);
 
-    chk = abcdk_rtsp_server_create_media(rtsp_sever_ctx, "video", "Video Stitcher", "ABCDK");
+    chk = abcdk_rtsp_server_create_media(rtsp_ctx, rtsp_name, "Video Stitcher", NULL);
     assert(chk == 0);
 
     abcdk_object_t *extdata = abcdk_object_copyfrom(enc_params2.ext_data, enc_params2.ext_size);
-    rtsp_server_stream_id = abcdk_rtsp_server_add_stream(rtsp_sever_ctx, "video", ABCDK_RTSP_CODEC_H265, extdata,
-                                                         ABCDK_CLAMP(enc_params2.bitrate / 1000, 3000, 50000),
-                                                         ABCDK_CLAMP(enc_params2.fps_n, 25, 100));
+    rtsp_stream_id = abcdk_rtsp_server_add_stream(rtsp_ctx, rtsp_name, ABCDK_RTSP_CODEC_H265, extdata,
+                                                  ABCDK_CLAMP(enc_params2.bitrate / 1000, 3000, 50000),
+                                                  ABCDK_CLAMP(enc_params2.fps_n, 25, 100));
     abcdk_object_unref(&extdata);
 
-    chk = abcdk_rtsp_server_play_media(rtsp_sever_ctx, "video");
+    chk = abcdk_rtsp_server_play_media(rtsp_ctx, rtsp_name);
     assert(chk == 0);
 
     frame_duration = (1000 / enc_params2.fps_n);
@@ -330,19 +332,20 @@ void _videostitcher_writer(videostitcher_t *ctx)
         chk = abcdk_xpu_venc_recv_packet(enc_ctx, &dst_packet, &dst_pts);
         if (chk > 0)
         {
-            AVRational timebase = {enc_params2.fps_n, enc_params2.fps_d};
+            AVRational timebase = {enc_params2.fps_d, enc_params2.fps_n};// 常用设定: 1/FPS
 
             double pts_sec = (double)(dst_pts)*abcdk_ffmpeg_q2d(&timebase, 1.); // 秒.
             double dur_sec = (double)(frame_duration);                          // 毫秒.
 
-            chk = abcdk_rtsp_server_play_stream(rtsp_sever_ctx, "video", rtsp_server_stream_id,
+            chk = abcdk_rtsp_server_play_stream(rtsp_ctx, rtsp_name, rtsp_stream_id,
                                                 dst_packet->pptrs[0], dst_packet->sizes[0],
                                                 pts_sec * 1000000, dur_sec * 1000); // 转微秒.
-
             assert(chk == 0);
+
+            abcdk_trace_printf(LOG_DEBUG, "WRITER,PTS[%.3f]", pts_sec);
         }
 
-        abcdk_rwlock_rdlock(ctx->dst_locker, 1);
+        abcdk_rwlock_rdlock(ctx->dst_locker, 1);//lock.
 
         if (ctx->dst_img && !abcdk_xpu_image_empty(ctx->dst_img))
         {
@@ -350,7 +353,7 @@ void _videostitcher_writer(videostitcher_t *ctx)
             abcdk_xpu_image_clone(ctx->dst_img, &dst_img, 16); // clone
         }
 
-        abcdk_rwlock_unlock(ctx->dst_locker);
+        abcdk_rwlock_unlock(ctx->dst_locker);//unlock.
 
         /*序号没更新, 即表示全景图没有更新.*/
         if (dst_dts2 >= dst_dts)
@@ -387,8 +390,8 @@ END:
 
     abcdk_xpu_venc_free(&enc_ctx);
 
-    abcdk_rtsp_server_stop(rtsp_sever_ctx);
-    abcdk_rtsp_server_destroy(&rtsp_sever_ctx);
+    abcdk_rtsp_server_stop(rtsp_ctx);
+    abcdk_rtsp_server_destroy(&rtsp_ctx);
 
     abcdk_xpu_context_current_set(NULL);
     abcdk_xpu_context_unref(&ctx->writer_dev_ctx);
@@ -514,7 +517,7 @@ void _videostitcher_work(videostitcher_t *ctx)
     abcdk_proc_wait_exit_signal(-1);
 
     /*通知所有作业退出.*/
-    ctx->worker_exit_flag = 1;
+    abcdk_atomic_store(&ctx->worker_exit_flag,1);
 
 END:
 

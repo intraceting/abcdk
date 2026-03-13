@@ -25,6 +25,9 @@ abcdk_ffmpeg_encoder_t *abcdk_ffmpeg_encoder_alloc3(AVCodecID codec_id);
 /**
  * 初始化.
  * 
+ * @param [in] time_base 时间基准. 时间的最小刻度单位, 它是一个分数(单位是"秒"). 常用设定: 1/FPS
+ * @param [in] frame_rate 播放帧率. 播放时每秒显示帧的数量(参考值). 常用设定: FPS/1
+ * 
  * @return 0 成功, < 0 失败.
 */
 int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx, const AVCodecParameters *param,
