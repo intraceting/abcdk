@@ -52,20 +52,20 @@ void _calibrate_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--win-size < HEIGHT,WIDTH >\n");
     fprintf(stderr, ABCDK_GETTEXT("\t 搜索窗口尺寸(高,宽)(像素). 默认: 11,11\n"));
 
-    fprintf(stderr, "\n\t--black-alpha < VALUE > \n");
-    fprintf(stderr, ABCDK_GETTEXT("\t 黑色区域比例(0.0~1.0). 默认: 1\n"));
-
     fprintf(stderr, "\n\t--src-img-path < PATH >\n");
     fprintf(stderr, ABCDK_GETTEXT("\t 源图像路径.默认: ./\n"));
 
     fprintf(stderr, "\n\t--dst-img-path < PATH >\n");
     fprintf(stderr, ABCDK_GETTEXT("\t 矫正图像路径, 未指定则忽略.\n"));
 
-    fprintf(stderr, "\n\t--undistort-param-file < FILE >\n");
-    fprintf(stderr, ABCDK_GETTEXT("\t 矫正参数文件, 未指定则忽略.\n"));
+    fprintf(stderr, "\n\t--undistort-black-alpha < VALUE > \n");
+    fprintf(stderr, ABCDK_GETTEXT("\t 黑色区域比例(0.0~1.0). 默认: 1\n"));
 
     fprintf(stderr, "\n\t--undistort-param-magic < STRING >\n");
     fprintf(stderr, ABCDK_GETTEXT("\t 矫正参数魔法字符串. 默认: ABCDK \n"));
+
+    fprintf(stderr, "\n\t--undistort-param-file < FILE >\n");
+    fprintf(stderr, ABCDK_GETTEXT("\t 矫正参数文件, 未指定则忽略.\n"));
 }
 
 void _calibrate_load_src_img(calibrate_t *ctx)
@@ -148,7 +148,7 @@ void _calibrate_work(calibrate_t *ctx)
 
     const char *win_size_p = abcdk_option_get(ctx->args, "--win-size", 0, "11,11");
 
-    double black_alpha = abcdk_option_get_double(ctx->args, "--black-alpha", 0, 1.0);
+    double black_alpha = abcdk_option_get_double(ctx->args, "--undistort-black-alpha", 0, 1.0);
 
     const char *undistort_param_file_p = abcdk_option_get(ctx->args, "--undistort-param-file", 0, NULL);
     const char *undistort_param_magic_p = abcdk_option_get(ctx->args, "--undistort-param-magic", 0, "ABCDK");

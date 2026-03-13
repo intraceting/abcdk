@@ -219,14 +219,14 @@ namespace abcdk_xpu
                 }
                 else if (dst->format == AV_PIX_FMT_NV12)
                 {
-#if NPP_VERSION >= (11 * 1000 + 2 * 100 + 0)
+#if NPP_VERSION >= (12 * 1000 + 4 * 100 + 0)
                     if (src->format == AV_PIX_FMT_RGB24)
                     {
                         NppStreamContext stream_ctx = {0};
                         npp_chk = nppiRGBToNV12_8u_ColorTwist32f_C3P2R_Ctx(src->data[0], src->linesize[0], dst->data, dst->linesize, src_roi, rgb_to_yuv_twist, stream_ctx);
                     }
                     else
-#endif // #if NPP_VERSION >= (11 * 1000 + 2 * 100 + 0)
+#endif // #if NPP_VERSION >= (12 * 1000 + 4 * 100 + 0)
                     {
                         tmp_dst = image::create(dst->width, dst->height, ABCDK_XPU_PIXFMT_RGB24, 16, 0);
                         if (!tmp_dst)

@@ -31,14 +31,14 @@ void _undistort_print_usage(abcdk_option_t *args)
     fprintf(stderr, ABCDK_GETTEXT("\t %d: 无\n"), ABCDK_XPU_HWACCEL_NONE);
     fprintf(stderr, ABCDK_GETTEXT("\t %d: 英伟达\n"), ABCDK_XPU_HWACCEL_NVIDIA);
 
-    fprintf(stderr, "\n\t--undistort-param-file < FILE >\n");
-    fprintf(stderr, ABCDK_GETTEXT("\t 矫正参数文件.\n"));
-
+    fprintf(stderr, "\n\t--undistort-black-alpha < VALUE > \n");
+    fprintf(stderr, ABCDK_GETTEXT("\t 黑色区域比例(0.0~1.0). 默认: 0\n"));
+    
     fprintf(stderr, "\n\t--undistort-param-magic < STRING >\n");
     fprintf(stderr, ABCDK_GETTEXT("\t 矫正参数魔法字符串. 默认: ABCDK \n"));
 
-    fprintf(stderr, "\n\t--black-alpha < VALUE > \n");
-    fprintf(stderr, ABCDK_GETTEXT("\t 黑色区域比例(0.0~1.0). 默认: 0\n"));
+    fprintf(stderr, "\n\t--undistort-param-file < FILE >\n");
+    fprintf(stderr, ABCDK_GETTEXT("\t 矫正参数文件.\n"));
 
     fprintf(stderr, "\n\t--src-img-path < PATH >\n");
     fprintf(stderr, ABCDK_GETTEXT("\t 源图像路径. 默认: ./\n"));
@@ -78,6 +78,11 @@ void _undistort_process(undistort_t *ctx)
 
         /**统一图像格式. */
         chk = abcdk_xpu_imgproc_convert2(&src_img, ABCDK_XPU_PIXFMT_RGB24);
+        if (chk != 0)
+        {
+            abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("转换图像格式失败, 内存不足或其它."));
+            break;
+        }
 
         chk = abcdk_xpu_calibrate_undistort(ctx->ctx, src_img, &dst_img, ABCDK_XPU_INTER_CUBIC);
         if (chk != 0)
@@ -114,10 +119,11 @@ void _undistort_work(undistort_t *ctx)
     int hwaccel_vendor = abcdk_option_get_int(ctx->args, "--hwaccel-vendor", 0, ABCDK_XPU_HWACCEL_NONE);
     int device_id = abcdk_option_get_int(ctx->args, "--device-id", 0, 0);
 
+    double black_alpha = abcdk_option_get_double(ctx->args, "--undistort-black-alpha", 0, 0.);
+
     const char *undistort_param_file_p = abcdk_option_get(ctx->args, "--undistort-param-file", 0, NULL);
     const char *undistort_param_magic_p = abcdk_option_get(ctx->args, "--undistort-param-magic", 0, "ABCDK");
 
-    double black_alpha = abcdk_option_get_double(ctx->args, "--black-alpha", 0, 0.);
 
     chk = abcdk_xpu_runtime_init(hwaccel_vendor);
     assert(chk == 0);
