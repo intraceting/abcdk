@@ -562,7 +562,7 @@ void _videostitcher_work(videostitcher_t *ctx)
     {
         ctx->src_file_p[i] = abcdk_option_get(ctx->args, "--src-video-file", i, NULL);
         ctx->src_undistort_param_magic_p[i] = abcdk_option_get(ctx->args, "--src-undistort-param-magic", i, NULL);
-        ctx->src_undistort_param_file_p[i] = abcdk_option_get(ctx->args, "--src-undistort-param-file", i, NULL);
+        ctx->src_undistort_param_file_p[i] = abcdk_option_get(ctx->args, "--src-undistort-param-file", i, "ABCDK");
 
         if (!ctx->src_file_p[i])
             break;
