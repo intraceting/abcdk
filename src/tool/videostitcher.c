@@ -501,7 +501,7 @@ void _videostitcher_work(videostitcher_t *ctx)
     int device_id = abcdk_option_get_int(ctx->args, "--device-id", 0, 0);
     ctx->optimize_seam = abcdk_option_get_int(ctx->args, "--stitching-optimize-seam", 0, 1);
     const char *warper_name_p = abcdk_option_get(ctx->args, "--stitching-warper-name", 0, "spherical");
-    const char *camera_param_file_p = abcdk_option_get(ctx->args, "--stitching-camera-param-file", 0, NULL);
+    const char *camera_param_file_p = abcdk_option_get(ctx->args, "--stitching-camera-param-file", 0, "");
     const char *camera_param_magic_p = abcdk_option_get(ctx->args, "--stitching-camera-param-magic", 0, "ABCDK");
     ctx->dst_name_p = abcdk_option_get(ctx->args, "--dst-video-name", 0, "output");
     ctx->dst_fps = abcdk_option_get_int(ctx->args, "--dst-video-fps", 0, 16);
@@ -528,33 +528,33 @@ void _videostitcher_work(videostitcher_t *ctx)
 
     if (!camera_param_file_p || access(camera_param_file_p, R_OK) != 0)
     {
-        abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("相机参数文件(%s)不存在或无权限."), camera_param_file_p);
+        abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("拼接缝合相机参数文件(%s)不存在或无权限."), camera_param_file_p);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL, END);
     }
 
     chk = abcdk_xpu_stitcher_load_parameters_from_file(ctx->ctx, camera_param_file_p, camera_param_magic_p);
     if (chk == -127)
     {
-        abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("加载相机参数文件(%s)成功, 但与当前源图像不匹配."), camera_param_file_p);
+        abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("加载拼接缝合相机参数文件(%s)成功, 但与当前源图像不匹配."), camera_param_file_p);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL, END);
     }
     else if (chk < 0)
     {
-        abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("加载相机参数文件(%s)失败, 格式错误或无权限."), camera_param_file_p);
+        abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("加载拼接缝合相机参数文件(%s)失败, 格式错误或无权限."), camera_param_file_p);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL, END);
     }
 
     chk = abcdk_xpu_stitcher_set_warper(ctx->ctx, warper_name_p);
     if (chk != 0)
     {
-        abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("不支持的矫正算法(%s)."), warper_name_p);
+        abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("不支持的拼接缝合矫正算法(%s)."), warper_name_p);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL, END);
     }
 
     chk = abcdk_xpu_stitcher_build_parameters(ctx->ctx);
     if (chk != 0)
     {
-        abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("构建相机参数失败, 内存不足或其它错误."));
+        abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("构建拼接缝合相机参数失败, 内存不足或其它错误."));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL, END);
     }
 
@@ -562,7 +562,7 @@ void _videostitcher_work(videostitcher_t *ctx)
     {
         ctx->src_file_p[i] = abcdk_option_get(ctx->args, "--src-video-file", i, NULL);
         ctx->src_undistort_param_magic_p[i] = abcdk_option_get(ctx->args, "--src-undistort-param-magic", i, "ABCDK");
-        ctx->src_undistort_param_file_p[i] = abcdk_option_get(ctx->args, "--src-undistort-param-file", i, NULL);
+        ctx->src_undistort_param_file_p[i] = abcdk_option_get(ctx->args, "--src-undistort-param-file", i, "");
 
         if (!ctx->src_file_p[i])
             break;
