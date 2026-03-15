@@ -1,7 +1,7 @@
 /*
  * This file is part of ABCDK.
  *
- * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
+ * Copyright (c) 2026 The ABCDK project authors. All Rights Reserved.
  *
  */
 #include "entry.h"
@@ -26,16 +26,21 @@ typedef struct _videostitcher
     const char *src_undistort_param_magic_p[ABCDK_TOOL_VIDEOSTITCHER_SRC_MAX];
     const char *src_undistort_param_file_p[ABCDK_TOOL_VIDEOSTITCHER_SRC_MAX];
 
+    abcdk_xpu_rect_t pano_roi;
+    int pano_roi_fixed;
+
     const char *dst_name_p;
     int dst_fps;
+    abcdk_xpu_size_t dst_size;
+
 
     int64_t src_pts[ABCDK_TOOL_VIDEOSTITCHER_SRC_MAX];
     abcdk_xpu_image_t *src_img[ABCDK_TOOL_VIDEOSTITCHER_SRC_MAX];
     abcdk_rwlock_t *src_locker[ABCDK_TOOL_VIDEOSTITCHER_SRC_MAX];
 
-    int64_t dst_dts;
-    abcdk_xpu_image_t *dst_img;
-    abcdk_rwlock_t *dst_locker;
+    int64_t pano_dts;
+    abcdk_xpu_image_t *pano_img;
+    abcdk_rwlock_t *pano_locker;
 
     abcdk_xpu_context_t *reader_dev_ctx[ABCDK_TOOL_VIDEOSTITCHER_SRC_MAX];
     abcdk_xpu_context_t *stitching_dev_ctx;
@@ -56,9 +61,6 @@ void _videostitcher_print_usage(abcdk_option_t *args)
 
     fprintf(stderr, "\n\t--help\n");
     fprintf(stderr, ABCDK_GETTEXT("\t 显示帮助信息.\n"));
-
-    fprintf(stderr, "\n\t--rtsp-server-port < PORT >\n");
-    fprintf(stderr, ABCDK_GETTEXT("\t RTSP服务端口. 默认: 8554 \n"));
     
     fprintf(stderr, "\n\t--hwaccel-vendor < VENDOR > \n");
     fprintf(stderr, ABCDK_GETTEXT("\t 硬件加速供应商. 默认: %d\n"), ABCDK_XPU_HWACCEL_NONE);
@@ -68,36 +70,45 @@ void _videostitcher_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--device-id < ID > \n");
     fprintf(stderr, ABCDK_GETTEXT("\t 设备ID. 默认: 0\n"));
 
+    fprintf(stderr, "\n\t--rtsp-server-port < PORT >\n");
+    fprintf(stderr, ABCDK_GETTEXT("\t RTSP服务端口. 默认: 8554 \n"));
+
     fprintf(stderr, "\n\t--stitching-warper-name < NAME > \n");
-    fprintf(stderr, ABCDK_GETTEXT("\t 拼接缝合矫正算法. 默认: spherical\n"));
+    fprintf(stderr, ABCDK_GETTEXT("\t 拼接矫正算法. 默认: spherical\n"));
     fprintf(stderr, ABCDK_GETTEXT("\t plane: 平面\n"));
     fprintf(stderr, ABCDK_GETTEXT("\t spherical: 球面\n"));
 
     fprintf(stderr, "\n\t--stitching-optimize-seam < BOOL > \n");
-    fprintf(stderr, ABCDK_GETTEXT("\t 拼接缝合接缝美化. 默认: 1\n"));
+    fprintf(stderr, ABCDK_GETTEXT("\t 拼接接缝美化. 默认: 1\n"));
     fprintf(stderr, ABCDK_GETTEXT("\t 0: 关\n"));
     fprintf(stderr, ABCDK_GETTEXT("\t 1: 开\n"));
 
     fprintf(stderr, "\n\t--stitching-camera-param-magic < STRING >\n");
-    fprintf(stderr, ABCDK_GETTEXT("\t 拼接缝合相机参数魔法字符串. 默认: ABCDK \n"));
+    fprintf(stderr, ABCDK_GETTEXT("\t 拼接相机参数魔法字符串. 默认: ABCDK \n"));
 
     fprintf(stderr, "\n\t--stitching-camera-param-file < FILE >\n");
-    fprintf(stderr, ABCDK_GETTEXT("\t 拼接缝合相机参数文件. 未指定则忽略.\n"));
+    fprintf(stderr, ABCDK_GETTEXT("\t 拼接相机参数文件. 未指定则忽略.\n"));
+
+    fprintf(stderr, "\n\t--stitching-panorama-roi < X,Y,W,H >\n");
+    fprintf(stderr, ABCDK_GETTEXT("\t 拼接全景感兴趣区域. 默认: 0, 0, MAX, MAX\n"));
 
     fprintf(stderr, "\n\t--dst-video-name < STRING >\n");
-    fprintf(stderr, ABCDK_GETTEXT("\t 全景视频名称. 默认: output \n"));
+    fprintf(stderr, ABCDK_GETTEXT("\t 输出视频名称. 默认: output \n"));
 
     fprintf(stderr, "\n\t--dst-video-fps < NUMBER >\n");
-    fprintf(stderr, ABCDK_GETTEXT("\t 全景视频帧率. 默认: 16 \n"));
+    fprintf(stderr, ABCDK_GETTEXT("\t 输出视频帧率. 默认: 16 \n"));
+
+    fprintf(stderr, "\n\t--dst-video-size < WIDTHxHEIGHT >\n");
+    fprintf(stderr, ABCDK_GETTEXT("\t 输出视频尺寸. 默认: 3840x2160 \n"));
 
     fprintf(stderr, "\n\t--src-video-file < FILE >\n");
-    fprintf(stderr, ABCDK_GETTEXT("\t 源视频文件(包括路径). \n"));
+    fprintf(stderr, ABCDK_GETTEXT("\t 输入视频文件(包括路径). \n"));
 
     fprintf(stderr, "\n\t--src-undistort-param-magic < STRING >\n");
-    fprintf(stderr, ABCDK_GETTEXT("\t 源视频畸变矫正参数魔法字符串. 默认: ABCDK \n"));
+    fprintf(stderr, ABCDK_GETTEXT("\t 输入视频畸变矫正参数魔法字符串. 默认: ABCDK \n"));
 
     fprintf(stderr, "\n\t--src-undistort-param-file < FILE >\n");
-    fprintf(stderr, ABCDK_GETTEXT("\t 源视频畸变矫正参数文件.\n"));
+    fprintf(stderr, ABCDK_GETTEXT("\t 输入视频畸变矫正参数文件.\n"));
 }
 
 void _videostitcher_reader(videostitcher_t *ctx, int id)
@@ -238,7 +249,7 @@ void _videostitcher_reader(videostitcher_t *ctx, int id)
                     break;
                 }
 
-                abcdk_trace_printf(LOG_DEBUG, "READER[%d],PTS[%.3f]", id, abcdk_ffmpeg_editor_stream_ts2sec(ff_ctx, ff_stream_idx, ctx->src_pts[id]));
+                abcdk_trace_printf(LOG_DEBUG, "READER[%d],SEC[%.3f]", id, abcdk_ffmpeg_editor_stream_ts2sec(ff_ctx, ff_stream_idx, ctx->src_pts[id]));
                 continue;
             }
             else if (chk == 0 && ff_stream_eof)
@@ -321,22 +332,22 @@ void _videostitcher_stitching(videostitcher_t *ctx)
         if (src_count != ctx->src_count)
             continue;
 
-        abcdk_rwlock_wrlock(ctx->dst_locker, 1);//lock.
+        abcdk_rwlock_wrlock(ctx->pano_locker, 1);//lock.
 
         /*拼接.*/
-        chk = abcdk_xpu_stitcher_compose(ctx->ctx, src_count, (const abcdk_xpu_image_t **)src_img, &ctx->dst_img, ctx->optimize_seam);
+        chk = abcdk_xpu_stitcher_compose(ctx->ctx, src_count, (const abcdk_xpu_image_t **)src_img, &ctx->pano_img, ctx->optimize_seam);
         /*滚动DTS.*/
         if (chk == 0)
-            ctx->dst_dts += 1;
+            ctx->pano_dts += 1;
 
-        abcdk_rwlock_unlock(ctx->dst_locker);//unlock.
+        abcdk_rwlock_unlock(ctx->pano_locker);//unlock.
         if (chk != 0)
         {
             abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("全景拼接失败, 内存不足或其它错误."));
             break;
         }
 
-        abcdk_trace_printf(LOG_DEBUG, "STITCHING,DTS[%lld]", ctx->dst_dts);
+        abcdk_trace_printf(LOG_DEBUG, "STITCHING,DTS[%lld]", ctx->pano_dts);
     }
 
     abcdk_xpu_context_current_set(NULL);
@@ -349,12 +360,12 @@ void _videostitcher_writer(videostitcher_t *ctx)
     abcdk_xpu_vcodec_params_t enc_params = {0};
     abcdk_xpu_vcodec_params_t enc_params2 = {0};
     int rtsp_stream_id = -1;
-    int64_t dst_dts = INT64_MIN;
-    int64_t dst_dts2 = INT64_MIN;
+    int64_t pano_dts = INT64_MIN;
+    int64_t pano_dts2 = INT64_MIN;
+    abcdk_xpu_image_t *pano_img = NULL;
+    abcdk_object_t *dst_packet = NULL;
     int64_t dst_pts = INT64_MIN;
     abcdk_xpu_image_t *dst_img = NULL;
-    abcdk_xpu_image_t *dst_img2 = NULL;
-    abcdk_object_t *dst_packet = NULL;
     int64_t frame_duration = 0;
     int chk;
 
@@ -363,8 +374,8 @@ void _videostitcher_writer(videostitcher_t *ctx)
     enc_params.format = ABCDK_XPU_VCODEC_ID_H265;
     enc_params.bitrate = 15000 * 1000;     // 15Mbps
     enc_params.max_bitrate = 30000 * 1000; // 30Mbps
-    enc_params.width = 1920;
-    enc_params.height = 1080;
+    enc_params.width = ctx->dst_size.width;
+    enc_params.height = ctx->dst_size.height;
     enc_params.fps_n = ctx->dst_fps;
     enc_params.fps_d = 1;
     enc_params.max_b_frames = 0;
@@ -399,7 +410,7 @@ void _videostitcher_writer(videostitcher_t *ctx)
     chk = abcdk_rtsp_server_play_media(ctx->rtsp_ctx, ctx->dst_name_p);
     assert(chk == 0);
 
-    frame_duration = (1000 / enc_params2.fps_n);
+    frame_duration = (1000 / ctx->dst_fps);
 
     while (1)
     {
@@ -421,41 +432,50 @@ void _videostitcher_writer(videostitcher_t *ctx)
                                                 pts_sec * 1000000, dur_sec * 1000); // 转微秒.
             assert(chk == 0);
 
-            abcdk_trace_printf(LOG_DEBUG, "WRITER,PTS[%.3f]", pts_sec);
+            abcdk_trace_printf(LOG_DEBUG, "WRITER,SEC[%.3f]", pts_sec);
         }
 
-        abcdk_rwlock_rdlock(ctx->dst_locker, 1);//lock.
+        abcdk_rwlock_rdlock(ctx->pano_locker, 1);//lock.
 
-        if (ctx->dst_img && !abcdk_xpu_image_empty(ctx->dst_img))
+        if (ctx->pano_img && !abcdk_xpu_image_empty(ctx->pano_img))
         {
-            dst_dts = ctx->dst_dts;                            // copy
-            abcdk_xpu_image_clone(ctx->dst_img, &dst_img, 16); // clone
+            pano_dts = ctx->pano_dts;                            // copy
+            abcdk_xpu_image_clone(ctx->pano_img, &pano_img, 16); // clone
         }
 
-        abcdk_rwlock_unlock(ctx->dst_locker);//unlock.
+        abcdk_rwlock_unlock(ctx->pano_locker);//unlock.
 
         /*序号没更新, 即表示全景图没有更新.*/
-        if (dst_dts2 >= dst_dts)
+        if (pano_dts2 >= pano_dts)
             continue;
 
         /*更新序号.*/
-        dst_dts2 = dst_dts;
+        pano_dts2 = pano_dts;
 
-        chk = abcdk_xpu_image_reset(&dst_img2, enc_params2.width, enc_params2.height, ABCDK_XPU_PIXFMT_RGB24, 16);
+        chk = abcdk_xpu_image_reset(&dst_img, enc_params2.width, enc_params2.height, ABCDK_XPU_PIXFMT_RGB24, 16);
         if (chk != 0)
         {
             abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("内存不足."));
             goto END;
         }
 
-        chk = abcdk_xpu_imgproc_resize(dst_img, NULL, dst_img2, ABCDK_XPU_INTER_CUBIC);
+        if (!ctx->pano_roi_fixed)
+        {
+            ctx->pano_roi_fixed = 1;
+            ctx->pano_roi.x = ABCDK_CLAMP(ctx->pano_roi.x, 0, abcdk_xpu_image_get_width(pano_img) - 1);
+            ctx->pano_roi.y = ABCDK_CLAMP(ctx->pano_roi.y, 0, abcdk_xpu_image_get_height(pano_img) - 1);
+            ctx->pano_roi.width = ABCDK_CLAMP(ctx->pano_roi.width, 16, abcdk_xpu_image_get_width(pano_img));
+            ctx->pano_roi.height = ABCDK_CLAMP(ctx->pano_roi.height, 16, abcdk_xpu_image_get_height(pano_img));
+        }
+
+        chk = abcdk_xpu_imgproc_resize(pano_img, &ctx->pano_roi, dst_img, ABCDK_XPU_INTER_CUBIC);
         if (chk != 0)
         {
             abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("内存不足."));
             goto END;
         }
 
-        chk = abcdk_xpu_venc_send_frame(enc_ctx, dst_img2, dst_dts);
+        chk = abcdk_xpu_venc_send_frame(enc_ctx, dst_img, pano_dts);
         if (chk < 0)
         {
             abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("内存不足."));
@@ -467,8 +487,8 @@ END:
 
     abcdk_object_unref(&dst_packet);
 
+    abcdk_xpu_image_free(&pano_img);
     abcdk_xpu_image_free(&dst_img);
-    abcdk_xpu_image_free(&dst_img2);
 
     abcdk_xpu_venc_free(&enc_ctx);
 
@@ -496,15 +516,29 @@ void _videostitcher_work(videostitcher_t *ctx)
 {
     int chk;
     
-    int rtsp_port = abcdk_option_get_int(ctx->args, "--rtsp-server-port", 0, 8554);
+    
     int hwaccel_vendor = abcdk_option_get_int(ctx->args, "--hwaccel-vendor", 0, ABCDK_XPU_HWACCEL_NONE);
     int device_id = abcdk_option_get_int(ctx->args, "--device-id", 0, 0);
+
+    int rtsp_port = abcdk_option_get_int(ctx->args, "--rtsp-server-port", 0, 8554);
+
     ctx->optimize_seam = abcdk_option_get_int(ctx->args, "--stitching-optimize-seam", 0, 1);
     const char *warper_name_p = abcdk_option_get(ctx->args, "--stitching-warper-name", 0, "spherical");
     const char *camera_param_file_p = abcdk_option_get(ctx->args, "--stitching-camera-param-file", 0, "");
     const char *camera_param_magic_p = abcdk_option_get(ctx->args, "--stitching-camera-param-magic", 0, "ABCDK");
+    const char *panorama_roi_p = abcdk_option_get(ctx->args, "--stitching-panorama-roi", 0, "0,0,2147483647,2147483647");
+
     ctx->dst_name_p = abcdk_option_get(ctx->args, "--dst-video-name", 0, "output");
     ctx->dst_fps = abcdk_option_get_int(ctx->args, "--dst-video-fps", 0, 16);
+    const char *dst_size_p = abcdk_option_get(ctx->args, "--dst-video-size", 0, "3840x2160");
+
+    chk = abcdk_xpu_runtime_init(hwaccel_vendor);
+    assert(chk == 0);
+
+    ctx->dev_ctx = abcdk_xpu_context_alloc(device_id);
+    assert(ctx->dev_ctx != NULL);
+
+    abcdk_xpu_context_current_set(ctx->dev_ctx);
 
     ctx->rtsp_ctx = abcdk_rtsp_server_create(rtsp_port, 0x01 | 0x02 | 0x10);
     if (!ctx->rtsp_ctx)
@@ -515,14 +549,6 @@ void _videostitcher_work(videostitcher_t *ctx)
 
     chk = abcdk_rtsp_server_start(ctx->rtsp_ctx);
     assert(chk == 0);
-
-    chk = abcdk_xpu_runtime_init(hwaccel_vendor);
-    assert(chk == 0);
-
-    ctx->dev_ctx = abcdk_xpu_context_alloc(device_id);
-    assert(ctx->dev_ctx != NULL);
-
-    abcdk_xpu_context_current_set(ctx->dev_ctx);
 
     ctx->ctx = abcdk_xpu_stitcher_alloc();
 
@@ -568,8 +594,6 @@ void _videostitcher_work(videostitcher_t *ctx)
             break;
 
         ctx->src_count += 1;
-        ctx->src_pts[ctx->src_count - 1] = INT64_MIN;
-        ctx->src_locker[ctx->src_count - 1] = abcdk_rwlock_create();
     }
 
     if (ctx->src_count < 2)
@@ -578,13 +602,31 @@ void _videostitcher_work(videostitcher_t *ctx)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = -EINVAL, END);
     }
 
-    ctx->dst_dts = 0;
-    ctx->dst_locker = abcdk_rwlock_create();
+    sscanf(panorama_roi_p, "%d,%d,%d,%d", &ctx->pano_roi.x, &ctx->pano_roi.y, &ctx->pano_roi.width, &ctx->pano_roi.height);
+
+    ctx->pano_roi.x = ABCDK_CLAMP(ctx->pano_roi.x,0,INT32_MAX-1);
+    ctx->pano_roi.y = ABCDK_CLAMP(ctx->pano_roi.y,0,INT32_MAX-1);
+    ctx->pano_roi.width = ABCDK_CLAMP(ctx->pano_roi.width,16,INT32_MAX);
+    ctx->pano_roi.height = ABCDK_CLAMP(ctx->pano_roi.height,16,INT32_MAX);
+
+    sscanf(dst_size_p,"%dx%d",&ctx->dst_size.width,&ctx->dst_size.height);
+
+    ctx->dst_size.width = ABCDK_CLAMP(ctx->dst_size.width,16,3840);
+    ctx->dst_size.height = ABCDK_CLAMP(ctx->dst_size.height,16,2160);
 
     for (int i = 0; i < ctx->src_count; i++)
+    {
+        ctx->src_img[i] = NULL;
+        ctx->src_pts[i] = INT64_MIN;
+        ctx->src_locker[i] = abcdk_rwlock_create();
         ctx->reader_dev_ctx[i] = abcdk_xpu_context_refer(ctx->dev_ctx);
+    }
 
+    ctx->pano_dts = 0;
+    ctx->pano_img = NULL;
+    ctx->pano_locker = abcdk_rwlock_create();
     ctx->stitching_dev_ctx = abcdk_xpu_context_refer(ctx->dev_ctx);
+
     ctx->writer_dev_ctx = abcdk_xpu_context_refer(ctx->dev_ctx);
 
     abcdk_worker_config_t cfg;
@@ -615,7 +657,7 @@ END:
     for (int i = 0; i < ctx->src_count; i++)
         abcdk_xpu_image_free(&ctx->src_img[i]);
 
-    abcdk_xpu_image_free(&ctx->dst_img);
+    abcdk_xpu_image_free(&ctx->pano_img);
 
     if(ctx->rtsp_ctx)
         abcdk_rtsp_server_stop(ctx->rtsp_ctx);

@@ -211,7 +211,8 @@ namespace abcdk_xpu
 
             __ABCDK_XPU_INVOKE_HOST void kernel_dim_make_3d3d(dim3 &grid, dim3 &block, size_t n)
             {
-                make_dim_make_3d(block, 8, 8);
+                //make_dim_make_3d(block, 8, 8); //太慢了, 调度用时, 远大于执行用时.
+                make_dim_make_3d(block, 256, 1); //不支持古老的算力. 虽然效率不是最高, 但是兼容性最好.
                 make_dim_make_3d(grid, n, block.x * block.y * block.z);
             }
 
