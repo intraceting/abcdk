@@ -113,10 +113,13 @@ namespace abcdk
             QObject::connect(tray, &main_trayicon::onQuit, this, &main_window::onQuit);
 
             loadTasks();
+
+            startRefresh(5000);
         }
 
         void main_window::onRefresh()
         {
+            saveTasks();
         }
 
         void main_window::closeEvent(QCloseEvent *event)
