@@ -59,8 +59,6 @@ namespace abcdk
             {
                 int sock_fd = -1, sock6_fd = -1;
 
-                OutPacketBuffer::maxSize = 4 * 1024 * 1024; // 4MB
-
 #if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
 
                 if (flag & 0x01)

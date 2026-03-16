@@ -88,6 +88,9 @@ abcdk_rtsp_server_t *abcdk_rtsp_server_create(uint16_t port, int flag)
     /*标记为退出.*/
     ctx->worker_flag = 1;
 
+    /*修改输出缓存区大小.*/
+    OutPacketBuffer::maxSize = 4 * 1024 * 1024; // 4MB
+
     ctx->l5_scheduler_ctx = BasicTaskScheduler::createNew();
     if (!ctx->l5_scheduler_ctx)
         goto ERR;

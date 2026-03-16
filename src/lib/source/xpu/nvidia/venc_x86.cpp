@@ -164,6 +164,8 @@ namespace abcdk_xpu
 
                     ctx->nv_params.encodeConfig->encodeCodecConfig.h264Config.idrPeriod = ctx->params.idr_interval;
                     ctx->nv_params.encodeConfig->encodeCodecConfig.h264Config.maxNumRefFrames = ctx->params.refs;
+                    ctx->nv_params.encodeConfig->encodeCodecConfig.h264Config.repeatSPSPPS = ctx->params.insert_spspps_idr;
+
                 }
                 else if (ctx->nv_params.encodeGUID == NV_ENC_CODEC_HEVC_GUID)
                 {
@@ -177,6 +179,8 @@ namespace abcdk_xpu
 
                     ctx->nv_params.encodeConfig->encodeCodecConfig.hevcConfig.idrPeriod = ctx->params.idr_interval;
                     ctx->nv_params.encodeConfig->encodeCodecConfig.hevcConfig.maxNumRefFramesInDPB = ctx->params.refs;
+                    ctx->nv_params.encodeConfig->encodeCodecConfig.hevcConfig.repeatSPSPPS = ctx->params.insert_spspps_idr;
+
                 }
 
                 nv_chk = ctx->nv_apis.nvEncInitializeEncoder(ctx->nv_encoder, &ctx->nv_params);

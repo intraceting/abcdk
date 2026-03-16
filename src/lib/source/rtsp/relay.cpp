@@ -18,7 +18,6 @@
 #include "abcdk/rtsp/server.h"
 #include "abcdk/rtsp/relay.h"
 
-
 /**简单的RTSP中继服务.*/
 struct _abcdk_rtsp_relay
 {
@@ -35,7 +34,7 @@ struct _abcdk_rtsp_relay
     abcdk_ffmpeg_editor_t *ff_ctx;
 
     /**流索引映射表. */
-    std::map<int,int> index_s2d;
+    std::map<int, int> index_s2d;
 
     /**服务指针. */
     abcdk_rtsp_server_t *server_ctx_p;
@@ -48,7 +47,7 @@ struct _abcdk_rtsp_relay
 
     /**源格式.*/
     char *src_fmt;
-    
+
     /**源超时(秒).*/
     int src_timeout;
 
@@ -82,14 +81,14 @@ static int _abcdk_rtsp_relay_worker_thread_start(abcdk_rtsp_relay_t *ctx)
     return 0;
 }
 
-#endif //#ifdef HAVE_FFMPEG
+#endif // #ifdef HAVE_FFMPEG
 
 void abcdk_rtsp_relay_destroy(abcdk_rtsp_relay_t **ctx)
 {
 #ifndef HAVE_FFMPEG
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
-    return ;
-#else //#ifndef HAVE_FFMPEG
+    return;
+#else  // #ifndef HAVE_FFMPEG
     abcdk_rtsp_relay_t *ctx_p;
 
     if (!ctx || !*ctx)
@@ -106,7 +105,7 @@ void abcdk_rtsp_relay_destroy(abcdk_rtsp_relay_t **ctx)
     abcdk_heap_free(ctx_p->src_fmt);
 
     delete ctx_p;
-#endif //#ifndef HAVE_FFMPEG
+#endif // #ifndef HAVE_FFMPEG
 }
 
 abcdk_rtsp_relay_t *abcdk_rtsp_relay_create(abcdk_rtsp_server_t *server_ctx, const char *media_name, const char *src_url, const char *src_fmt, int src_timeout, int src_retry)
@@ -114,7 +113,7 @@ abcdk_rtsp_relay_t *abcdk_rtsp_relay_create(abcdk_rtsp_server_t *server_ctx, con
 #ifndef HAVE_FFMPEG
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return NULL;
-#else //#ifndef HAVE_FFMPEG
+#else // #ifndef HAVE_FFMPEG
     abcdk_rtsp_relay_t *ctx;
     int chk;
 
@@ -147,7 +146,7 @@ ERR:
     abcdk_rtsp_relay_destroy(&ctx);
     return NULL;
 
-#endif //#ifndef HAVE_FFMPEG
+#endif // #ifndef HAVE_FFMPEG
 }
 
 #ifdef HAVE_FFMPEG
@@ -186,19 +185,28 @@ static int _abcdk_rtsp_realy_create_media(abcdk_rtsp_relay_t *ctx)
         {
             extdata = abcdk_object_copyfrom(codecpar->extradata, codecpar->extradata_size);
 
-            ctx->index_s2d[i] = abcdk_rtsp_server_add_stream(ctx->server_ctx_p, ctx->media_name, ABCDK_RTSP_CODEC_H265, extdata, ABCDK_CLAMP(bitrate, 3000, 50000), ABCDK_CLAMP(cache, 25, 100));
+            ctx->index_s2d[i] = abcdk_rtsp_server_add_stream(ctx->server_ctx_p, ctx->media_name,
+                                                             ABCDK_RTSP_CODEC_H265, extdata,
+                                                             ABCDK_CLAMP(bitrate, 200, 50000),
+                                                             ABCDK_CLAMP(cache, 25, 100));
         }
         else if (codecpar->codec_id == AV_CODEC_ID_H264)
         {
             extdata = abcdk_object_copyfrom(codecpar->extradata, codecpar->extradata_size);
 
-            ctx->index_s2d[i] = abcdk_rtsp_server_add_stream(ctx->server_ctx_p, ctx->media_name, ABCDK_RTSP_CODEC_H264, extdata, ABCDK_CLAMP(bitrate, 3000, 50000), ABCDK_CLAMP(cache, 25, 100));
+            ctx->index_s2d[i] = abcdk_rtsp_server_add_stream(ctx->server_ctx_p, ctx->media_name,
+                                                             ABCDK_RTSP_CODEC_H264, extdata,
+                                                             ABCDK_CLAMP(bitrate, 200, 50000),
+                                                             ABCDK_CLAMP(cache, 25, 100));
         }
         else if (codecpar->codec_id == AV_CODEC_ID_AAC)
         {
             extdata = abcdk_object_copyfrom(codecpar->extradata, codecpar->extradata_size);
 
-            ctx->index_s2d[i] = abcdk_rtsp_server_add_stream(ctx->server_ctx_p, ctx->media_name, ABCDK_RTSP_CODEC_AAC, extdata, ABCDK_CLAMP(bitrate, 96, 512), ABCDK_CLAMP(cache, 5, 10));
+            ctx->index_s2d[i] = abcdk_rtsp_server_add_stream(ctx->server_ctx_p, ctx->media_name,
+                                                             ABCDK_RTSP_CODEC_AAC, extdata,
+                                                             ABCDK_CLAMP(bitrate, 96, 512),
+                                                             ABCDK_CLAMP(cache, 5, 10));
         }
         else if (codecpar->codec_id == AV_CODEC_ID_PCM_MULAW)
         {
@@ -206,7 +214,10 @@ static int _abcdk_rtsp_realy_create_media(abcdk_rtsp_relay_t *ctx)
             ABCDK_PTR2I32(extdata->pptrs[0], 0) = codecpar->channels;
             ABCDK_PTR2I32(extdata->pptrs[1], 0) = codecpar->sample_rate;
 
-            ctx->index_s2d[i] = abcdk_rtsp_server_add_stream(ctx->server_ctx_p, ctx->media_name, ABCDK_RTSP_CODEC_G711U, extdata, ABCDK_CLAMP(bitrate, 96, 512), ABCDK_CLAMP(cache, 5, 10));
+            ctx->index_s2d[i] = abcdk_rtsp_server_add_stream(ctx->server_ctx_p, ctx->media_name,
+                                                             ABCDK_RTSP_CODEC_G711U, extdata,
+                                                             ABCDK_CLAMP(bitrate, 96, 512),
+                                                             ABCDK_CLAMP(cache, 5, 10));
         }
         else if (codecpar->codec_id == AV_CODEC_ID_PCM_ALAW)
         {
@@ -214,7 +225,10 @@ static int _abcdk_rtsp_realy_create_media(abcdk_rtsp_relay_t *ctx)
             ABCDK_PTR2I32(extdata->pptrs[0], 0) = codecpar->channels;
             ABCDK_PTR2I32(extdata->pptrs[1], 0) = codecpar->sample_rate;
 
-            ctx->index_s2d[i] = abcdk_rtsp_server_add_stream(ctx->server_ctx_p, ctx->media_name, ABCDK_RTSP_CODEC_G711A, extdata, ABCDK_CLAMP(bitrate, 96, 512), ABCDK_CLAMP(cache, 5, 10));
+            ctx->index_s2d[i] = abcdk_rtsp_server_add_stream(ctx->server_ctx_p, ctx->media_name,
+                                                             ABCDK_RTSP_CODEC_G711A, extdata,
+                                                             ABCDK_CLAMP(bitrate, 96, 512),
+                                                             ABCDK_CLAMP(cache, 5, 10));
         }
         else if (codecpar->codec_id == AV_CODEC_ID_OPUS)
         {
@@ -222,7 +236,10 @@ static int _abcdk_rtsp_realy_create_media(abcdk_rtsp_relay_t *ctx)
             ABCDK_PTR2I32(extdata->pptrs[0], 0) = codecpar->channels;
             ABCDK_PTR2I32(extdata->pptrs[1], 0) = codecpar->sample_rate;
 
-            ctx->index_s2d[i] = abcdk_rtsp_server_add_stream(ctx->server_ctx_p, ctx->media_name, ABCDK_RTSP_CODEC_OPUS, extdata, ABCDK_CLAMP(bitrate, 96, 512), ABCDK_CLAMP(cache, 5, 10));
+            ctx->index_s2d[i] = abcdk_rtsp_server_add_stream(ctx->server_ctx_p, ctx->media_name,
+                                                             ABCDK_RTSP_CODEC_OPUS, extdata,
+                                                             ABCDK_CLAMP(bitrate, 96, 512),
+                                                             ABCDK_CLAMP(cache, 5, 10));
         }
         else
         {
@@ -266,7 +283,7 @@ static void _abcdk_rtsp_realy_forward_media(abcdk_rtsp_relay_t *ctx)
         if (dst_idx < 0)
             continue;
 
-        pts_sec = abcdk_ffmpeg_editor_stream_ts2sec(ctx->ff_ctx, src_idx, pkt.pts); // 秒.
+        pts_sec = abcdk_ffmpeg_editor_stream_ts2sec(ctx->ff_ctx, src_idx, pkt.pts);                     // 秒.
         dur_sec = (double)pkt.duration * abcdk_ffmpeg_editor_stream_timebase_q2d(ctx->ff_ctx, src_idx); // 秒.
 
         abcdk_rtsp_server_play_stream(ctx->server_ctx_p, ctx->media_name, dst_idx, pkt.data, pkt.size, pts_sec * 1000000, dur_sec * 1000000); // 转微秒.
@@ -279,7 +296,6 @@ static void _abcdk_rtsp_relay_process(abcdk_rtsp_relay_t *ctx)
 {
     int retry_count = 0;
     int chk;
-
 
 RETRY:
 
@@ -307,8 +323,8 @@ RETRY:
     if (!ctx->ff_ctx)
         goto RETRY;
 
-    chk = abcdk_ffmpeg_editor_open(ctx->ff_ctx,&ctx->ff_cfg);
-    if(chk != 0)
+    chk = abcdk_ffmpeg_editor_open(ctx->ff_ctx, &ctx->ff_cfg);
+    if (chk != 0)
         goto RETRY;
 
     /*删除旧的.*/
@@ -349,4 +365,4 @@ static void *_abcdk_rtsp_relay_worker_thread_routine(void *opaque)
     return NULL;
 }
 
-#endif //#ifdef HAVE_FFMPEG
+#endif // #ifdef HAVE_FFMPEG

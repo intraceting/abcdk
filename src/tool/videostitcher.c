@@ -372,8 +372,6 @@ void _videostitcher_writer(videostitcher_t *ctx)
     abcdk_xpu_context_current_set(ctx->writer_dev_ctx);
 
     enc_params.format = ABCDK_XPU_VCODEC_ID_H265;
-    enc_params.bitrate = 15000 * 1000;     // 15Mbps
-    enc_params.max_bitrate = 30000 * 1000; // 30Mbps
     enc_params.width = ctx->dst_size.width;
     enc_params.height = ctx->dst_size.height;
     enc_params.fps_n = ctx->dst_fps;
@@ -383,13 +381,55 @@ void _videostitcher_writer(videostitcher_t *ctx)
     enc_params.hw_preset_type = 0;
     enc_params.idr_interval = ctx->dst_fps;
     enc_params.iframe_interval = ctx->dst_fps;
-    enc_params.insert_spspps_idr = 1;// 每个IDR帧带着SPSPPS等.
+    enc_params.insert_spspps_idr = 0;
     enc_params.mode_vbr = 0;
-    enc_params.level = 51;
-    enc_params.profile = 1;//
-    enc_params.qmin = 10; //调低qmin允许更高质量.
-    enc_params.qmax = 51;
-    
+
+    if (ctx->dst_size.width >= 3840 && ctx->dst_size.height >= 2160)
+    {
+        enc_params.bitrate = 30000 * 1000;     // Mbps
+        enc_params.max_bitrate = 50000 * 1000; // Mbps
+        enc_params.level = 51;
+        enc_params.profile = 1; //
+        enc_params.qmin = 10;
+        enc_params.qmax = 30;
+    }
+    else if (ctx->dst_size.width >= 2560 && ctx->dst_size.height >= 1440)
+    {
+        enc_params.bitrate = 12500 * 1000;     // Mbps
+        enc_params.max_bitrate = 20000 * 1000; // Mbps
+        enc_params.level = 50;
+        enc_params.profile = 1; //
+        enc_params.qmin = 10;
+        enc_params.qmax = 30;
+    }
+    else if (ctx->dst_size.width >= 1920 && ctx->dst_size.height >= 1080)
+    {
+        enc_params.bitrate = 6000 * 1000;     // Mbps
+        enc_params.max_bitrate = 10000 * 1000; // Mbps
+        enc_params.level = 41;
+        enc_params.profile = 1; //
+        enc_params.qmin = 10;
+        enc_params.qmax = 30;
+    }
+    else if (ctx->dst_size.width >= 1920 && ctx->dst_size.height >= 1080)
+    {
+        enc_params.bitrate = 3000 * 1000;     // Mbps
+        enc_params.max_bitrate = 5000 * 1000; // Mbps
+        enc_params.level = 31;
+        enc_params.profile = 1; //
+        enc_params.qmin = 10;
+        enc_params.qmax = 30;
+    }
+    else
+    {
+        enc_params.bitrate = 1500 * 1000;     // Mbps
+        enc_params.max_bitrate = 2500 * 1000; // Mbps
+        enc_params.level = 21;
+        enc_params.profile = 1; //
+        enc_params.qmin = 10;
+        enc_params.qmax = 30;
+    }
+
     enc_ctx = abcdk_xpu_venc_alloc();
 
     chk = abcdk_xpu_venc_setup(enc_ctx, &enc_params);
@@ -403,7 +443,7 @@ void _videostitcher_writer(videostitcher_t *ctx)
 
     abcdk_object_t *extdata = abcdk_object_copyfrom(enc_params2.ext_data, enc_params2.ext_size);
     rtsp_stream_id = abcdk_rtsp_server_add_stream(ctx->rtsp_ctx, ctx->dst_name_p, ABCDK_RTSP_CODEC_H265, extdata,
-                                                  ABCDK_CLAMP(enc_params2.bitrate / 1000, 3000, 50000),
+                                                  ABCDK_CLAMP(enc_params2.bitrate / 1000, 200, 50000),
                                                   ABCDK_CLAMP(enc_params2.fps_n, 16, 100));
     abcdk_object_unref(&extdata);
 
