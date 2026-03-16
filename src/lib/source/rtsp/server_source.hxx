@@ -64,7 +64,7 @@ namespace abcdk
                 memcpy(fTo, m_pkt.data(m_pkt_offset), fFrameSize);
                 m_pkt_offset += fFrameSize;
 
-#if 1
+#if 0
                 gettimeofday(&fPresentationTime, NULL);
 #else 
                 fPresentationTime.tv_sec = m_pkt.pts()/1000000;
