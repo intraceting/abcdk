@@ -141,7 +141,7 @@ namespace abcdk
 
             virtual FramedSource *createNewStreamSource(unsigned clientSessionId, unsigned &estBitrate)
             {
-                estBitrate = ABCDK_CLAMP(m_bitrate,(unsigned int)1500, m_bitrate); // bps, 1500 ~ MAX.
+                estBitrate = ABCDK_MAX(m_bitrate,(uint32_t)3000); // kbps, 3000 ~ MAX.
 
                 h264_source *source_ctx = h264_source::createNew(envir(), codec_id(),m_rgbuf_ctx_p);
                 if (!source_ctx)

@@ -59,6 +59,8 @@ namespace abcdk
             {
                 int sock_fd = -1, sock6_fd = -1;
 
+                OutPacketBuffer::maxSize = 4 * 1024 * 1024; // 4MB
+
 #if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
 
                 if (flag & 0x01)
@@ -376,7 +378,7 @@ namespace abcdk
                 : RTSPServer(env, ourSocketIPv4, ourPort, NULL, reclamationTestSeconds)
 #endif // #if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
             {
-                OutPacketBuffer::maxSize = 4 * 1024 * 1024; // 4MB
+                
 
                 m_use_udp = use_udp;
                 m_auth_ctx = NULL; // no auth.

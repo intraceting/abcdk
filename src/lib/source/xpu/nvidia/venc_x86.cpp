@@ -315,6 +315,20 @@ namespace abcdk_xpu
                     nv_pic_params.outputBitstream = ctx->nv_bs_out_bufs[idx];
                     nv_pic_params.completionEvent = ctx->nv_vp_com_evts[idx];
 
+#if 0
+                    if (cudaVideoCodec_H264 == ctx->nv_codec_id)
+                    {
+                        nv_pic_params.codecPicParams.h264PicParams.sliceModeDataUpdate = 1;
+                        nv_pic_params.codecPicParams.h264PicParams.sliceMode = 1;
+                        nv_pic_params.codecPicParams.h264PicParams.sliceModeData = 1500;
+                    }
+                    else if (cudaVideoCodec_HEVC == ctx->nv_codec_id)
+                    {
+                        nv_pic_params.codecPicParams.hevcPicParams.sliceModeDataUpdate = 1;
+                        nv_pic_params.codecPicParams.hevcPicParams.sliceMode = 1;
+                        nv_pic_params.codecPicParams.hevcPicParams.sliceModeData = 1500;
+                    }
+#endif 
                     nv_chk = ctx->nv_apis.nvEncEncodePicture(ctx->nv_encoder, &nv_pic_params); // 编码图像.
                     if (nv_chk == NV_ENC_SUCCESS || nv_chk == NV_ENC_ERR_NEED_MORE_INPUT)
                     {

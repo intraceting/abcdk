@@ -250,7 +250,7 @@ void _videostitcher_reader(videostitcher_t *ctx, int id)
                 }
 
                 abcdk_trace_printf(LOG_DEBUG, "READER[%d],SEC[%.3f]", id, abcdk_ffmpeg_editor_stream_ts2sec(ff_ctx, ff_stream_idx, ctx->src_pts[id]));
-                continue;
+                continue;//尽可能快的把已解码数据取出来.
             }
             else if (chk == 0 && ff_stream_eof)
             {
@@ -339,7 +339,7 @@ void _videostitcher_stitching(videostitcher_t *ctx)
         /*滚动DTS.*/
         if (chk == 0)
             ctx->pano_dts += 1;
-
+        
         abcdk_rwlock_unlock(ctx->pano_locker);//unlock.
         if (chk != 0)
         {
@@ -378,18 +378,18 @@ void _videostitcher_writer(videostitcher_t *ctx)
     enc_params.height = ctx->dst_size.height;
     enc_params.fps_n = ctx->dst_fps;
     enc_params.fps_d = 1;
-    enc_params.max_b_frames = 0;
-    enc_params.refs = 4;
+    enc_params.max_b_frames = 0; // 低延迟.
+    enc_params.refs = 1;
     enc_params.hw_preset_type = 0;
-    enc_params.idr_interval = 12;
-    enc_params.iframe_interval = 13;
-    enc_params.insert_spspps_idr = 50;
+    enc_params.idr_interval = ctx->dst_fps;
+    enc_params.iframe_interval = ctx->dst_fps;
+    enc_params.insert_spspps_idr = 1;// 每个IDR帧带着SPSPPS等.
     enc_params.mode_vbr = 0;
     enc_params.level = 51;
-    enc_params.profile = 66;
+    enc_params.profile = 1;//
+    enc_params.qmin = 10; //调低qmin允许更高质量.
     enc_params.qmax = 51;
-    enc_params.qmin = 25;
-
+    
     enc_ctx = abcdk_xpu_venc_alloc();
 
     chk = abcdk_xpu_venc_setup(enc_ctx, &enc_params);
@@ -433,6 +433,7 @@ void _videostitcher_writer(videostitcher_t *ctx)
             assert(chk == 0);
 
             abcdk_trace_printf(LOG_DEBUG, "WRITER,SEC[%.3f]", pts_sec);
+            continue;//尽可能快的把已编码数据取出来.
         }
 
         abcdk_rwlock_rdlock(ctx->pano_locker, 1);//lock.

@@ -63,7 +63,7 @@ namespace abcdk
 
             virtual FramedSource *createNewStreamSource(unsigned clientSessionId, unsigned &estBitrate)
             {
-                estBitrate = ABCDK_CLAMP(m_bitrate,(unsigned int)96, m_bitrate); // bps, 96 ~ MAX.
+                estBitrate = ABCDK_MAX(m_bitrate,(uint32_t)64); // kbps, 64 ~ MAX.
 
                 aac_source *source_ctx = aac_source::createNew(envir(),codec_id(), m_rgbuf_ctx_p);
                 if (!source_ctx)
