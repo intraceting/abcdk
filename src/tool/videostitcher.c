@@ -100,6 +100,7 @@ void _videostitcher_print_usage(abcdk_option_t *args)
 
     fprintf(stderr, "\n\t--dst-video-size < WIDTHxHEIGHT >\n");
     fprintf(stderr, ABCDK_GETTEXT("\t 输出视频尺寸. 默认: 3840x2160 \n"));
+    fprintf(stderr, ABCDK_GETTEXT("\t 有效尺寸: 16x16 ~ 8192x4320 \n"));
 
     fprintf(stderr, "\n\t--src-video-file < FILE >\n");
     fprintf(stderr, ABCDK_GETTEXT("\t 输入视频文件(包括路径). \n"));
@@ -302,12 +303,17 @@ void _videostitcher_stitching(videostitcher_t *ctx)
 
     frame_duration = (1000 / ctx->dst_fps);
 
+    uint64_t dot_clock = abcdk_time_systime(9);
+
     while (1)
     {
         if (abcdk_atomic_compare(&ctx->worker_exit_flag, 1))
             break;
 
-        usleep(frame_duration * 1000); // nFPS.
+        uint64_t step_clock = abcdk_clock(dot_clock, &dot_clock) / 1000000;
+
+        if (frame_duration > step_clock)
+            usleep((frame_duration - step_clock) * 1000); // nFPS.
 
         for (int i = 0; i < ctx->src_count; i++)
         {
@@ -383,52 +389,12 @@ void _videostitcher_writer(videostitcher_t *ctx)
     enc_params.iframe_interval = ctx->dst_fps;
     enc_params.insert_spspps_idr = 0;
     enc_params.mode_vbr = 0;
-
-    if (ctx->dst_size.width >= 3840 && ctx->dst_size.height >= 2160)
-    {
-        enc_params.bitrate = 30000 * 1000;     // Mbps
-        enc_params.max_bitrate = 50000 * 1000; // Mbps
-        enc_params.level = 51;
-        enc_params.profile = 1; //
-        enc_params.qmin = 10;
-        enc_params.qmax = 30;
-    }
-    else if (ctx->dst_size.width >= 2560 && ctx->dst_size.height >= 1440)
-    {
-        enc_params.bitrate = 12500 * 1000;     // Mbps
-        enc_params.max_bitrate = 20000 * 1000; // Mbps
-        enc_params.level = 50;
-        enc_params.profile = 1; //
-        enc_params.qmin = 10;
-        enc_params.qmax = 30;
-    }
-    else if (ctx->dst_size.width >= 1920 && ctx->dst_size.height >= 1080)
-    {
-        enc_params.bitrate = 6000 * 1000;     // Mbps
-        enc_params.max_bitrate = 10000 * 1000; // Mbps
-        enc_params.level = 41;
-        enc_params.profile = 1; //
-        enc_params.qmin = 10;
-        enc_params.qmax = 30;
-    }
-    else if (ctx->dst_size.width >= 1920 && ctx->dst_size.height >= 1080)
-    {
-        enc_params.bitrate = 3000 * 1000;     // Mbps
-        enc_params.max_bitrate = 5000 * 1000; // Mbps
-        enc_params.level = 31;
-        enc_params.profile = 1; //
-        enc_params.qmin = 10;
-        enc_params.qmax = 30;
-    }
-    else
-    {
-        enc_params.bitrate = 1500 * 1000;     // Mbps
-        enc_params.max_bitrate = 2500 * 1000; // Mbps
-        enc_params.level = 21;
-        enc_params.profile = 1; //
-        enc_params.qmin = 10;
-        enc_params.qmax = 30;
-    }
+    enc_params.bitrate = 8000 * 1000;     // Mbps
+    enc_params.max_bitrate = 25000 * 1000; // Mbps
+    enc_params.level = 51;
+    enc_params.profile = 1; //
+    enc_params.qmin = 10;
+    enc_params.qmax = 30;
 
     enc_ctx = abcdk_xpu_venc_alloc();
 
@@ -452,12 +418,17 @@ void _videostitcher_writer(videostitcher_t *ctx)
 
     frame_duration = (1000 / ctx->dst_fps);
 
+    uint64_t dot_clock = abcdk_time_systime(9);
+
     while (1)
     {
         if (abcdk_atomic_compare(&ctx->worker_exit_flag, 1))
             break;
 
-        usleep(frame_duration * 1000); // nFPS.
+        uint64_t step_clock = abcdk_clock(dot_clock, &dot_clock) / 1000000;
+
+        if (frame_duration > step_clock)
+            usleep((frame_duration - step_clock) * 1000); // nFPS.
 
         chk = abcdk_xpu_venc_recv_packet(enc_ctx, &dst_packet, &dst_pts);
         if (chk > 0)
@@ -652,8 +623,8 @@ void _videostitcher_work(videostitcher_t *ctx)
 
     sscanf(dst_size_p,"%dx%d",&ctx->dst_size.width,&ctx->dst_size.height);
 
-    ctx->dst_size.width = ABCDK_CLAMP(ctx->dst_size.width,16,3840);
-    ctx->dst_size.height = ABCDK_CLAMP(ctx->dst_size.height,16,2160);
+    ctx->dst_size.width = ABCDK_CLAMP(ctx->dst_size.width,16,8192);
+    ctx->dst_size.height = ABCDK_CLAMP(ctx->dst_size.height,16,4320);
 
     for (int i = 0; i < ctx->src_count; i++)
     {

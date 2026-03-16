@@ -37,7 +37,7 @@ namespace abcdk
             {
                 int chk;
 
-                if (m_pkt.size() == 0 || m_pkt.size() == m_pkt_offset)
+                if (m_pkt.size() == 0 || m_pkt_offset >= m_pkt.size())
                 {
                     chk = fetch(m_pkt);
                     if (chk <= 0)
@@ -51,14 +51,16 @@ namespace abcdk
                     m_pkt_offset = 0;//must to 0.
                 }
 
-                if (m_pkt.size(m_pkt_offset) > fMaxSize)
+                size_t remaining_size = m_pkt.size(m_pkt_offset);
+
+                if (remaining_size > fMaxSize)
                 {
                     fFrameSize = fMaxSize;
-                    fNumTruncatedBytes = m_pkt.size(m_pkt_offset) - fMaxSize;
+                    fNumTruncatedBytes = remaining_size - fMaxSize;
                 }
                 else
                 {
-                    fFrameSize = m_pkt.size(m_pkt_offset);
+                    fFrameSize = remaining_size;
                     fNumTruncatedBytes = 0;
                 }
 
