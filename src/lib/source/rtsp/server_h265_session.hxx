@@ -180,6 +180,8 @@ namespace abcdk
                 if(!vps_p || !sps_p || !pps_p)
                     return NULL;
 
+                increaseSendBufferTo(envir(), rtpGroupsock->socketNum(), 500 * 1024);
+
                 return H265VideoRTPSink::createNew(envir(), rtpGroupsock, rtpPayloadTypeIfDynamic, vps_p, vps_size, sps_p, sps_size, pps_p, pps_size);
             }
         };

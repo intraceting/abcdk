@@ -55,7 +55,7 @@ typedef struct _abcdk_ffmpeg_editor_param
     /**读,是否禁用延迟刷新.*/
     int read_nodelay;
 
-    /**读,速率比例(3位小数). <=0 无效.*/
+    /**读,速率比例(n/1000). <=0 无效.*/
     int read_rate_scale;
 
     /**读,是否启用MP4流转换.*/

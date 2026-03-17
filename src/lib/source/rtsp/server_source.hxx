@@ -61,7 +61,7 @@ namespace abcdk
                 else
                 {
                     fFrameSize = remaining_size;
-                    fNumTruncatedBytes = 0;
+                  //  fNumTruncatedBytes = 0;
                 }
 
                 memcpy(fTo, m_pkt.data(m_pkt_offset), fFrameSize);
