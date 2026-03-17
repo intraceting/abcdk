@@ -128,3 +128,12 @@ uint64_t abcdk_sequence_num()
     return abcdk_atomic_fetch_and_add(&num,1);
 }
 
+void abcdk_nanosleep(uint64_t duration)
+{
+    struct timespec req = {0};
+
+    req.tv_sec = (long)(duration / 1000000000);
+    req.tv_nsec = (long)(duration % 1000000000);
+
+    nanosleep(&req, NULL);
+}

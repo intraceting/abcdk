@@ -38,7 +38,7 @@ typedef struct _videostitcher
     abcdk_xpu_image_t *src_img[ABCDK_TOOL_VIDEOSTITCHER_SRC_MAX];
     abcdk_rwlock_t *src_locker[ABCDK_TOOL_VIDEOSTITCHER_SRC_MAX];
 
-    int64_t pano_dts;
+    int64_t pano_pts;
     abcdk_xpu_image_t *pano_img;
     abcdk_rwlock_t *pano_locker;
 
@@ -297,19 +297,20 @@ void _videostitcher_stitching(videostitcher_t *ctx)
     int64_t src_pts[10] = {INT64_MIN, INT64_MIN, INT64_MIN, INT64_MIN, INT64_MIN, INT64_MIN, INT64_MIN, INT64_MIN, INT64_MIN, INT64_MIN};
     abcdk_xpu_image_t *src_img[10] = {NULL};
     int64_t frame_duration = 0;
+    uint64_t dot_clock = 0;
     int chk;
 
     abcdk_xpu_context_current_set(ctx->stitching_dev_ctx);
 
     frame_duration = (1000 / ctx->dst_fps);
-
-    uint64_t dot_clock = abcdk_time_systime(9);
+    dot_clock = abcdk_time_systime(9);
 
     while (1)
     {
         if (abcdk_atomic_compare(&ctx->worker_exit_flag, 1))
             break;
 
+        abcdk_clock_delay(&dot_clock, frame_duration * 1000000);
 
         for (int i = 0; i < ctx->src_count; i++)
         {
@@ -338,9 +339,9 @@ void _videostitcher_stitching(videostitcher_t *ctx)
 
         /*拼接.*/
         chk = abcdk_xpu_stitcher_compose(ctx->ctx, src_count, (const abcdk_xpu_image_t **)src_img, &ctx->pano_img, ctx->optimize_seam);
-        /*滚动DTS.*/
+        /*滚动PTS.*/
         if (chk == 0)
-            ctx->pano_dts += 1;
+            ctx->pano_pts += 1;
         
         abcdk_rwlock_unlock(ctx->pano_locker);//unlock.
         if (chk != 0)
@@ -349,12 +350,8 @@ void _videostitcher_stitching(videostitcher_t *ctx)
             break;
         }
 
-        abcdk_trace_printf(LOG_DEBUG, "STITCHING,DTS[%lld]", ctx->pano_dts);
+        abcdk_trace_printf(LOG_DEBUG, "STITCHING,DTS[%lld]", ctx->pano_pts);
 
-        uint64_t step_clock = abcdk_clock(dot_clock, &dot_clock) / 1000000;
-
-        if (frame_duration > step_clock)
-            usleep((frame_duration - step_clock) * 1000); // nFPS.
     }
 
     abcdk_xpu_context_current_set(NULL);
@@ -367,13 +364,15 @@ void _videostitcher_writer(videostitcher_t *ctx)
     abcdk_xpu_vcodec_params_t enc_params = {0};
     abcdk_xpu_vcodec_params_t enc_params2 = {0};
     int rtsp_stream_id = -1;
-    int64_t pano_dts = INT64_MIN;
-    int64_t pano_dts2 = INT64_MIN;
+    int64_t pano_pts = INT64_MIN;
+    int64_t pano_pts2 = INT64_MIN;
     abcdk_xpu_image_t *pano_img = NULL;
     abcdk_object_t *dst_packet = NULL;
-    int64_t dst_pts = INT64_MIN;
+    int64_t dst_pts = 0;
+    int64_t dst_pts2 = 0;
     abcdk_xpu_image_t *dst_img = NULL;
     int64_t frame_duration = 0;
+    uint64_t dot_clock = 0;
     int chk;
 
     abcdk_xpu_context_current_set(ctx->writer_dev_ctx);
@@ -386,12 +385,12 @@ void _videostitcher_writer(videostitcher_t *ctx)
     enc_params.max_b_frames = 0; // 低延迟.
     enc_params.refs = 1;
     enc_params.hw_preset_type = 0;
-    enc_params.idr_interval = ctx->dst_fps;
-    enc_params.iframe_interval = ctx->dst_fps;
+    enc_params.idr_interval = ctx->dst_fps *2;
+    enc_params.iframe_interval = ctx->dst_fps *2;
     enc_params.insert_spspps_idr = 1;
     enc_params.mode_vbr = 0;
-    enc_params.bitrate = 30000 * 1000;     // Mbps
-    enc_params.max_bitrate = 50000 * 1000; // Mbps
+    enc_params.bitrate = 4000 * 1000;     // Mbps
+    enc_params.max_bitrate = 8000 * 1000; // Mbps
     enc_params.level = 51;
     enc_params.profile = 1; //
     enc_params.qmin = 10;
@@ -417,20 +416,21 @@ void _videostitcher_writer(videostitcher_t *ctx)
     assert(chk == 0);
 
     frame_duration = (1000 / ctx->dst_fps);
-
-    uint64_t dot_clock = abcdk_time_systime(9);
+    dot_clock = abcdk_time_systime(9);
 
     while (1)
     {
         if (abcdk_atomic_compare(&ctx->worker_exit_flag, 1))
             break;
 
-        chk = abcdk_xpu_venc_recv_packet(enc_ctx, &dst_packet, &dst_pts);
+        chk = abcdk_xpu_venc_recv_packet(enc_ctx, &dst_packet, &dst_pts2);
         if (chk > 0)
         {
+            abcdk_clock_delay(&dot_clock, frame_duration * 1000000);
+
             AVRational timebase = {enc_params2.fps_d, enc_params2.fps_n};// 常用设定: 1/FPS
 
-            double pts_sec = (double)(dst_pts)*abcdk_ffmpeg_q2d(&timebase, 1.); // 秒.
+            double pts_sec = (double)(dst_pts2)*abcdk_ffmpeg_q2d(&timebase, 1.); // 秒.
             double dur_sec = (double)(frame_duration);                          // 毫秒.
 
             chk = abcdk_rtsp_server_play_stream(ctx->rtsp_ctx, ctx->dst_name_p, rtsp_stream_id,
@@ -446,18 +446,18 @@ void _videostitcher_writer(videostitcher_t *ctx)
 
         if (ctx->pano_img && !abcdk_xpu_image_empty(ctx->pano_img))
         {
-            pano_dts = ctx->pano_dts;                            // copy
+            pano_pts = ctx->pano_pts;                            // copy
             abcdk_xpu_image_clone(ctx->pano_img, &pano_img, 16); // clone
         }
 
         abcdk_rwlock_unlock(ctx->pano_locker);//unlock.
 
         /*序号没更新, 即表示全景图没有更新.*/
-        if (pano_dts2 >= pano_dts)
+        if (pano_pts2 >= pano_pts)
             continue;
 
         /*更新序号.*/
-        pano_dts2 = pano_dts;
+        pano_pts2 = pano_pts;
 
         chk = abcdk_xpu_image_reset(&dst_img, enc_params2.width, enc_params2.height, ABCDK_XPU_PIXFMT_RGB24, 16);
         if (chk != 0)
@@ -482,17 +482,13 @@ void _videostitcher_writer(videostitcher_t *ctx)
             goto END;
         }
 
-        chk = abcdk_xpu_venc_send_frame(enc_ctx, dst_img, pano_dts);
+        chk = abcdk_xpu_venc_send_frame(enc_ctx, dst_img, ++dst_pts);
         if (chk < 0)
         {
             abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("内存不足."));
             goto END;
         }
 
-        uint64_t step_clock = abcdk_clock(dot_clock, &dot_clock) / 1000000;
-
-        if (frame_duration > step_clock)
-            usleep((frame_duration - step_clock) * 1000); // nFPS.
     }
 
 END:
@@ -634,7 +630,7 @@ void _videostitcher_work(videostitcher_t *ctx)
         ctx->reader_dev_ctx[i] = abcdk_xpu_context_refer(ctx->dev_ctx);
     }
 
-    ctx->pano_dts = 0;
+    ctx->pano_pts = 0;
     ctx->pano_img = NULL;
     ctx->pano_locker = abcdk_rwlock_create();
     ctx->stitching_dev_ctx = abcdk_xpu_context_refer(ctx->dev_ctx);

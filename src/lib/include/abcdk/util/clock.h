@@ -32,6 +32,14 @@ uint64_t abcdk_clock(uint64_t start,uint64_t *dot);
  */
 int64_t abcdk_clock_remainder(uint64_t start, uint64_t duration, uint64_t check);
 
+/**
+ * 延时(纳秒).
+ * 
+ * @param [in out] dot 打点时刻.
+ * @param [in] duration 时长.
+*/
+void abcdk_clock_delay(uint64_t *dot, uint64_t duration);
+
 __END_DECLS
 
 #endif //ABCDK_UTIL_CLOCK_H

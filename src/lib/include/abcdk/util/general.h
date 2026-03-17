@@ -115,6 +115,11 @@ pid_t abcdk_gettid();
  */
 uint64_t abcdk_sequence_num();
 
+/**
+ * 休息(纳秒).
+ */
+void abcdk_nanosleep(uint64_t duration);
+
 __END_DECLS
 
 #endif // ABCDK_UTIL_GENERAL_H

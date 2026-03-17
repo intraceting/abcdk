@@ -99,7 +99,7 @@ namespace abcdk_xpu
 
                 abcdk_object_unref(dst);
                 *dst = abcdk_object_copyfrom(tmp_dst.data, tmp_dst.size);
-                *ts = tmp_dst.dts;
+                *ts = tmp_dst.pts;
 
                 av_packet_unref(&tmp_dst); // Don't forget.
 
@@ -120,7 +120,7 @@ namespace abcdk_xpu
                     tmp_src->width = src->width;
                     tmp_src->height = src->height;
                     tmp_src->format = src->format;
-                    tmp_src->pkt_dts = ts;
+                    tmp_src->pts = ts;
 
                     for (int i = 0; i < 4; i++)
                     {

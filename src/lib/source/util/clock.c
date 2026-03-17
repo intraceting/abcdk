@@ -41,3 +41,10 @@ int64_t abcdk_clock_remainder(uint64_t start, uint64_t duration, uint64_t check)
 
     return remainder;
 }
+
+void abcdk_clock_delay(uint64_t *dot, uint64_t duration)
+{
+    uint64_t step = abcdk_clock(*dot, dot);
+    if (duration > step)
+        abcdk_nanosleep(duration - step);
+}
