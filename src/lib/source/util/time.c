@@ -8,27 +8,30 @@
 #include "abcdk/util/heap.h"
 #include "abcdk/util/time.h"
 
-
 uint64_t abcdk_time_clock2kind(struct timespec *ts, uint8_t precision)
 {
-    uint64_t kind = 0;
-    uint64_t p = 0;
+    static const uint64_t powers[] = {
+        1ULL,         // 0
+        10ULL,        // 1
+        100ULL,       // 2
+        1000ULL,      // 3
+        10000ULL,     // 4
+        100000ULL,    // 5
+        1000000ULL,   // 6
+        10000000ULL,  // 7
+        100000000ULL, // 8
+        1000000000ULL // 9
+    };
 
     assert(ts);
 
-    if (precision <= 9 && precision >= 1)
+    if (precision >= 1 && precision <= 9)
     {
-        p = powl(10, precision);
-
-        kind = ts->tv_sec * p;
-        kind += ts->tv_nsec / (1000000000UL / p);
-    }
-    else
-    {
-        kind = ts->tv_sec;
+        uint64_t p = powers[precision];
+        return ((uint64_t)ts->tv_sec * p) + ((uint64_t)ts->tv_nsec * p / 1000000000ULL);
     }
 
-    return kind;
+    return (uint64_t)ts->tv_sec;
 }
 
 uint64_t abcdk_time_clock2kind_with(clockid_t id,uint8_t precision)

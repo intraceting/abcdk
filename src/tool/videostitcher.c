@@ -154,6 +154,7 @@ void _videostitcher_reader(videostitcher_t *ctx, int id)
     ff_param.read_ignore_audio = 1;
     ff_param.read_ignore_subtitle = 1;
     ff_param.read_nodelay = 0;
+    ff_param.read_rate_scale = 0;
 
     for (int i = 0; i < 100000000; i++)
     {
@@ -548,7 +549,7 @@ void _videostitcher_work(videostitcher_t *ctx)
 
     abcdk_xpu_context_current_set(ctx->dev_ctx);
 
-    ctx->rtsp_ctx = abcdk_rtsp_server_create(rtsp_port, 0x01 | 0x02 | 0x10);
+    ctx->rtsp_ctx = abcdk_rtsp_server_create(rtsp_port, 0x01 | 0x02);
     if (!ctx->rtsp_ctx)
     {
         abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("流媒体服务无法启动, 端口(%d)被占用或无权限."), rtsp_port);

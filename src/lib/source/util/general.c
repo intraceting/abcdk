@@ -130,10 +130,14 @@ uint64_t abcdk_sequence_num()
 
 void abcdk_nanosleep(uint64_t duration)
 {
-    struct timespec req = {0};
+    struct timespec req, rem;
 
-    req.tv_sec = (long)(duration / 1000000000);
-    req.tv_nsec = (long)(duration % 1000000000);
+    req.tv_sec = (time_t)(duration / 1000000000ULL);
+    req.tv_nsec = (long)(duration % 1000000000ULL);
 
-    nanosleep(&req, NULL);
+    /*循环执行，直到睡眠真正完成.*/
+    while (nanosleep(&req, &rem) == -1 && errno == EINTR)
+    {
+        req = rem; // 使用剩余的时间继续睡眠.
+    }
 }
