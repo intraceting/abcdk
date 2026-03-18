@@ -386,12 +386,12 @@ void _videostitcher_writer(videostitcher_t *ctx)
     enc_params.max_b_frames = 0; // 低延迟.
     enc_params.refs = 1;
     enc_params.hw_preset_type = 0;
-    enc_params.idr_interval = ctx->dst_fps *2;
-    enc_params.iframe_interval = ctx->dst_fps *2;
+    enc_params.idr_interval = ctx->dst_fps;
+    enc_params.iframe_interval = ctx->dst_fps;
     enc_params.insert_spspps_idr = 1;
     enc_params.mode_vbr = 0;
-    enc_params.bitrate = 4000 * 1000;     // Mbps
-    enc_params.max_bitrate = 8000 * 1000; // Mbps
+    enc_params.bitrate = 5000 * 1000;     // Mbps
+    enc_params.max_bitrate = 10000 * 1000; // Mbps
     enc_params.level = 51;
     enc_params.profile = 1; //
     enc_params.qmin = 10;
@@ -410,7 +410,7 @@ void _videostitcher_writer(videostitcher_t *ctx)
 
     abcdk_object_t *extdata = abcdk_object_copyfrom(enc_params2.ext_data, enc_params2.ext_size);
     rtsp_stream_id = abcdk_rtsp_server_add_stream(ctx->rtsp_ctx, ctx->dst_name_p, ABCDK_RTSP_CODEC_H265, extdata,
-                                                  enc_params2.bitrate / 1000, enc_params2.fps_n);
+                                                  enc_params2.bitrate / 1000, enc_params2.fps_n*2);
     abcdk_object_unref(&extdata);
 
     chk = abcdk_rtsp_server_play_media(ctx->rtsp_ctx, ctx->dst_name_p);

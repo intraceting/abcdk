@@ -32,7 +32,7 @@ namespace abcdk
             {
                 return m_codec_id;
             }
-            
+
             void doGetNextFrame()
             {
                 int chk;
@@ -69,11 +69,11 @@ namespace abcdk
 
 #if 0
                 gettimeofday(&fPresentationTime, NULL);
-#else 
-                fPresentationTime.tv_sec = m_pkt.pts()/1000000;
-                fPresentationTime.tv_usec = m_pkt.pts()%1000000;
+#else
+                fPresentationTime.tv_sec = m_pkt.pts() / 1000000;
+                fPresentationTime.tv_usec = m_pkt.pts() % 1000000;
 #endif
-                
+
                 fDurationInMicroseconds = m_pkt.dur();
 
                 FramedSource::afterGetting(this);
