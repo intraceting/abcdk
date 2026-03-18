@@ -837,6 +837,39 @@ int abcdk_ffmpeg_editor_add_stream2(abcdk_ffmpeg_editor_t *ctx, const AVCodecPar
 #endif // #ifndef HAVE_FFMPEG
 }
 
+int abcdk_ffmpeg_editor_add_stream_video(abcdk_ffmpeg_editor_t *ctx, int h264_or_h265, int width, int height, int fps,
+                                         int bit_rate, int level, int profile, int format)
+{
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
+    return -1;
+#else  // #ifndef HAVE_FFMPEG
+    int stream_index = -1;
+    AVCodecParameters *codecpar = NULL;
+    
+    codecpar = avcodec_parameters_alloc();
+    if(!codecpar)
+        return -1;
+
+    codecpar->codec_tag = 0;
+    codecpar->codec_id = (h264_or_h265 ? AV_CODEC_ID_H264 : AV_CODEC_ID_HEVC);
+    codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
+    codecpar->bit_rate = bit_rate;
+    codecpar->width = width;
+    codecpar->height = height;
+    codecpar->level = level;
+    codecpar->profile = profile;
+    codecpar->format = format;
+
+    AVRational timebase = {1, fps}; // 常用设定: 1/FPS
+
+    stream_index = abcdk_ffmpeg_editor_add_stream2(ctx, codecpar, &timebase, NULL, NULL);
+    avcodec_parameters_free(&codecpar);
+
+    return stream_index;
+#endif // #ifndef HAVE_FFMPEG
+}
+
 int abcdk_ffmpeg_editor_write_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *src)
 {
 #ifndef HAVE_FFMPEG
@@ -901,6 +934,31 @@ int abcdk_ffmpeg_editor_write_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *src)
         avio_flush(ctx->media_ctx->pb);
 
     return 0;
+#endif // #ifndef HAVE_FFMPEG
+}
+
+int abcdk_ffmpeg_editor_write_packet2(abcdk_ffmpeg_editor_t *ctx, int stream_index, const void *pkt_data, int pkt_size, int64_t pkt_dts, int64_t pkt_pts)
+{
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
+    return -1;
+#else //#ifndef HAVE_FFMPEG
+    int chk;
+
+    AVPacket *pkt = av_packet_alloc();
+    if (!pkt)
+        return -1;
+
+    pkt->stream_index = stream_index;
+    pkt->data = (uint8_t *)pkt_data;
+    pkt->size = pkt_size;
+    pkt->dts = pkt_dts;
+    pkt->pts = pkt_pts;
+
+    chk = abcdk_ffmpeg_editor_write_packet(ctx, pkt);
+    av_packet_free(&pkt);
+
+    return chk;
 #endif // #ifndef HAVE_FFMPEG
 }
 

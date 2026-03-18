@@ -52,7 +52,12 @@ typedef struct _abcdk_ffmpeg_editor_param
     /**读,是否忽略字幕. */
     int read_ignore_subtitle;
 
-    /**读,是否禁用延迟刷新.*/
+    /**
+     * 读,是否禁用延迟刷新.
+     * 
+     * 0: 以播放速度读取.
+     * 1: 尽快读.
+    */
     int read_nodelay;
 
     /**读,速率比例(n/1000). <=0 无效.*/
@@ -61,7 +66,12 @@ typedef struct _abcdk_ffmpeg_editor_param
     /**读,是否启用MP4流转换.*/
     int read_mp4toannexb;
 
-    /**写,是否禁用延迟刷新. */
+    /**
+     * 写,是否禁用延迟刷新.
+     * 
+     * 0: 由算法决定.
+     * 1: 尽快落盘或推流.
+     */
     int write_nodelay;
 
     /**写,启用FMP4封装. */
@@ -133,11 +143,28 @@ int abcdk_ffmpeg_editor_add_stream2(abcdk_ffmpeg_editor_t *ctx, const AVCodecPar
                                     const AVRational *avg_frame_rate, const AVRational *r_frame_rate);
 
 /**
+ * 创建视频流.
+ * 
+ * @param [in] bit_rate 码率(bps).
+ * 
+ * @return >= 0 成功(流索引), < 0 失败.
+*/
+int abcdk_ffmpeg_editor_add_stream_video(abcdk_ffmpeg_editor_t *ctx, int h264_or_h265, int width, int height, int fps,
+                                         int bit_rate, int level, int profile, int format);
+
+/**
  * 写数据包.
  * 
  * @return 0 成功, < 0 失败(出错或结束).
 */
 int abcdk_ffmpeg_editor_write_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *src);
+
+/**
+ * 写数据包.
+ * 
+ * @return 0 成功, < 0 失败(出错或结束).
+*/
+int abcdk_ffmpeg_editor_write_packet2(abcdk_ffmpeg_editor_t *ctx, int stream_index, const void *pkt_data, int pkt_size, int64_t pkt_dts, int64_t pkt_pts);
 
 /**
  * 写头部信息.

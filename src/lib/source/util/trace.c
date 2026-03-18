@@ -11,11 +11,39 @@
 
 static void *g_trace_dump_cb_opaque = NULL;
 static abcdk_trace_dump_cb g_trace_dump_cb_func = NULL;
+static uint32_t g_trace_mask = 0xFFFFFFFF;
 
 void abcdk_trace_redirect(abcdk_trace_dump_cb cb, void *opaque)
 {
     g_trace_dump_cb_func = cb;
     g_trace_dump_cb_opaque = opaque;
+}
+
+void abcdk_trace_mask(int type, ...)
+{
+    uint32_t mask = 0;
+
+    va_list vaptr;
+    va_start(vaptr, type);
+    for (;;)
+    {
+        if (type < 0 || type >= 32)
+            break;
+
+        mask |= (1 << type);
+
+        /*遍历后续的.*/
+        type = va_arg(vaptr, int);
+    }
+    va_end(vaptr);
+
+    /*覆盖现有的.*/
+    g_trace_mask = mask;
+}
+
+static int _abcdk_trace_filter(int type)
+{
+    return ((g_trace_mask & (1 << type)) ? 0 : 1);
 }
 
 void abcdk_trace_output(int type, const char *str)
@@ -31,9 +59,13 @@ void abcdk_trace_output(int type, const char *str)
 
     assert(str != NULL);
 
+    /*如果不需要记录, 直接跳过.*/
+    if (_abcdk_trace_filter(type))
+        return;
+
     /*获取自然时间.*/
     ts = abcdk_time_realtime(6);
-    abcdk_time_sec2tm(&tm, ts / 1000000UL, 0);
+    abcdk_time_sec2tm(&tm, ts / 1000000ULL, 0);
 
     /*获线程名称.*/
     abcdk_thread_getname(pthread_self(), name);

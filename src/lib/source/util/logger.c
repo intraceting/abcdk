@@ -56,7 +56,7 @@ struct _abcdk_logger
      *
      * 见syslog.
      */
-    volatile uint32_t mask;
+    uint32_t mask;
 
 }; // abcdk_logger_t;
 
@@ -112,30 +112,6 @@ abcdk_logger_t *abcdk_logger_open2(const char *path, const char *filename,
     snprintf(name, PATH_MAX, "%s/%s", path, filename);
 
     return abcdk_logger_open(name, segment_max, segment_size, copy2syslog, copy2stderr);
-}
-
-void abcdk_logger_mask(abcdk_logger_t *ctx, int type, ...)
-{
-    uint32_t mask = 0;
-
-    assert(ctx != NULL);
-
-    va_list vaptr;
-    va_start(vaptr, type);
-    for (;;)
-    {
-        if (type < 0 || type >= ABCDK_LOGGER_TYPE_MAX)
-            break;
-
-        mask |= (1 << type);
-
-        /*遍历后续的.*/
-        type = va_arg(vaptr, int);
-    }
-    va_end(vaptr);
-
-    /*覆盖现有的.*/
-    ctx->mask = mask;
 }
 
 static int _abcdk_logger_backup(abcdk_logger_t *ctx)
@@ -233,12 +209,41 @@ open_log_file:
     }
 }
 
+void abcdk_logger_mask(abcdk_logger_t *ctx, int type, ...)
+{
+    uint32_t mask = 0;
+
+    assert(ctx != NULL);
+
+    va_list vaptr;
+    va_start(vaptr, type);
+    for (;;)
+    {
+        if (type < 0 || type >= ABCDK_LOGGER_TYPE_MAX)
+            break;
+
+        mask |= (1 << type);
+
+        /*遍历后续的.*/
+        type = va_arg(vaptr, int);
+    }
+    va_end(vaptr);
+
+    /*覆盖现有的.*/
+    ctx->mask = mask;
+}
+
+static int _abcdk_logger_filter(abcdk_logger_t *ctx, int type)
+{
+    return ((ctx->mask & (1 << type)) ? 0 : 1);
+}
+
 void abcdk_logger_output(abcdk_logger_t *ctx, int type, const char *str)
 {
     assert(ctx != NULL && str != NULL);
 
     /*如果不需要记录, 直接跳过.*/
-    if (!(ctx->mask & (1 << type)))
+    if (_abcdk_logger_filter(ctx,type))
         return;
 
     /*加锁, 确保每个线程写操作不被打断.*/

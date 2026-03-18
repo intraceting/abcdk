@@ -19,6 +19,9 @@ typedef void (*abcdk_trace_dump_cb)(void *opaque, int type, const char *str);
 /**轨迹重定向.*/
 void abcdk_trace_redirect(abcdk_trace_dump_cb cb, void *opaque);
 
+/**设置掩码.*/
+void abcdk_trace_mask(int type, ...);
+
 /**一般输出.*/
 void abcdk_trace_output(int type, const char *str);
 
