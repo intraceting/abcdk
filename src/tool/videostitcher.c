@@ -160,6 +160,7 @@ void _videostitcher_reader(videostitcher_t *ctx, int id)
     ff_param.read_ignore_subtitle = 1;
     ff_param.read_nodelay = 0;
     ff_param.read_rate_scale = 0;
+    ff_param.rtsp_transport = 2;
 
     for (int i = 0; i < INT32_MAX; i++)
     {
@@ -451,6 +452,7 @@ void _videostitcher_writer(videostitcher_t *ctx)
             ff_cfg.url = ctx->dst_url_p;
             ff_cfg.write_fmp4 = 1;
             ff_cfg.write_nodelay = 1;
+            ff_cfg.rtsp_transport = 2;
 
             chk = abcdk_ffmpeg_editor_open(ff_ctx, &ff_cfg);
             if (chk != 0)

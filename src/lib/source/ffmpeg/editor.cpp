@@ -995,21 +995,21 @@ int abcdk_ffmpeg_editor_write_header(abcdk_ffmpeg_editor_t *ctx)
         chk = avio_open(&ctx->media_ctx->pb, url_p, AVIO_FLAG_WRITE);
         if (chk < 0)
             return chk;
-
-        if (ctx->param.rtsp_transport)
-        {
-            if (ctx->param.rtsp_transport == 1)
-                av_dict_set(&ctx->option_ctx, "rtsp_transport", "udp", 0);
-            else if (ctx->param.rtsp_transport == 2)
-                av_dict_set(&ctx->option_ctx, "rtsp_transport", "tcp", 0);
-        }
-
-        if (ctx->param.write_fmp4)
-            av_dict_set(&ctx->option_ctx, "movflags", "frag_keyframe+empty_moov+default_base_moof+faststart", 0);
-
-        // 控制输出时音频和视频数据包之间的最大"交织时间差".
-        av_dict_set(&ctx->option_ctx, "max_interleave_delta", "0", 0);
     }
+
+    if (ctx->param.rtsp_transport)
+    {
+        if (ctx->param.rtsp_transport == 1)
+            av_dict_set(&ctx->option_ctx, "rtsp_transport", "udp", 0);
+        else if (ctx->param.rtsp_transport == 2)
+            av_dict_set(&ctx->option_ctx, "rtsp_transport", "tcp", 0);
+    }
+
+    if (ctx->param.write_fmp4)
+        av_dict_set(&ctx->option_ctx, "movflags", "frag_keyframe+empty_moov+default_base_moof+faststart", 0);
+
+    // 控制输出时音频和视频数据包之间的最大"交织时间差".
+    av_dict_set(&ctx->option_ctx, "max_interleave_delta", "0", 0);
 
     chk = avformat_write_header(ctx->media_ctx, &ctx->option_ctx);
     if (chk < 0)
