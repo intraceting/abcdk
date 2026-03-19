@@ -359,7 +359,11 @@ void abcdk_ffmpeg_stream_fix_bitrate(AVStream *vs_ctx)
     }
     else if (vs_ctx->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
     {
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
+        bit_rate = vs_ctx->codecpar->sample_rate * vs_ctx->codecpar->ch_layout.nb_channels * 0.12; // 经验估算.
+#else //#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
         bit_rate = vs_ctx->codecpar->sample_rate * vs_ctx->codecpar->channels * 0.12; // 经验估算.
+#endif //#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
     }
     else
     {

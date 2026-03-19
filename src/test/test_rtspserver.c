@@ -88,7 +88,11 @@ int abcdk_test_server(abcdk_option_t *args)
         else if (p->codecpar->codec_id == AV_CODEC_ID_PCM_MULAW)
         {
             abcdk_object_t *extdata = abcdk_object_alloc3(sizeof(int), 2); //[0] = channels,[1]=sample_rate
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
+            ABCDK_PTR2I32(extdata->pptrs[0], 0) = p->codecpar->ch_layout.nb_channels;
+#else //#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
             ABCDK_PTR2I32(extdata->pptrs[0], 0) = p->codecpar->channels;
+#endif //#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
             ABCDK_PTR2I32(extdata->pptrs[1], 0) = p->codecpar->sample_rate;
             stream[i] = abcdk_rtsp_server_add_stream(ctx, name, ABCDK_RTSP_CODEC_G711U, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate / 1000 : 96), 10);
             abcdk_object_unref(&extdata);
@@ -96,7 +100,11 @@ int abcdk_test_server(abcdk_option_t *args)
         else if (p->codecpar->codec_id == AV_CODEC_ID_PCM_ALAW)
         {
             abcdk_object_t *extdata = abcdk_object_alloc3(sizeof(int), 2); //[0] = channels,[1]=sample_rate
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
+            ABCDK_PTR2I32(extdata->pptrs[0], 0) = p->codecpar->ch_layout.nb_channels;
+#else //#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
             ABCDK_PTR2I32(extdata->pptrs[0], 0) = p->codecpar->channels;
+#endif //#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
             ABCDK_PTR2I32(extdata->pptrs[1], 0) = p->codecpar->sample_rate;
             stream[i] = abcdk_rtsp_server_add_stream(ctx, name, ABCDK_RTSP_CODEC_G711A, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate / 1000 : 96), 10);
             abcdk_object_unref(&extdata);
@@ -104,7 +112,11 @@ int abcdk_test_server(abcdk_option_t *args)
         else if (p->codecpar->codec_id == AV_CODEC_ID_OPUS)
         {
             abcdk_object_t *extdata = abcdk_object_alloc3(sizeof(int), 2); //[0] = channels,[1]=sample_rate
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
+            ABCDK_PTR2I32(extdata->pptrs[0], 0) = p->codecpar->ch_layout.nb_channels;
+#else //#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
             ABCDK_PTR2I32(extdata->pptrs[0], 0) = p->codecpar->channels;
+#endif //#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
             ABCDK_PTR2I32(extdata->pptrs[1], 0) = p->codecpar->sample_rate;
             stream[i] = abcdk_rtsp_server_add_stream(ctx, name, ABCDK_RTSP_CODEC_OPUS, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate / 1000 : 96), 10);
             abcdk_object_unref(&extdata);

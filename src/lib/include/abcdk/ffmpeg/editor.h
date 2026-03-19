@@ -24,7 +24,11 @@ typedef struct _abcdk_ffmpeg_editor_param
     struct
     {
         int (*read_cb)(void *opaque, uint8_t *buf, int size);
+#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(59, 16, 100)
+        int (*write_cb)(void *opaque, const uint8_t *buf, int size);
+#else //#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(59, 16, 100)
         int (*write_cb)(void *opaque, uint8_t *buf, int size);
+#endif //#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(59, 16, 100)
         void *opaque;
     } vio;
 

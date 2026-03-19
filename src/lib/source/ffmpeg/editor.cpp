@@ -731,7 +731,7 @@ int abcdk_ffmpeg_editor_add_stream(abcdk_ffmpeg_editor_t *ctx, const AVCodecCont
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return -1;
 #else //#ifndef HAVE_FFMPEG
-    AVCodec *codec_ctx_p = NULL;
+    const AVCodec *codec_ctx_p = NULL;
     AVStream *vs_ctx = NULL;
     int chk;
 
@@ -788,7 +788,7 @@ int abcdk_ffmpeg_editor_add_stream2(abcdk_ffmpeg_editor_t *ctx, const AVCodecPar
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return -1;
 #else //#ifndef HAVE_FFMPEG
-    AVCodec *codec_ctx_p = NULL;
+    const AVCodec *codec_ctx_p = NULL;
     AVStream *vs_ctx = NULL;
     int chk;
 
