@@ -14,7 +14,11 @@
 #endif //#if defined(HAVE_OPENCV) && defined(HAVE_FFMPEG) && defined(HAVE_ONNX) && defined(HAVE_EIGEN)
 
 #if defined(HAVE_CUDA) && defined(HAVE_TENSORRT)
+#if defined(__aarch64__) && defined(HAVE_MMAPI)
 #define __XPU_NVIDIA__
+#elif defined(__x86_64__)
+#define __XPU_NVIDIA__
+#endif //
 #endif //#if defined(HAVE_CUDA) && defined(HAVE_TENSORRT)
 
 void _abcdk_xpu_hwaccel_set(int hwaccel);

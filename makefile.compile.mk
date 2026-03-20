@@ -33,12 +33,12 @@ ifeq (${HAVE_CUDA},yes)
 ifeq (${HAVE_TENSORRT},yes)
 LIB_SRC_CXX_FILES += $(wildcard $(SRC_DIR)/lib/source/xpu/nvidia/*.cpp)
 LIB_SRC_CU_FILES += $(wildcard $(SRC_DIR)/lib/source/xpu/nvidia/*.cu)
-ifeq (${TARGET_PLATFORM},aarch64)
-LIB_SRC_CXX_FILES += $(wildcard $(SRC_DIR)/lib/source/xpu/nvidia/jetson/common/classes/*.cpp)
+ifeq (${HAVE_MMAPI},yes)
+LIB_SRC_CXX_FILES += $(wildcard $(SRC_DIR)/lib/source/xpu/nvidia/jetson/${MMAPI_VERSION}/common/classes/*.cpp)
 #增加头文件搜索路径.
-CXX_FLAGS += -I$(SRC_DIR)/lib/source/xpu/nvidia/jetson/include
-CXX_FLAGS += -I$(SRC_DIR)/lib/source/xpu/nvidia/jetson/include/drm
-CXX_FLAGS += -I$(SRC_DIR)/lib/source/xpu/nvidia/jetson/include/libjpeg-8b
+CXX_FLAGS += -I$(SRC_DIR)/lib/source/xpu/nvidia/jetson/${MMAPI_VERSION}/include
+CXX_FLAGS += -I$(SRC_DIR)/lib/source/xpu/nvidia/jetson/${MMAPI_VERSION}/include/drm
+CXX_FLAGS += -I$(SRC_DIR)/lib/source/xpu/nvidia/jetson/${MMAPI_VERSION}/include/libjpeg-8b
 endif
 endif
 endif
