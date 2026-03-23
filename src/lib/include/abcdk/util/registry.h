@@ -33,7 +33,7 @@ typedef struct _abcdk_registry_config
     /**
      * KEY哈希回调函数.
      * 
-     * @note 默认使用BKDRHash64算法.
+     * @note 默认使用better64算法.
      */
     uint64_t (*key_hash_cb)(const void *key, void *opaque);
 

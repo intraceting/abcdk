@@ -24,6 +24,25 @@ int abcdk_test_any(abcdk_option_t *args)
 {
 #if 1
 
+    abcdk_nonce_t *ctx =  abcdk_nonce_create(5000);
+
+    for(int i = 0;i<10000000;i++)
+    {
+        uint8_t prefix[16];
+        uint8_t key[32];
+
+        RAND_bytes(prefix,16);
+
+        abcdk_nonce_generate(ctx,prefix,key);
+
+        int chk = abcdk_nonce_check(ctx,key);
+        assert(chk == 0);
+    }
+
+    abcdk_nonce_destroy(&ctx);
+
+#elif 0
+
     uint64_t dot_clock = abcdk_time_systime(9);
 
     for(int i = 0;i<100;i++)

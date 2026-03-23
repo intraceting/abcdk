@@ -70,7 +70,7 @@ static uint64_t _abcdk_registry_hash_cb(const void* key,size_t size,void *opaque
     if(ctx->cfg.key_hash_cb)
         hs = ctx->cfg.key_hash_cb(key,ctx->cfg.opaque);
     else 
-        hs = abcdk_hash_bkdr64(key,size);
+        hs = abcdk_hash_better64(key,size);
 
     return hs;
 }
