@@ -6,7 +6,7 @@
  */
 #include "vdec.hxx"
 
-#ifdef __aarch64__
+#ifdef __XPU_NVIDIA__MMAPI__
 
 #include "NvVideoDecoder.h"
 
@@ -51,4 +51,4 @@ namespace abcdk_xpu
 
 } // namespace abcdk_xpu
 
-#endif //#ifdef __aarch64__ 
+#endif //#ifdef __XPU_NVIDIA__MMAPI__ 
