@@ -11,17 +11,15 @@
 
 __BEGIN_DECLS
 
-/**
- * BKDR32
- * 
-*/
+/**BKDR32. */
+ABCDK_DEPRECATED
 uint32_t abcdk_hash_bkdr(const void* data,size_t size);
 
-/**
- * BKDR64
- * 
-*/
+/**BKDR64.*/
 uint64_t abcdk_hash_bkdr64(const void* data,size_t size);
+
+/**较好的.*/
+uint64_t abcdk_hash_better64(const void* data,size_t size);
 
 __END_DECLS
 

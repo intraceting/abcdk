@@ -16,7 +16,7 @@
 
 static uint64_t _abcdk_map_hash(const void *data, size_t size, void *opaque)
 {
-    return abcdk_hash_bkdr64(data, size);
+    return abcdk_hash_better64(data, size);
 }
 
 static int _abcdk_map_compare(const void *key1, size_t size1, const void *key2, size_t size2, void *opaque)

@@ -59,5 +59,9 @@
 #define __ABCDK_XPU_INVOKE_GLOBAL static inline
 #endif //__NVCC__
 
+#if defined(HAVE_CUDA) && defined(HAVE_TENSORRT) && defined(HAVE_MMAPI)
+#define __XPU_NVIDIA__MMAPI__
+#endif //#if defined(HAVE_CUDA) && defined(HAVE_TENSORRT)
+
 
 #endif //ABCDK_XPU_BASE_IN_H

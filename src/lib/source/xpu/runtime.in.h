@@ -15,9 +15,6 @@
 
 #if defined(HAVE_CUDA) && defined(HAVE_TENSORRT)
 #define __XPU_NVIDIA__
-#if defined(HAVE_MMAPI)
-#define __XPU_NVIDIA__MMAPI__
-#endif //
 #endif //#if defined(HAVE_CUDA) && defined(HAVE_TENSORRT)
 
 void _abcdk_xpu_hwaccel_set(int hwaccel);

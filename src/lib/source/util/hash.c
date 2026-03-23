@@ -36,3 +36,18 @@ uint64_t abcdk_hash_bkdr64(const void* data,size_t size)
 
     return hash; 
 }
+
+uint64_t abcdk_hash_better64(const void* data,size_t size)
+{
+    //1: 用现有的 BKDR 快速处理.
+    uint64_t h = abcdk_hash_bkdr64(data, size);
+
+    //2: 叠加 MurmurHash3 的收尾混合逻辑(fmix64) 使变化更加明显.
+    h ^= (h >> 33);
+    h *= 0xff51afd7ed558ccdLLU;
+    h ^= (h >> 33);
+    h *= 0xc4ceb9fe1a85ec53LLU;
+    h ^= (h >> 33);
+
+    return h;
+}
