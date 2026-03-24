@@ -128,7 +128,7 @@ abcdk_registry_t *abcdk_registry_create(abcdk_registry_config_t *cfg)
 
     ctx->cfg = *cfg;
 
-    ctx->store_ctx = abcdk_map_create(100000);
+    ctx->store_ctx = abcdk_map_create(10000000);
     if(!ctx->store_ctx)
         goto ERR;
 

@@ -22,9 +22,33 @@
 
 int abcdk_test_any(abcdk_option_t *args)
 {
-#if 1
+#if 0
+
+    int *button = (int *)calloc(100000,4);
+
+    for(int i = 0;i<10000000;i++)
+    {
+        uint64_t hash = abcdk_hash_bkdr64(&i,4);
+        //uint64_t hash = abcdk_hash_better64(&i,4);
+
+        button[hash%100000] += 1;
+    }
+
+    for(int i = 0;i<100000;i++)
+    {
+        if(!button[i])
+            continue;
+        
+        abcdk_trace_printf(LOG_INFO,"[%d]=%d",i,button[i]);
+    }
+
+    free(button);
+
+#elif 1
 
     abcdk_nonce_t *ctx =  abcdk_nonce_create(5000);
+
+    uint64_t s = abcdk_time_systime(9);
 
     for(int i = 0;i<10000000;i++)
     {
@@ -32,12 +56,17 @@ int abcdk_test_any(abcdk_option_t *args)
         uint8_t key[32];
 
         RAND_bytes(prefix,16);
+        //memcpy(prefix,&i,4);
 
         abcdk_nonce_generate(ctx,prefix,key);
 
         int chk = abcdk_nonce_check(ctx,key);
         assert(chk == 0);
     }
+
+    uint64_t step = abcdk_clock(s,&s);
+
+    abcdk_trace_printf(LOG_INFO,"step: %llu.%llu",step/1000000000ULL,step%1000000000ULL);
 
     abcdk_nonce_destroy(&ctx);
 
