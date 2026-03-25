@@ -7,9 +7,9 @@
 #ifndef ABCDK_XPU_NVIDIA_VENC_HXX
 #define ABCDK_XPU_NVIDIA_VENC_HXX
 
-#include "abcdk/xpu/venc.h"
 #include "../base.in.h"
 #include "../common/imgproc.hxx"
+#include "../common/util.hxx"
 #include "context.hxx"
 #include "image.hxx"
 #include "imgproc.hxx"

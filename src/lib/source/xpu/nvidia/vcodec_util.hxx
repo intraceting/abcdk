@@ -15,6 +15,10 @@
 #include "ffnvcodec/dynlink_nvcuvid.h"
 #endif // #ifdef __x86_64__
 
+#ifdef __XPU_NVIDIA__MMAPI__
+#include "v4l2_nv_extensions.h"
+#endif //#ifdef __XPU_NVIDIA__MMAPI__
+
 namespace abcdk_xpu
 {
 
@@ -49,30 +53,40 @@ namespace abcdk_xpu
                     return cudaVideoCodec_NumCodecs;
                 }
             }
+
+            static inline cudaVideoCodec local_to_nvcodec(uint32_t id)
+            {
+                return local_to_nvcodec((abcdk_xpu_vcodec_id_t)id);
+            }
 #endif // #ifdef __x86_64__
 
-#ifdef __aarch64__
+#ifdef __XPU_NVIDIA__MMAPI__
             static inline int local_to_nvcodec(abcdk_xpu_vcodec_id_t id)
             {
                 switch (id)
                 {
                 case ABCDK_XPU_VCODEC_ID_MPEG2VIDEO:
-                    return 1;
+                    return -1;
                 case ABCDK_XPU_VCODEC_ID_MPEG4:
-                    return 2;
+                    return -1;
                 case ABCDK_XPU_VCODEC_ID_H264:
-                    return 3;
+                    return V4L2_PIX_FMT_H264;
                 case ABCDK_XPU_VCODEC_ID_HEVC:
-                    return 4;
+                    return V4L2_PIX_FMT_H265;
                 case ABCDK_XPU_VCODEC_ID_VP8:
-                    return 5;
+                    return -1;
                 case ABCDK_XPU_VCODEC_ID_VP9:
-                    return 6;
+                    return V4L2_PIX_FMT_VP9;
                 default:
                     return -1;
                 }
             }
-#endif // #ifdef __aarch64__
+
+            static inline int local_to_nvcodec(uint32_t id)
+            {
+                return local_to_nvcodec((abcdk_xpu_vcodec_id_t)id);
+            }
+#endif // #ifdef __XPU_NVIDIA__MMAPI__
 
         } // namespace vcodec
     } // namespace nvidia

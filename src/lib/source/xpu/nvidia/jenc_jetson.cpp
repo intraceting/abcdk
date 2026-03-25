@@ -49,7 +49,7 @@ namespace abcdk_xpu
                 if (!ctx)
                     return NULL;
 
-                ctx->cu_ctx = NvJPEGEncoder::createJPEGEncoder("jpenenc");
+                ctx->cu_ctx = NULL;
 
                 return ctx;
             }
@@ -61,6 +61,13 @@ namespace abcdk_xpu
                 NvBufSurface *dma_surf = NULL;
                 abcdk_object_t *dst;
                 int chk;
+
+                if(!ctx->cu_ctx)
+                {
+                    ctx->cu_ctx = NvJPEGEncoder::createJPEGEncoder("nvjpegenc");
+                    if(!ctx->cu_ctx)
+                        return NULL;
+                }
 
                 if (src->format != AV_PIX_FMT_YUV420P)
                 {
@@ -101,30 +108,22 @@ namespace abcdk_xpu
                     return NULL;
                 }
 
-                for (int i = 0; i < 4; i++)
+                chk = image::copy(src, 0, dma_surf, 1);
+                if (chk != 0)
                 {
-                    if (src->linesize[i] <= 0)
-                        break;
-
-                    NvBufSurfaceMap(dma_surf, 0, i, NVBUF_MAP_READ_WRITE);
-                    NvBufSurfaceSyncForCpu(dma_surf, 0, i);
-
-                    chk = image::copy(src, i, 0, dma_surf->surfaceList[0].mappedAddr.addr[i], dma_surf->surfaceList[0].planeParams.pitch[i], 1);
-                    assert(chk == 0);
-
-                    NvBufSurfaceSyncForDevice (dma_surf, 0, i);
-                    NvBufSurfaceUnMap(dma_surf, 0, i);
+                    NvBufSurf::NvDestroy(dma_fd);
+                    return NULL;
                 }
 
                 dst = abcdk_object_alloc2(src->width * src->height * 3 / 2);
                 if(!dst)
                 {
-                    NvBufSurfaceDestroy(dma_surf);
+                    NvBufSurf::NvDestroy(dma_fd);
                     return NULL;
                 }
 
                 chk = ctx->cu_ctx->encodeFromFd(dma_fd, JCS_YCbCr, &dst->pptrs[0], dst->sizes[0], 100);
-                NvBufSurfaceDestroy(dma_surf);
+                NvBufSurf::NvDestroy(dma_fd);
                 
                 if(chk != 0)
                     return NULL;

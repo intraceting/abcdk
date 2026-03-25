@@ -7,15 +7,17 @@
 #ifndef ABCDK_XPU_NVIDIA_IMAGE_HXX
 #define ABCDK_XPU_NVIDIA_IMAGE_HXX
 
-#include "abcdk/xpu/image.h"
 #include "../base.in.h"
 #include "../common/image.hxx"
 #include "pixfmt.hxx"
 #include "memory.hxx"
 
+#ifdef __XPU_NVIDIA__MMAPI__
+#include "NvBufSurface.h"
+#endif //#ifdef __XPU_NVIDIA__MMAPI__
+
 namespace abcdk_xpu
 {
-
     namespace nvidia
     {
         namespace image
@@ -45,6 +47,12 @@ namespace abcdk_xpu
 
             int copy(const cv::Mat &src, int src_in_host, metadata_t *dst, int dst_in_host);
 
+#ifdef __XPU_NVIDIA__MMAPI__            
+            int copy(const NvBufSurface *src, int src_in_host, metadata_t *dst, int dst_in_host);
+
+            int copy(const metadata_t *src, int src_in_host, NvBufSurface *dst, int dst_in_host);
+#endif //#ifdef __XPU_NVIDIA__MMAPI__
+
             metadata_t *clone(const metadata_t *src, int src_in_host, int dst_align, int dst_in_host);
 
             metadata_t *clone(abcdk_xpu_pixfmt_t pixfmt, const cv::Mat &src, int src_in_host, int dst_align, int dst_in_host);
@@ -60,7 +68,6 @@ namespace abcdk_xpu
             int download(const metadata_t *src, uint8_t *dst_data[4], int dst_linesize[4]);
         } // namespace image
     } // namespace nvidia
-
 } // namespace abcdk_xpu
 
 #endif // ABCDK_XPU_NVIDIA_IMAGE_HXX

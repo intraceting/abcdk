@@ -220,7 +220,7 @@ namespace abcdk_xpu
                 if (ctx->nv_dec_info.OutputFormat == cudaVideoSurfaceFormat_NV12)
                     pixfmt = ABCDK_XPU_PIXFMT_NV12;
                 else if (ctx->nv_dec_info.OutputFormat == cudaVideoSurfaceFormat_P016)
-                   pixfmt = ABCDK_XPU_PIXFMT_P016;
+                    pixfmt = ABCDK_XPU_PIXFMT_P016;
                 else if (ctx->nv_dec_info.OutputFormat == cudaVideoSurfaceFormat_YUV444)
                     pixfmt = ABCDK_XPU_PIXFMT_YUV444P;
                 else if (ctx->nv_dec_info.OutputFormat == cudaVideoSurfaceFormat_YUV444_16Bit)

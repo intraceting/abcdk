@@ -9,6 +9,7 @@
 
 #include "../base.in.h"
 #include "../common/imgproc.hxx"
+#include "../common/util.hxx"
 #include "context.hxx"
 #include "image.hxx"
 #include "imgproc.hxx"

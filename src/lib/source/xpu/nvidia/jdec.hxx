@@ -14,7 +14,6 @@
 
 namespace abcdk_xpu
 {
-
     namespace nvidia
     {
         namespace jdec
@@ -28,7 +27,6 @@ namespace abcdk_xpu
             image::metadata_t *decode(metadata_t *ctx,const void *src, int src_size);
         } // namespace jdec
     } // namespace nvidia
-
 } // namespace abcdk_xpu
 
 #endif // ABCDK_XPU_NVIDIA_JDEC_HXX

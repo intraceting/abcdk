@@ -258,6 +258,56 @@ namespace abcdk_xpu
                 return chk;
             }
 
+#ifdef __XPU_NVIDIA__MMAPI__            
+            int copy(const NvBufSurface *src, int src_in_host, metadata_t *dst, int dst_in_host)
+            {
+                int chk;
+
+                assert(src_in_host == 1);
+
+                for (int i = 0; i < 4; i++)
+                {
+                    if (dst->linesize[i] <= 0)
+                        break;
+
+                    NvBufSurfaceMap((NvBufSurface *)src, 0, i, NVBUF_MAP_READ);
+                    NvBufSurfaceSyncForCpu((NvBufSurface *)src, 0, i);
+
+                    chk = image::copy(src->surfaceList[0].mappedAddr.addr[i], src->surfaceList[0].planeParams.pitch[i], src_in_host, dst, i, dst_in_host);
+                    if(chk != 0)
+                        return -1;
+
+                    NvBufSurfaceUnMap((NvBufSurface *)src, 0, i);
+                }
+
+                return 0;
+            }
+
+            int copy(const metadata_t *src, int src_in_host, NvBufSurface *dst, int dst_in_host)
+            {
+                int chk;
+
+                assert(dst_in_host == 1);
+
+                for (int i = 0; i < 4; i++)
+                {
+                    if (src->linesize[i] <= 0)
+                        break;
+
+                    NvBufSurfaceMap((NvBufSurface *)dst, 0, i, NVBUF_MAP_WRITE);
+                    NvBufSurfaceSyncForCpu((NvBufSurface *)dst, 0, i);
+
+                    chk = image::copy(src, i, src_in_host, dst->surfaceList[0].mappedAddr.addr[i], dst->surfaceList[0].planeParams.pitch[i], dst_in_host);
+                    if(chk != 0)
+                        return -1;
+
+                    NvBufSurfaceUnMap((NvBufSurface *)dst, 0, i);
+                }
+
+                return 0;
+            }
+#endif //#ifdef __XPU_NVIDIA__MMAPI__
+
             metadata_t *clone(const metadata_t *src, int src_in_host, int dst_align, int dst_in_host)
             {
                 metadata_t *dst;

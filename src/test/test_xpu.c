@@ -409,7 +409,13 @@ static void _test_xpu_7(abcdk_option_t *args)
         if (chk > 0)
         {
             abcdk_trace_printf(LOG_DEBUG, "pts:%.3f", abcdk_ffmpeg_editor_stream_ts2sec(ff_ctx, ff_pkt->stream_index, dst_ts));
-            //   chk = abcdk_xpu_imgcodec_encode_to_file(dst_img, dst_file, NULL);
+            
+            static int save_ok = 0;
+            if (!save_ok)
+            {
+                chk = abcdk_xpu_imgcodec_encode_to_file(dst_img, dst_file, NULL);
+                save_ok = (chk == 0 ? 1 : 0);
+            }
         }
 
         chk = abcdk_xpu_vdec_send_packet(vdec_ctx, ff_pkt->data, ff_pkt->size, ff_pkt->pts);
