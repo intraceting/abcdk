@@ -322,6 +322,9 @@ namespace abcdk_xpu
                 if (chk != 0)
                     return -EINVAL;
 
+                if (ctx->params.ext_data != NULL && ctx->params.ext_size > 0)
+                    _send_packet(ctx, ctx->params.ext_data, ctx->params.ext_size, 0);
+
                 return 0;
             }
 
