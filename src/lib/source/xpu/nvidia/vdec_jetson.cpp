@@ -74,40 +74,45 @@ namespace abcdk_xpu
                 struct v4l2_buffer v4l2_buf;
                 struct v4l2_plane planes[MAX_PLANES];
                 NvBuffer *buffer = NULL;
+                uint32_t buf_idx;
                 int chk;
+
+                memset(&v4l2_buf, 0, sizeof(v4l2_buf));
+                memset(planes, 0, sizeof(planes));
+
+                if (ctx->cu_ctx->isInError())
+                    return -1;
+
+                if (ctx->output_plane_buf_ts < ctx->cu_ctx->output_plane.getNumBuffers())
+                {
+                    buf_idx = ctx->output_plane_buf_ts++;
+                    buffer = ctx->cu_ctx->output_plane.getNthBuffer(buf_idx);
+
+                    v4l2_buf.index = buf_idx;   // bind
+                    v4l2_buf.m.planes = planes; // bind
+                }
+                else
+                {
+                    v4l2_buf.m.planes = planes; // bind
+
+                    chk = ctx->cu_ctx->output_plane.dqBuffer(v4l2_buf, &buffer, NULL, -1);
+                    if (chk < 0)
+                        return -2;
+                }
 
                 if (!src_data || src_size <= 0)
                 {
+                    v4l2_buf.m.planes[0].bytesused = 0; // 空包
+                    v4l2_buf.flags |= V4L2_BUF_FLAG_LAST; // 最后一包.
+
+                    chk = ctx->cu_ctx->output_plane.qBuffer(v4l2_buf, NULL);
+                    if (chk < 0)
+                        return -3;
+
                     return 1;
                 }
                 else
                 {
-                    uint32_t buf_idx;
-
-                    memset(&v4l2_buf, 0, sizeof(v4l2_buf));
-                    memset(planes, 0, sizeof(planes));
-
-                    if (ctx->cu_ctx->isInError())
-                        return -1;
-
-                    if (ctx->output_plane_buf_ts < ctx->cu_ctx->output_plane.getNumBuffers())
-                    {
-                        buf_idx = ctx->output_plane_buf_ts++;
-                        buffer = ctx->cu_ctx->output_plane.getNthBuffer(buf_idx);
-
-                        v4l2_buf.index = buf_idx;   // bind
-                        v4l2_buf.m.planes = planes; // bind
-                    }
-                    else
-                    {
-                        v4l2_buf.m.planes = planes; // bind
-
-                        chk = ctx->cu_ctx->output_plane.dqBuffer(v4l2_buf, &buffer, NULL, -1);
-                        if (chk < 0)
-                            return -2;
-                    }
-
-                    assert(buffer != NULL);
                     assert(buffer->planes[0].length >= src_size);
 
                     memcpy((char *)buffer->planes[0].data, src_data, src_size);
@@ -257,8 +262,10 @@ namespace abcdk_xpu
                 if (ctx_p->capture_dma_fd > 0)
                     NvBufSurf::NvDestroy(ctx_p->capture_dma_fd);
 
-                _revoke_output_buffer(ctx_p);
-                _revoke_capture_buffer(ctx_p);
+                if (ctx_p->cu_ctx->capture_plane.getStreamStatus())
+                    ctx_p->cu_ctx->capture_plane.setStreamStatus(false);
+                if (ctx_p->cu_ctx->output_plane.getStreamStatus())
+                    ctx_p->cu_ctx->output_plane.setStreamStatus(false);
 
                 common::util::delete_object(&ctx_p->cu_ctx);
 

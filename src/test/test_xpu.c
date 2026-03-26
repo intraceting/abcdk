@@ -37,13 +37,13 @@ static void _test_xpu_1(abcdk_option_t *args)
     assert(chk == 0);
 
     abcdk_xpu_image_t *img_dst2 = abcdk_xpu_image_alloc();
-    chk = abcdk_xpu_image_reset(&img_dst2, 1000, 1000, ABCDK_XPU_PIXFMT_NV12, 32);
+    chk = abcdk_xpu_image_reset(&img_dst2, 1000, 1000, ABCDK_XPU_PIXFMT_BGR24, 32);
     assert(chk == 0);
 
     chk = abcdk_xpu_imgproc_resize(img_src, NULL, img_dst2, ABCDK_XPU_INTER_CUBIC);
     assert(chk == 0);
 
-    chk = abcdk_xpu_imgproc_resize(img_dst2, NULL, img_dst, ABCDK_XPU_INTER_CUBIC);
+    chk = abcdk_xpu_imgproc_resize(img_dst2, NULL, img_src, ABCDK_XPU_INTER_CUBIC);
     assert(chk == 0);
 
     abcdk_xpu_image_free(&img_dst2);
@@ -399,6 +399,8 @@ static void _test_xpu_7(abcdk_option_t *args)
     abcdk_xpu_image_t *dst_img = NULL;
     int64_t dst_ts = 0;
 
+    static int save_ok = 0;
+
     for (int i = 0; i < 100000; i++)
     {
         chk = abcdk_ffmpeg_editor_read_packet(ff_ctx, ff_pkt);
@@ -410,7 +412,6 @@ static void _test_xpu_7(abcdk_option_t *args)
         {
             abcdk_trace_printf(LOG_DEBUG, "pts:%.3f", abcdk_ffmpeg_editor_stream_ts2sec(ff_ctx, ff_pkt->stream_index, dst_ts));
             
-            static int save_ok = 0;
             if (!save_ok)
             {
                 chk = abcdk_xpu_imgcodec_encode_to_file(dst_img, dst_file, NULL);
@@ -432,7 +433,11 @@ static void _test_xpu_7(abcdk_option_t *args)
             break;
 
         abcdk_trace_printf(LOG_DEBUG, "pts:%.3f", abcdk_ffmpeg_editor_stream_ts2sec(ff_ctx, ff_pkt->stream_index, dst_ts));
-        chk = abcdk_xpu_imgcodec_encode_to_file(dst_img, dst_file, NULL);
+        if (!save_ok)
+        {
+            chk = abcdk_xpu_imgcodec_encode_to_file(dst_img, dst_file, NULL);
+            save_ok = (chk == 0 ? 1 : 0);
+        }
     }
 
     abcdk_xpu_image_free(&dst_img);
