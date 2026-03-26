@@ -144,6 +144,9 @@ namespace abcdk_xpu
                 NvBufSurface *dma_surf = NULL;
                 int chk;
 
+                if (ctx->cu_ctx->isInError())
+                    return -1;
+
                 if (!ctx->capture_info_ok)
                 {
                     chk = ctx->cu_ctx->dqEvent(ev, 10);
@@ -262,10 +265,7 @@ namespace abcdk_xpu
                 if (ctx_p->capture_dma_fd > 0)
                     NvBufSurf::NvDestroy(ctx_p->capture_dma_fd);
 
-                if (ctx_p->cu_ctx->capture_plane.getStreamStatus())
-                    ctx_p->cu_ctx->capture_plane.setStreamStatus(false);
-                if (ctx_p->cu_ctx->output_plane.getStreamStatus())
-                    ctx_p->cu_ctx->output_plane.setStreamStatus(false);
+                ctx_p->cu_ctx->abort();
 
                 common::util::delete_object(&ctx_p->cu_ctx);
 
