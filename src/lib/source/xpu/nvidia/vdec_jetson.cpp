@@ -28,7 +28,7 @@ namespace abcdk_xpu
                 abcdk_xpu_vcodec_params_t params;
 
                 NvVideoDecoder *cu_ctx;
-                int output_plane_buf_ts;
+                int output_buf_ts;
 
                 int capture_info_ok;
                 struct v4l2_format capture_format;
@@ -51,9 +51,9 @@ namespace abcdk_xpu
                 if (ctx->cu_ctx->isInError())
                     return -1;
 
-                if (ctx->output_plane_buf_ts < ctx->cu_ctx->output_plane.getNumBuffers())
+                if (ctx->output_buf_ts < ctx->cu_ctx->output_plane.getNumBuffers())
                 {
-                    buf_idx = ctx->output_plane_buf_ts++;
+                    buf_idx = ctx->output_buf_ts++;
                     buffer = ctx->cu_ctx->output_plane.getNthBuffer(buf_idx);
 
                     v4l2_buf.index = buf_idx;   // bind
@@ -72,12 +72,6 @@ namespace abcdk_xpu
                 {
                     v4l2_buf.m.planes[0].bytesused = 0; // 空包
                     v4l2_buf.flags |= V4L2_BUF_FLAG_LAST; // 最后一包.
-
-                    chk = ctx->cu_ctx->output_plane.qBuffer(v4l2_buf, NULL);
-                    if (chk < 0)
-                        return -3;
-
-                    return 1;
                 }
                 else
                 {
@@ -92,12 +86,13 @@ namespace abcdk_xpu
                     v4l2_buf.timestamp.tv_usec = ts % 1000000;
                     v4l2_buf.flags |= V4L2_BUF_FLAG_TIMESTAMP_COPY;
 
-                    chk = ctx->cu_ctx->output_plane.qBuffer(v4l2_buf, NULL);
-                    if (chk < 0)
-                        return -3;
-
-                    return 1;
                 }
+
+                chk = ctx->cu_ctx->output_plane.qBuffer(v4l2_buf, NULL);
+                if (chk != 0)
+                    return -3;
+
+                return 1;
             }
 
             static int _recv_frame(metadata_t *ctx, image::metadata_t **dst, int64_t *ts)
@@ -251,7 +246,7 @@ namespace abcdk_xpu
                     return NULL;
 
                 ctx->cu_ctx = NULL;
-                ctx->output_plane_buf_ts = 0;
+                ctx->output_buf_ts = 0;
 
                 ctx->capture_info_ok = 0;
                 ctx->capture_dma_fd -1;

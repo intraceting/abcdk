@@ -111,3 +111,53 @@ next_nal:
 
     return;
 }
+
+int abcdk_h2645_extract_sei(void *data, size_t size, int h264_or_hevc)
+{
+    uint8_t *pkt_p = NULL;
+
+    assert(data != NULL && size > 0);
+
+    pkt_p = (uint8_t *)data;
+
+    // H264 find IDR index 0x00 0x00 0x00 0x01 (H&0x1F)==0x05
+    if (h264_or_hevc)
+    {
+        int i = 0;
+        while (1)
+        {
+
+            if (size < i + 5)
+                break;
+
+            if ((pkt_p[i] != 0 || pkt_p[i + 1] != 0 || pkt_p[i + 2] != 0 || pkt_p[i + 3] != 0x01 || (pkt_p[i + 4] & 0x1F) != 0x05)) // 找到关键帧开始的地方, 在这之前的就是SEI数据.
+                i++;
+            else
+                break;
+        }
+
+        if (i + 5 <= size)
+            return i;
+    }
+    // H265 find IDR index 0x00 0x00 0x00 0x01 0x26 0x01
+    else if (!h264_or_hevc)
+    {
+        int i = 0;
+        while (1)
+        {
+
+            if (size < i + 6)
+                break;
+
+            if ((pkt_p[i] != 0 || pkt_p[i + 1] != 0 || pkt_p[i + 2] != 0 || pkt_p[i + 3] != 0x01 || pkt_p[i + 4] != 0x26 || pkt_p[i + 5] != 0x01)) // 找到关键帧开始的地方, 在这之前的就是SEI数据.
+                i++;
+            else
+                break;
+        }
+
+        if (i + 6 <= size)
+            return i;
+    }
+
+    return -1;
+}

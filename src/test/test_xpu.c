@@ -271,13 +271,13 @@ static void _test_xpu_6(abcdk_option_t *args)
 
     const char *dst_file = abcdk_option_get(args, "--dst-file", 0, "");
     const char *src_file = abcdk_option_get(args, "--src-file", 0, "");
+    int h264_or_hevc = abcdk_option_get_int(args, "--h264-or-hevc", 0, 0);
 
     abcdk_xpu_venc_t *venc_ctx = abcdk_xpu_venc_alloc();
 
     abcdk_xpu_vcodec_params_t venc_params = {0};
 
-    // venc_params.format = ABCDK_XPU_VCODEC_ID_H264;
-    venc_params.format = ABCDK_XPU_VCODEC_ID_H265;
+    venc_params.format = (h264_or_hevc?ABCDK_XPU_VCODEC_ID_H264:ABCDK_XPU_VCODEC_ID_H265);
     venc_params.bitrate = 15000 * 1000;     // 15Mbps
     venc_params.max_bitrate = 30000 * 1000; // 30Mbps
     venc_params.width = 1920;
