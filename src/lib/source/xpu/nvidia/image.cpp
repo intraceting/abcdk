@@ -301,7 +301,75 @@ namespace abcdk_xpu
                     if(chk != 0)
                         return -1;
 
+                    NvBufSurfaceSyncForDevice((NvBufSurface *)dst, 0, i);
                     NvBufSurfaceUnMap((NvBufSurface *)dst, 0, i);
+                }
+
+                return 0;
+            }
+
+
+            int copy(const NvBuffer *src, int src_in_host, metadata_t *dst, int dst_in_host)
+            {
+                int chk;
+
+                assert(src_in_host == 1);
+
+                if (src->planes[0].fd >= 0)
+                {
+                    NvBufSurface *nvbuf_surf = NULL;
+
+                    chk = NvBufSurfaceFromFd(src->planes[0].fd, (void **)(&nvbuf_surf));
+                    if (chk != 0)
+                        return -2;
+
+                    chk = NvBufSurfaceSyncForCpu(nvbuf_surf, -1, -1);
+                    if (chk != 0)
+                        return -3;
+                }
+
+                for (int i = 0; i < 4; i++)
+                {
+                    if (dst->linesize[i] <= 0)
+                        break;
+
+                    chk = image::copy(src->planes[i].data, src->planes[i].fmt.stride, src_in_host, dst, i, dst_in_host);
+                    if(chk != 0)
+                        return -1;
+                }
+
+                return 0;
+            }
+
+            int copy(const metadata_t *src, int src_in_host, NvBuffer *dst, int dst_in_host)
+            {
+                int chk;
+
+                assert(dst_in_host == 1);
+
+                for (int i = 0; i < 4; i++)
+                {
+                    if (src->linesize[i] <= 0)
+                        break;
+
+                    chk = image::copy(src, i, src_in_host, dst->planes[i].data, dst->planes[i].fmt.stride, dst_in_host);
+                    if(chk != 0)
+                        return -1;
+
+                    dst->planes[i].bytesused = dst->planes[i].fmt.bytesperpixel * dst->planes[i].fmt.height;
+                }
+
+                if (dst->planes[0].fd >= 0)
+                {
+                    NvBufSurface *nvbuf_surf = NULL;
+
+                    chk = NvBufSurfaceFromFd(dst->planes[0].fd, (void **)(&nvbuf_surf));
+                    if (chk != 0)
+                        return -2;
+
+                    chk = NvBufSurfaceSyncForDevice(nvbuf_surf, -1, -1);
+                    if (chk != 0)
+                        return -3;
                 }
 
                 return 0;

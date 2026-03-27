@@ -37,38 +37,6 @@ namespace abcdk_xpu
 
             } metadata_t;
 
-            static void _revoke_output_buffer(metadata_t *ctx)
-            {
-                struct v4l2_buffer v4l2_buf;
-                struct v4l2_plane planes[MAX_PLANES];
-
-                for (int i = 0; i < ctx->cu_ctx->output_plane.getNumBuffers(); i++)
-                {
-                    memset(&v4l2_buf, 0, sizeof(v4l2_buf));
-                    memset(planes, 0, sizeof(planes));
-
-                    v4l2_buf.m.planes = planes;
-                    int chk = ctx->cu_ctx->output_plane.dqBuffer(v4l2_buf, NULL, NULL, -1);
-                    ABCDK_UNUSED(chk);
-                }
-            }
-
-            static void _revoke_capture_buffer(metadata_t *ctx)
-            {
-                struct v4l2_buffer v4l2_buf;
-                struct v4l2_plane planes[MAX_PLANES];
-
-                for (int i = 0; i < ctx->cu_ctx->capture_plane.getNumBuffers(); i++)
-                {
-                    memset(&v4l2_buf, 0, sizeof(v4l2_buf));
-                    memset(planes, 0, sizeof(planes));
-
-                    v4l2_buf.m.planes = planes;
-                    int chk = ctx->cu_ctx->capture_plane.dqBuffer(v4l2_buf, NULL, NULL, -1);
-                    ABCDK_UNUSED(chk);
-                }
-            }
-
             static int _send_packet(metadata_t *ctx, const void *src_data, size_t src_size, int64_t ts)
             {
                 struct v4l2_buffer v4l2_buf;
@@ -284,6 +252,9 @@ namespace abcdk_xpu
 
                 ctx->cu_ctx = NULL;
                 ctx->output_plane_buf_ts = 0;
+
+                ctx->capture_info_ok = 0;
+                ctx->capture_dma_fd -1;
 
                 return ctx;
             }

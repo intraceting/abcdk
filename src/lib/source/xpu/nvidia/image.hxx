@@ -13,6 +13,7 @@
 #include "memory.hxx"
 
 #ifdef __XPU_NVIDIA__MMAPI__
+#include "NvBuffer.h"
 #include "NvBufSurface.h"
 #endif //#ifdef __XPU_NVIDIA__MMAPI__
 
@@ -51,6 +52,10 @@ namespace abcdk_xpu
             int copy(const NvBufSurface *src, int src_in_host, metadata_t *dst, int dst_in_host);
 
             int copy(const metadata_t *src, int src_in_host, NvBufSurface *dst, int dst_in_host);
+
+            int copy(const NvBuffer *src, int src_in_host, metadata_t *dst, int dst_in_host);
+
+            int copy(const metadata_t *src, int src_in_host, NvBuffer *dst, int dst_in_host);
 #endif //#ifdef __XPU_NVIDIA__MMAPI__
 
             metadata_t *clone(const metadata_t *src, int src_in_host, int dst_align, int dst_in_host);
