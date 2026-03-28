@@ -98,19 +98,20 @@ namespace abcdk
 
             setStyleSheet(1);
 
-            if (!QSystemTrayIcon::isSystemTrayAvailable())
+            if (QSystemTrayIcon::isSystemTrayAvailable())
+            {
+                main_trayicon *tray = new main_trayicon(this);
+                tray->show();
+
+                // 关联托盘事件.
+                QObject::connect(tray, &main_trayicon::onShow, this, &main_window::onShow);
+                QObject::connect(tray, &main_trayicon::onAbout, this, &main_window::onAbout);
+                QObject::connect(tray, &main_trayicon::onQuit, this, &main_window::onQuit);
+            }
+            else
             {
                 abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("不支持注册托盘图标."));
-                return;
             }
-
-            main_trayicon *tray = new main_trayicon(this);
-            tray->show();
-
-            // 关联托盘事件.
-            QObject::connect(tray, &main_trayicon::onShow, this, &main_window::onShow);
-            QObject::connect(tray, &main_trayicon::onAbout, this, &main_window::onAbout);
-            QObject::connect(tray, &main_trayicon::onQuit, this, &main_window::onQuit);
 
             loadTasks();
 
@@ -132,9 +133,17 @@ namespace abcdk
 
             if (alive_count > 0)
             {
-                QMessageBox::information(this, ABCDK_GETTEXT("提示"), ABCDK_GETTEXT("还有应用程序正在运行, 主窗体将最小化到托盘."));
+                if (QSystemTrayIcon::isSystemTrayAvailable())
+                {
+                    QMessageBox::information(this, ABCDK_GETTEXT("提示"), ABCDK_GETTEXT("还有应用程序正在运行, 主窗体将最小化到托盘."));
+                    hide();          // 隐藏窗体.
+                }
+                else
+                {
+                    QMessageBox::information(this, ABCDK_GETTEXT("提示"), ABCDK_GETTEXT("还有应用程序正在运行, 主窗体将最小化到任务栏."));
+                    showMinimized(); // 最小化窗体.
+                }
 
-                hide();          // 隐藏窗体.
                 event->ignore(); // 阻止默认关闭.
             }
             else
