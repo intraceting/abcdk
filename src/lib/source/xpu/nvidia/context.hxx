@@ -60,11 +60,11 @@ namespace abcdk_xpu
                 if (cu_chk != CUDA_SUCCESS)
                     return NULL;
                     
-#if CUDA_VERSION >= 12000
+#if CUDA_VERSION >= 13000
                 cu_chk = cuCtxCreate(&cu_ctx, NULL, 0, cu_dev);
-#else //#if CUDA_VERSION >= 12000
+#else //#if CUDA_VERSION >= 13000
                 cu_chk = cuCtxCreate(&cu_ctx, 0, cu_dev);
-#endif //#if CUDA_VERSION >= 12000
+#endif //#if CUDA_VERSION >= 13000
                 if (cu_chk != CUDA_SUCCESS)
                     return NULL;
                 
