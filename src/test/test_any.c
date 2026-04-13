@@ -50,7 +50,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     uint64_t s = abcdk_time_systime(9);
 
-#pragma omp parallel for num_threads(1)
+#pragma omp parallel for num_threads(4)
     for(int i = 0;i<10000000;i++)
     {
         uint8_t prefix[16];
