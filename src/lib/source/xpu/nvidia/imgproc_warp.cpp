@@ -5,6 +5,7 @@
  *
  */
 #include "imgproc.hxx"
+#include "util.hxx"
 
 namespace abcdk_xpu
 {
@@ -15,9 +16,12 @@ namespace abcdk_xpu
         {
             static int _warp(const image::metadata_t *src, image::metadata_t *dst, const abcdk_xpu_matrix_3x3_t *coeffs, int warp_mode, abcdk_xpu_inter_t inter_mode)
             {
+                NppStreamContext npp_ctx = {0};
                 NppiSize tmp_src_size = {0};
                 NppiRect tmp_dst_roi = {0}, tmp_src_roi = {0};
                 NppStatus npp_chk = NPP_NOT_IMPLEMENTED_ERROR;
+
+                util::npp_get_context(&npp_ctx, 0);
 
                 tmp_dst_roi.x = 0;
                 tmp_dst_roi.y = 0;
@@ -36,56 +40,56 @@ namespace abcdk_xpu
                 {
                     if (src->format == AV_PIX_FMT_GRAY8)
                     {
-                        npp_chk = nppiWarpPerspective_8u_C1R(src->data[0], tmp_src_size, src->linesize[0], tmp_src_roi,
+                        npp_chk = nppiWarpPerspective_8u_C1R_Ctx(src->data[0], tmp_src_size, src->linesize[0], tmp_src_roi,
                                                              dst->data[0], dst->linesize[0], tmp_dst_roi,
-                                                             coeffs->f64, inter_local_to_nppi(inter_mode));
+                                                             coeffs->f64, util::inter_local_to_nppi(inter_mode),npp_ctx);
                     }
                     else if (src->format == AV_PIX_FMT_RGB24 || src->format == AV_PIX_FMT_BGR24)
                     {
-                        npp_chk = nppiWarpPerspective_8u_C3R(src->data[0], tmp_src_size, src->linesize[0], tmp_src_roi,
+                        npp_chk = nppiWarpPerspective_8u_C3R_Ctx(src->data[0], tmp_src_size, src->linesize[0], tmp_src_roi,
                                                              dst->data[0], dst->linesize[0], tmp_dst_roi,
-                                                             coeffs->f64, inter_local_to_nppi(inter_mode));
+                                                             coeffs->f64, util::inter_local_to_nppi(inter_mode),npp_ctx);
                     }
                     else if (src->format == AV_PIX_FMT_RGB32 || src->format == AV_PIX_FMT_BGR32)
                     {
 
-                        npp_chk = nppiWarpPerspective_8u_C4R(src->data[0], tmp_src_size, src->linesize[0], tmp_src_roi,
+                        npp_chk = nppiWarpPerspective_8u_C4R_Ctx(src->data[0], tmp_src_size, src->linesize[0], tmp_src_roi,
                                                              dst->data[0], dst->linesize[0], tmp_dst_roi,
-                                                             coeffs->f64, inter_local_to_nppi(inter_mode));
+                                                             coeffs->f64, util::inter_local_to_nppi(inter_mode),npp_ctx);
                     }
                     else if (src->format == AV_PIX_FMT_GRAYF32)
                     {
-                        npp_chk = nppiWarpPerspective_32s_C1R((Npp32s *)src->data[0], tmp_src_size, src->linesize[0], tmp_src_roi,
+                        npp_chk = nppiWarpPerspective_32s_C1R_Ctx((Npp32s *)src->data[0], tmp_src_size, src->linesize[0], tmp_src_roi,
                                                               (Npp32s *)dst->data[0], dst->linesize[0], tmp_dst_roi,
-                                                              coeffs->f64, inter_local_to_nppi(inter_mode));
+                                                              coeffs->f64, util::inter_local_to_nppi(inter_mode),npp_ctx);
                     }
                 }
                 else if (warp_mode == 2)
                 {
                     if (src->format == AV_PIX_FMT_GRAY8)
                     {
-                        npp_chk = nppiWarpAffine_8u_C1R(src->data[0], tmp_src_size, src->linesize[0], tmp_src_roi,
+                        npp_chk = nppiWarpAffine_8u_C1R_Ctx(src->data[0], tmp_src_size, src->linesize[0], tmp_src_roi,
                                                         dst->data[0], dst->linesize[0], tmp_dst_roi,
-                                                        coeffs->f64, inter_local_to_nppi(inter_mode));
+                                                        coeffs->f64, util::inter_local_to_nppi(inter_mode),npp_ctx);
                     }
                     else if (src->format == AV_PIX_FMT_RGB24 || src->format == AV_PIX_FMT_BGR24)
                     {
-                        npp_chk = nppiWarpAffine_8u_C3R(src->data[0], tmp_src_size, src->linesize[0], tmp_src_roi,
+                        npp_chk = nppiWarpAffine_8u_C3R_Ctx(src->data[0], tmp_src_size, src->linesize[0], tmp_src_roi,
                                                         dst->data[0], dst->linesize[0], tmp_dst_roi,
-                                                        coeffs->f64, inter_local_to_nppi(inter_mode));
+                                                        coeffs->f64, util::inter_local_to_nppi(inter_mode),npp_ctx);
                     }
                     else if (src->format == AV_PIX_FMT_RGB32 || src->format == AV_PIX_FMT_BGR32)
                     {
 
-                        npp_chk = nppiWarpAffine_8u_C4R(src->data[0], tmp_src_size, src->linesize[0], tmp_src_roi,
+                        npp_chk = nppiWarpAffine_8u_C4R_Ctx(src->data[0], tmp_src_size, src->linesize[0], tmp_src_roi,
                                                         dst->data[0], dst->linesize[0], tmp_dst_roi,
-                                                        coeffs->f64, inter_local_to_nppi(inter_mode));
+                                                        coeffs->f64, util::inter_local_to_nppi(inter_mode),npp_ctx);
                     }
                     else if (src->format == AV_PIX_FMT_GRAYF32)
                     {
-                        npp_chk = nppiWarpAffine_32s_C1R((Npp32s *)src->data[0], tmp_src_size, src->linesize[0], tmp_src_roi,
+                        npp_chk = nppiWarpAffine_32s_C1R_Ctx((Npp32s *)src->data[0], tmp_src_size, src->linesize[0], tmp_src_roi,
                                                          (Npp32s *)dst->data[0], dst->linesize[0], tmp_dst_roi,
-                                                         coeffs->f64, inter_local_to_nppi(inter_mode));
+                                                         coeffs->f64, util::inter_local_to_nppi(inter_mode),npp_ctx);
                     }
                 }
 

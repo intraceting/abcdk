@@ -408,7 +408,7 @@ namespace abcdk_xpu
                 ctx->params.ext_data = NULL;
                 ctx->params.ext_size = 0;
 
-                ctx->nv_codec_id = vcodec::local_to_nvcodec((abcdk_xpu_vcodec_id_t)ctx->params.format);
+                ctx->nv_codec_id = util::local_to_nvcodec((abcdk_xpu_vcodec_id_t)ctx->params.format);
 
                 if (ctx->params.fps_n <= 0 || ctx->params.fps_d <= 0)
                     return -EINVAL;

@@ -5,11 +5,12 @@
  *
  */
 #include "imgproc.hxx"
+#include "util.hxx"
 #include "../common/imgproc.hxx"
+
 
 namespace abcdk_xpu
 {
-
     namespace nvidia
     {
         namespace imgproc
@@ -43,6 +44,7 @@ namespace abcdk_xpu
             static int _convert_gpu(image::metadata_t *dst, const image::metadata_t *src)
             {
                 image::metadata_t *tmp_dst = NULL;
+                NppStreamContext npp_ctx = {0};
                 NppStatus npp_chk = NPP_NOT_IMPLEMENTED_ERROR;
 
                 NppiSize src_roi = {src->width, src->height};
@@ -54,13 +56,15 @@ namespace abcdk_xpu
                     {0.500f, -0.419f, -0.081f, 128.0f}  // V
                 };
 
+                util::npp_get_context(&npp_ctx, 0);
+
                 int chk;
 
                 if (dst->format == AV_PIX_FMT_GRAY8)
                 {
                     if (src->format == AV_PIX_FMT_RGB24)
                     {
-                        npp_chk = nppiRGBToGray_8u_C3C1R(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi);
+                        npp_chk = nppiRGBToGray_8u_C3C1R_Ctx(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi,npp_ctx);
                     }
                     else
                     {
@@ -81,33 +85,33 @@ namespace abcdk_xpu
                     if (src->format == AV_PIX_FMT_BGR24)
                     {
                         int dst_order[3] = {2, 1, 0};
-                        npp_chk = nppiSwapChannels_8u_C3R(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi, dst_order);
+                        npp_chk = nppiSwapChannels_8u_C3R_Ctx(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi, dst_order,npp_ctx);
                     }
                     else if (src->format == AV_PIX_FMT_RGB32)
                     {
                         int dst_order[3] = {0, 1, 2};
-                        npp_chk = nppiSwapChannels_8u_C4C3R(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi, dst_order);
+                        npp_chk = nppiSwapChannels_8u_C4C3R_Ctx(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi, dst_order,npp_ctx);
                     }
                     else if (src->format == AV_PIX_FMT_BGR32)
                     {
                         int dst_order[3] = {2, 1, 0};
-                        npp_chk = nppiSwapChannels_8u_C4C3R(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi, dst_order);
+                        npp_chk = nppiSwapChannels_8u_C4C3R_Ctx(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi, dst_order,npp_ctx);
                     }
                     else if (src->format == AV_PIX_FMT_YUV420P)
                     {
-                        npp_chk = nppiYUV420ToRGB_8u_P3C3R(src->data, (int *)src->linesize, dst->data[0], dst->linesize[0], src_roi);
+                        npp_chk = nppiYUV420ToRGB_8u_P3C3R_Ctx(src->data, (int *)src->linesize, dst->data[0], dst->linesize[0], src_roi,npp_ctx);
                     }
                     else if (src->format == AV_PIX_FMT_YUV422P)
                     {
-                        npp_chk = nppiYUV422ToRGB_8u_P3C3R(src->data, (int *)src->linesize, dst->data[0], dst->linesize[0], src_roi);
+                        npp_chk = nppiYUV422ToRGB_8u_P3C3R_Ctx(src->data, (int *)src->linesize, dst->data[0], dst->linesize[0], src_roi,npp_ctx);
                     }
                     else if (src->format == AV_PIX_FMT_YUV444P)
                     {
-                        npp_chk = nppiYCbCr444ToRGB_JPEG_8u_P3C3R(src->data, src->linesize[0], dst->data[0], dst->linesize[0], src_roi);
+                        npp_chk = nppiYCbCr444ToRGB_JPEG_8u_P3C3R_Ctx(src->data, src->linesize[0], dst->data[0], dst->linesize[0], src_roi,npp_ctx);
                     }
                     else if (src->format == AV_PIX_FMT_NV12)
                     {
-                        npp_chk = nppiNV12ToRGB_8u_P2C3R(src->data, src->linesize[0], dst->data[0], dst->linesize[0], src_roi);
+                        npp_chk = nppiNV12ToRGB_8u_P2C3R_Ctx(src->data, src->linesize[0], dst->data[0], dst->linesize[0], src_roi,npp_ctx);
                     }
                     else
                     {
@@ -119,25 +123,25 @@ namespace abcdk_xpu
                     if (src->format == AV_PIX_FMT_RGB24)
                     {
                         int dst_order[3] = {2, 1, 0};
-                        npp_chk = nppiSwapChannels_8u_C3R(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi, dst_order);
+                        npp_chk = nppiSwapChannels_8u_C3R_Ctx(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi, dst_order,npp_ctx);
                     }
                     else if (src->format == AV_PIX_FMT_BGR32)
                     {
                         int dst_order[3] = {0, 1, 2};
-                        npp_chk = nppiSwapChannels_8u_C4C3R(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi, dst_order);
+                        npp_chk = nppiSwapChannels_8u_C4C3R_Ctx(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi, dst_order,npp_ctx);
                     }
                     else if (src->format == AV_PIX_FMT_RGB32)
                     {
                         int dst_order[3] = {2, 1, 0};
-                        npp_chk = nppiSwapChannels_8u_C4C3R(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi, dst_order);
+                        npp_chk = nppiSwapChannels_8u_C4C3R_Ctx(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi, dst_order,npp_ctx);
                     }
                     else if (src->format == AV_PIX_FMT_YUV420P)
                     {
-                        npp_chk = nppiYUV420ToBGR_8u_P3C3R(src->data, (int *)src->linesize, dst->data[0], dst->linesize[0], src_roi);
+                        npp_chk = nppiYUV420ToBGR_8u_P3C3R_Ctx(src->data, (int *)src->linesize, dst->data[0], dst->linesize[0], src_roi,npp_ctx);
                     }
                     else if (src->format == AV_PIX_FMT_NV12)
                     {
-                        npp_chk = nppiNV12ToBGR_8u_P2C3R(src->data, src->linesize[0], dst->data[0], dst->linesize[0], src_roi);
+                        npp_chk = nppiNV12ToBGR_8u_P2C3R_Ctx(src->data, src->linesize[0], dst->data[0], dst->linesize[0], src_roi,npp_ctx);
                     }
                     else
                     {
@@ -157,11 +161,11 @@ namespace abcdk_xpu
                 {
                     if (src->format == AV_PIX_FMT_RGB24)
                     {
-                        npp_chk = nppiRGBToYUV420_8u_C3P3R(src->data[0], src->linesize[0], dst->data, dst->linesize, src_roi);
+                        npp_chk = nppiRGBToYUV420_8u_C3P3R_Ctx(src->data[0], src->linesize[0], dst->data, dst->linesize, src_roi,npp_ctx);
                     }
                     else if (src->format == AV_PIX_FMT_NV12)
                     {
-                        npp_chk = nppiNV12ToYUV420_8u_P2P3R(src->data, src->linesize[0], dst->data, dst->linesize, src_roi);
+                        npp_chk = nppiNV12ToYUV420_8u_P2P3R_Ctx(src->data, src->linesize[0], dst->data, dst->linesize, src_roi,npp_ctx);
                     }
                     else
                     {
@@ -181,7 +185,7 @@ namespace abcdk_xpu
                 {
                     if (src->format == AV_PIX_FMT_RGB24)
                     {
-                        npp_chk = nppiRGBToYUV422_8u_C3P3R(src->data[0], src->linesize[0], dst->data, dst->linesize, src_roi);
+                        npp_chk = nppiRGBToYUV422_8u_C3P3R_Ctx(src->data[0], src->linesize[0], dst->data, dst->linesize, src_roi, npp_ctx);
                     }
                     else
                     {
@@ -201,7 +205,7 @@ namespace abcdk_xpu
                 {
                     if (src->format == AV_PIX_FMT_RGB24)
                     {
-                        npp_chk = nppiRGBToYCbCr444_JPEG_8u_C3P3R(src->data[0], src->linesize[0], dst->data, dst->linesize[0], src_roi);
+                        npp_chk = nppiRGBToYCbCr444_JPEG_8u_C3P3R_Ctx(src->data[0], src->linesize[0], dst->data, dst->linesize[0], src_roi, npp_ctx);
                     }
                     else
                     {
@@ -222,8 +226,7 @@ namespace abcdk_xpu
                 {
                     if (src->format == AV_PIX_FMT_RGB24)
                     {
-                        NppStreamContext stream_ctx = {0};
-                        npp_chk = nppiRGBToNV12_8u_ColorTwist32f_C3P2R_Ctx(src->data[0], src->linesize[0], dst->data, dst->linesize, src_roi, rgb_to_yuv_twist, stream_ctx);
+                        npp_chk = nppiRGBToNV12_8u_ColorTwist32f_C3P2R_Ctx(src->data[0], src->linesize[0], dst->data, dst->linesize, src_roi, rgb_to_yuv_twist, npp_ctx);
                     }
                     else
                     {
@@ -246,12 +249,12 @@ namespace abcdk_xpu
                     if (src->format == AV_PIX_FMT_RGB24)
                     {
                         int dst_order[4] = {0, 1, 2, 3};
-                        npp_chk = nppiSwapChannels_8u_C3C4R(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi, dst_order, 0);
+                        npp_chk = nppiSwapChannels_8u_C3C4R_Ctx(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi, dst_order, 0,npp_ctx);
                     }
                     else if (src->format == AV_PIX_FMT_BGR24)
                     {
                         int dst_order[4] = {2, 1, 0, 3};
-                        npp_chk = nppiSwapChannels_8u_C3C4R(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi, dst_order, 0);
+                        npp_chk = nppiSwapChannels_8u_C3C4R_Ctx(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi, dst_order, 0,npp_ctx);
                     }
                     else
                     {
@@ -272,12 +275,12 @@ namespace abcdk_xpu
                     if (src->format == AV_PIX_FMT_BGR24)
                     {
                         int dst_order[4] = {0, 1, 2, 3};
-                        npp_chk = nppiSwapChannels_8u_C3C4R(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi, dst_order, 0);
+                        npp_chk = nppiSwapChannels_8u_C3C4R_Ctx(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi, dst_order, 0,npp_ctx);
                     }
                     else if (src->format == AV_PIX_FMT_RGB24)
                     {
                         int dst_order[4] = {2, 1, 0, 3};
-                        npp_chk = nppiSwapChannels_8u_C3C4R(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi, dst_order, 0);
+                        npp_chk = nppiSwapChannels_8u_C3C4R_Ctx(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi, dst_order, 0,npp_ctx);
                     }
                     else
                     {

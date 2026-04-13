@@ -12,6 +12,7 @@
 #include "abcdk/ffmpeg/encoder.h"
 #include "abcdk/xpu/image.h"
 #include "venc.hxx"
+#include "util.hxx"
 
 namespace abcdk_xpu
 {
@@ -43,7 +44,7 @@ namespace abcdk_xpu
                     return -1;
 
                 ctx->ff_par->codec_type = AVMEDIA_TYPE_VIDEO;
-                ctx->ff_par->codec_id = vcodec::local_to_ffmpeg(ctx->params.format);
+                ctx->ff_par->codec_id = util::local_to_ffmpeg(ctx->params.format);
                 ctx->ff_par->width = ctx->params.width;
                 ctx->ff_par->height = ctx->params.height;
                 ctx->ff_par->bit_rate = ctx->params.bitrate;

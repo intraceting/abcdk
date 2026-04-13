@@ -5,6 +5,7 @@
  *
  */
 #include "imgproc.hxx"
+#include "util.hxx"
 
 namespace abcdk_xpu
 {
@@ -15,9 +16,12 @@ namespace abcdk_xpu
         {
             static int _resize(const image::metadata_t *src, const abcdk_xpu_rect_t *src_roi, image::metadata_t *dst, abcdk_xpu_inter_t inter_mode)
             {
+                NppStreamContext npp_ctx = {0};
                 NppiSize tmp_dst_size = {0}, tmp_src_size = {0};
                 NppiRect tmp_dst_roi = {0}, tmp_src_roi = {0};
                 NppStatus npp_chk = NPP_NOT_IMPLEMENTED_ERROR;
+
+                util::npp_get_context(&npp_ctx, 0);
 
                 tmp_dst_size.width = dst->width;
                 tmp_dst_size.height = dst->height;
@@ -37,27 +41,27 @@ namespace abcdk_xpu
 
                 if (src->format == AV_PIX_FMT_GRAY8)
                 {
-                    npp_chk = nppiResize_8u_C1R(src->data[0], src->linesize[0], tmp_src_size, tmp_src_roi,
+                    npp_chk = nppiResize_8u_C1R_Ctx(src->data[0], src->linesize[0], tmp_src_size, tmp_src_roi,
                                                 dst->data[0], dst->linesize[0], tmp_dst_size, tmp_dst_roi,
-                                                inter_local_to_nppi(inter_mode));
+                                                util::inter_local_to_nppi(inter_mode),npp_ctx);
                 }
                 else if (src->format == AV_PIX_FMT_RGB24 || src->format == AV_PIX_FMT_BGR24)
                 {
-                    npp_chk = nppiResize_8u_C3R(src->data[0], src->linesize[0], tmp_src_size, tmp_src_roi,
+                    npp_chk = nppiResize_8u_C3R_Ctx(src->data[0], src->linesize[0], tmp_src_size, tmp_src_roi,
                                                 dst->data[0], dst->linesize[0], tmp_dst_size, tmp_dst_roi,
-                                                inter_local_to_nppi(inter_mode));
+                                                util::inter_local_to_nppi(inter_mode),npp_ctx);
                 }
                 else if (src->format == AV_PIX_FMT_RGB32 || src->format == AV_PIX_FMT_BGR32)
                 {
-                    npp_chk = nppiResize_8u_C4R(src->data[0], src->linesize[0], tmp_src_size, tmp_src_roi,
+                    npp_chk = nppiResize_8u_C4R_Ctx(src->data[0], src->linesize[0], tmp_src_size, tmp_src_roi,
                                                 dst->data[0], dst->linesize[0], tmp_dst_size, tmp_dst_roi,
-                                                inter_local_to_nppi(inter_mode));
+                                                util::inter_local_to_nppi(inter_mode),npp_ctx);
                 }
                 else if (src->format == AV_PIX_FMT_GRAYF32)
                 {
-                    npp_chk = nppiResize_32f_C1R((Npp32f *)src->data[0], src->linesize[0], tmp_src_size, tmp_src_roi,
+                    npp_chk = nppiResize_32f_C1R_Ctx((Npp32f *)src->data[0], src->linesize[0], tmp_src_size, tmp_src_roi,
                                                  (Npp32f *)dst->data[0], dst->linesize[0], tmp_dst_size, tmp_dst_roi,
-                                                 inter_local_to_nppi(inter_mode));
+                                                 util::inter_local_to_nppi(inter_mode),npp_ctx);
                 }
 
                 if (npp_chk != NPP_SUCCESS)

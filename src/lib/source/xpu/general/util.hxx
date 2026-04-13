@@ -4,8 +4,8 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
-#ifndef ABCDK_XPU_GENERAL_VCODEC_UTIL_HXX
-#define ABCDK_XPU_GENERAL_VCODEC_UTIL_HXX
+#ifndef ABCDK_XPU_GENERAL_UTIL_HXX
+#define ABCDK_XPU_GENERAL_UTIL_HXX
 
 #include "abcdk/xpu/types.h"
 #include "../base.in.h"
@@ -14,7 +14,7 @@ namespace abcdk_xpu
 {
     namespace general
     {
-        namespace vcodec
+        namespace util
         {
             static inline AVCodecID local_to_ffmpeg(abcdk_xpu_vcodec_id_t id)
             {
@@ -47,8 +47,8 @@ namespace abcdk_xpu
             {
                 return local_to_ffmpeg((abcdk_xpu_vcodec_id_t)id);
             }
-        } // namespace vcodec
+        } // namespace util
     } // namespace general
 } // namespace abcdk_xpu
 
-#endif // ABCDK_XPU_GENERAL_VCODEC_UTIL_HXX
+#endif // ABCDK_XPU_GENERAL_UTIL_HXX

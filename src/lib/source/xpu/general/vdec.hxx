@@ -9,7 +9,6 @@
 
 #include "abcdk/xpu/vdec.h"
 #include "../base.in.h"
-#include "vcodec_util.hxx"
 #include "context.hxx"
 #include "image.hxx"
 #include "imgproc.hxx"

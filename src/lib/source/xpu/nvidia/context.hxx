@@ -59,8 +59,12 @@ namespace abcdk_xpu
                 cu_chk = cuDeviceGet(&cu_dev, id);
                 if (cu_chk != CUDA_SUCCESS)
                     return NULL;
-
+                    
+#if CUDA_VERSION >= 12000
+                cu_chk = cuCtxCreate(&cu_ctx, NULL, 0, cu_dev);
+#else //#if CUDA_VERSION >= 12000
                 cu_chk = cuCtxCreate(&cu_ctx, 0, cu_dev);
+#endif //#if CUDA_VERSION >= 12000
                 if (cu_chk != CUDA_SUCCESS)
                     return NULL;
                 
@@ -120,7 +124,6 @@ namespace abcdk_xpu
 
                 return 0;
             }
-
         } // namespace context
     } // namespace nvidia
 } // namespace abcdk_xpu

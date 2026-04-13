@@ -13,7 +13,7 @@
 #include "context.hxx"
 #include "image.hxx"
 #include "imgproc.hxx"
-#include "vcodec_util.hxx"
+#include "util.hxx"
 
 namespace abcdk_xpu
 {

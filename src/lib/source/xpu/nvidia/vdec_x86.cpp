@@ -436,7 +436,7 @@ namespace abcdk_xpu
                 ctx->params.ext_data = ctx->ext_data.data();
                 ctx->params.ext_size = ctx->ext_data.size();
 
-                ctx->nv_codec_id = vcodec::local_to_nvcodec((abcdk_xpu_vcodec_id_t)ctx->params.format);
+                ctx->nv_codec_id = util::local_to_nvcodec((abcdk_xpu_vcodec_id_t)ctx->params.format);
 
                 if (ctx->nv_codec_id <= cudaVideoCodec_MPEG1 || ctx->nv_codec_id >= cudaVideoCodec_NumCodecs)
                     return -EINVAL;

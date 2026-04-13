@@ -12,6 +12,7 @@
 #include "../common/imgproc.hxx"
 #include "image.hxx"
 
+
 namespace abcdk_xpu
 {
 
@@ -19,8 +20,6 @@ namespace abcdk_xpu
     {
         namespace imgproc
         {
-            NppiInterpolationMode inter_local_to_nppi(abcdk_xpu_inter_t mode);
-
             int convert(const image::metadata_t *src, image::metadata_t *dst);
 
             int convert2(image::metadata_t **dst, abcdk_xpu_pixfmt_t pixfmt);
