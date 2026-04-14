@@ -22,6 +22,12 @@ void abcdk_openssl_init();
 /******************************************************************************************************/
 
 /**释放. */
+void abcdk_openssl_free(void **ptr);
+
+/**释放. */
+void abcdk_openssl_ai_free(ASN1_INTEGER **ai);
+
+/**释放. */
 void abcdk_openssl_bn_free(BIGNUM **bn);
 
 /**释放. */

@@ -134,6 +134,42 @@ static int _abcdk_openssl_pem_password_cb(char *buf, int size, int rwflag, void 
     return chk;
 }
 
+void abcdk_openssl_free(void **ptr)
+{
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
+    return ;
+#else //#ifndef HAVE_OPENSSL 
+    void *ptr_p;
+
+    if(!ptr || !*ptr)
+        return;
+
+    ptr_p = *ptr;
+    *ptr = NULL;
+
+    OPENSSL_free(ptr_p);
+#endif //#ifndef HAVE_OPENSSL  
+}
+
+void abcdk_openssl_ai_free(ASN1_INTEGER **ai)
+{
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
+    return ;
+#else //#ifndef HAVE_OPENSSL 
+    ASN1_INTEGER *ai_p;
+
+    if(!ai || !*ai)
+        return;
+
+    ai_p = *ai;
+    *ai = NULL;
+
+    ASN1_INTEGER_free(ai_p);
+#endif //#ifndef HAVE_OPENSSL
+}
+
 void abcdk_openssl_bn_free(BIGNUM **bn)
 {
 #ifndef HAVE_OPENSSL

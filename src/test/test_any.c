@@ -22,7 +22,30 @@
 
 int abcdk_test_any(abcdk_option_t *args)
 {
-#if 0
+#if 1
+
+    EVP_PKEY *pkey = abcdk_openssl_pki_generate_pkey(4096);
+    assert(pkey != NULL);
+    abcdk_openssl_evp_pkey_free(&pkey);
+
+    ASN1_INTEGER *serial = abcdk_openssl_pki_generate_serial(120);
+    assert(serial != NULL);
+
+    BIGNUM *bn = ASN1_INTEGER_to_BN(serial, NULL);
+
+    char *hex = BN_bn2hex(bn);
+    printf("serial(hex) = %s\n", hex);
+    abcdk_openssl_free((void**)&hex);
+
+    char *dec = BN_bn2dec(bn);
+    printf("serial(dec) = %s\n", dec);
+    abcdk_openssl_free((void**)&dec);
+
+    abcdk_openssl_bn_free(&bn);
+
+    abcdk_openssl_ai_free(&serial);
+
+#elif 0
 
     int *button = (int *)calloc(100000,4);
 
@@ -44,7 +67,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     free(button);
 
-#elif 1
+#elif 0
 
     abcdk_nonce_t *ctx =  abcdk_nonce_create(5000);
 

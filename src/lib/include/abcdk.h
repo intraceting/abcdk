@@ -111,6 +111,7 @@
 #include "abcdk/openssl/bio.h"
 #include "abcdk/openssl/cipherex.h"
 #include "abcdk/openssl/totp.h"
+#include "abcdk/openssl/pki.h"
 
 #include "abcdk/net/stcp.h"
 #include "abcdk/net/sudp.h"
