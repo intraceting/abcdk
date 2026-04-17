@@ -103,6 +103,7 @@ X509 *abcdk_openssl_pki_issue_cert(EVP_PKEY *pkey, ASN1_INTEGER *serial, const c
     X509 *cert = NULL;
 
     assert(serial != NULL && cn != NULL && org != NULL && opt != NULL);
+    assert((issuer_cert != NULL && issuer_pkey != NULL) || (issuer_cert == NULL && issuer_pkey == NULL));
     assert(*cn != '\0' && *org != '\0');
 
     cert = X509_new();

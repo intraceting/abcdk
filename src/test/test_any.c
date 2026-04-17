@@ -31,7 +31,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_option_t *opt = abcdk_option_alloc("--");
     
-    X509 * root_ca =  abcdk_openssl_pki_issue_cert(pkey,serial,"haha","hehe",1,opt,NULL,pkey);
+    X509 * root_ca =  abcdk_openssl_pki_issue_cert(pkey,serial,"haha","hehe",1,opt,NULL,NULL);
 
     abcdk_option_free(&opt);
 
