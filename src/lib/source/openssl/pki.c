@@ -149,5 +149,26 @@ X509 *abcdk_openssl_pki_issue_cert(EVP_PKEY *pkey, ASN1_INTEGER *serial, const c
     }
 
 
+    // SKI
+    _abcdk_openssl_pki_add_ext(cert, NID_subject_key_identifier, "hash");
+
+    // AKI
+    if(ca_or_not)
+    {
+        if(issuer_pkey)
+            _abcdk_openssl_pki_add_ext(cert, NID_authority_key_identifier, "keyid:always,issuer:always");
+        else 
+            _abcdk_openssl_pki_add_ext(cert, NID_authority_key_identifier, "keyid:always");//可选.
+    }
+    else
+    {
+        _abcdk_openssl_pki_add_ext(cert, NID_authority_key_identifier, "keyid:always");
+    }
+
+    // 签名.
+    X509_sign(cert, (issuer_pkey ? issuer_pkey : pkey), EVP_sha512());
+
+    return cert;
+
 #endif // #ifndef HAVE_OPENSSL
 }

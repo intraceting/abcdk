@@ -23,6 +23,21 @@
 int abcdk_test_any(abcdk_option_t *args)
 {
 #if 1
+    EVP_PKEY *pkey = abcdk_openssl_pki_generate_pkey(4096);
+    assert(pkey != NULL);
+
+    ASN1_INTEGER *serial = abcdk_openssl_pki_generate_serial(120);
+    assert(serial != NULL);
+
+    abcdk_option_t *opt = abcdk_option_alloc("--");
+    
+    X509 * root_ca =  abcdk_openssl_pki_issue_cert(pkey,serial,"haha","hehe",1,opt,NULL,pkey);
+
+    abcdk_option_free(&opt);
+
+    abcdk_openssl_ai_free(&serial);
+    abcdk_openssl_evp_pkey_free(&pkey);
+#elif 0
 
     EVP_PKEY *pkey = abcdk_openssl_pki_generate_pkey(4096);
     assert(pkey != NULL);
@@ -44,6 +59,9 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_openssl_bn_free(&bn);
 
     abcdk_openssl_ai_free(&serial);
+
+
+    
 
 #elif 0
 
