@@ -30,9 +30,19 @@ int abcdk_test_any(abcdk_option_t *args)
     assert(serial != NULL);
 
     abcdk_option_t *opt = abcdk_option_alloc("--");
+
+    abcdk_option_set(opt,"--pathlen","-1");
     
     X509 * root_ca =  abcdk_openssl_pki_issue_cert(pkey,serial,"haha","hehe",1,opt,NULL,NULL);
 
+    FILE *fp = fopen("/tmp/my_root_ca.pem", "w");
+    if (fp)
+    {
+        PEM_write_X509(fp, root_ca);
+        fclose(fp);
+    }
+
+    X509_free(root_ca);
     abcdk_option_free(&opt);
 
     abcdk_openssl_ai_free(&serial);
