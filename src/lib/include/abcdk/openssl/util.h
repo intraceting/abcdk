@@ -41,13 +41,24 @@ void abcdk_openssl_evp_cipher_ctx_free(EVP_CIPHER_CTX **cipher);
  * 
  * @note 仅支持PEM格式.
  * 
- * @param [in] key 密钥文件.
+ * @param [in] file 密钥文件.
  * @param [in] pubkey 是否为公钥.!0 是, 0 否.
  * @param [out] passwd 密钥密码, NULL(0) 忽略.
  * 
 */
-EVP_PKEY *abcdk_openssl_evp_pkey_load(const char *key,int pubkey, abcdk_object_t **passwd);
+EVP_PKEY *abcdk_openssl_evp_pkey_load(const char *file,int pubkey, abcdk_object_t **passwd);
 
+/**
+ * 导出密钥.
+ * 
+ * @note 仅支持PEM格式.
+ * 
+ * @param [in] pkey 密钥.
+ * @param [in] pubkey 是否为公钥.!0 是, 0 否.
+ * @param [in] passwd 密钥的密码地址, NULL(0) 忽略.
+ * @param [in] passwd_len 密钥的密码长度, <= 0 忽略.
+ */
+abcdk_object_t *abcdk_openssl_evp_pkey_export(EVP_PKEY *pkey, int pubkey, uint8_t *passwd, int passwd_len);
 
 /******************************************************************************************************/
 
@@ -162,9 +173,6 @@ abcdk_object_t *abcdk_openssl_cert_dump(X509 *x509);
 
 /** 打印证书检验错误信息. */
 abcdk_object_t *abcdk_openssl_cert_verify_error_dump(X509_STORE_CTX *store_ctx);
-
-/** 从证书中获取RSA公钥.*/
-RSA *abcdk_openssl_cert_get_rsa_pubkey(X509 *x509);
 
 /**
  * 导出证书到内存.

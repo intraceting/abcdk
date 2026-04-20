@@ -98,7 +98,7 @@ static int _abcdk_openssl_pki_add_ext(X509 *cert, int nid, const char *value, ..
 }
 #endif // #ifdef HAVE_OPENSSL
 
-int abcdk_openssl_pki_check_cert_and_key(X509 *cert, EVP_PKEY *pri_pkey)
+int abcdk_openssl_pki_check_cert_and_pkey(X509 *cert, EVP_PKEY *pri_pkey)
 {
 #ifndef HAVE_OPENSSL
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
@@ -145,15 +145,15 @@ X509 *abcdk_openssl_pki_issue_cert(EVP_PKEY *pkey, ASN1_INTEGER *serial, const c
 
     if (issuer_cert != NULL && issuer_pkey != NULL)
     {
-        chk = abcdk_openssl_pki_check_cert_and_key(issuer_cert, issuer_pkey);
+        chk = abcdk_openssl_pki_check_cert_and_pkey(issuer_cert, issuer_pkey);
         assert(chk != 0);
     }
 
-    long version = abcdk_option_get_long(opt, "--version", 0, 3);
+    long version = abcdk_option_get_long(opt, "--version", 0, 2);
     long not_before_days = abcdk_option_get_long(opt, "--not-before-days", 0, 0);
     long not_after_days = abcdk_option_get_long(opt, "--not-before-days", 0, 30);
     long pathlen = abcdk_option_get_long(opt, "--pathlen", 0, 0);
-    const char *san = abcdk_option_get(opt, "--san", 0, NULL);           // subject-alt-name
+    const char *san = abcdk_option_get(opt, "--san", 0, "DNS:localhost,DNS:localhost4,DNS:localhost6,IP:127.0.0.1,IP:::1");           // subject-alt-name
     const char *sigalg = abcdk_option_get(opt, "--sigalg", 0, "sha384"); // signature-algorithm
 
     X509_set_version(cert, version);
@@ -179,7 +179,11 @@ X509 *abcdk_openssl_pki_issue_cert(EVP_PKEY *pkey, ASN1_INTEGER *serial, const c
 
     if (ca_or_not)
     {
-        _abcdk_openssl_pki_add_ext(cert, NID_basic_constraints, "critical,CA:TRUE,pathlen:%d", pathlen);
+        if(pathlen>0)
+            _abcdk_openssl_pki_add_ext(cert, NID_basic_constraints, "critical,CA:TRUE,pathlen:%d", pathlen);
+        else 
+            _abcdk_openssl_pki_add_ext(cert, NID_basic_constraints, "critical,CA:TRUE");
+
         _abcdk_openssl_pki_add_ext(cert, NID_key_usage, "critical,keyCertSign,cRLSign");
     }
     else

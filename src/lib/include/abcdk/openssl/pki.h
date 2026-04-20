@@ -12,8 +12,15 @@
 
 __BEGIN_DECLS
 
+
+/**
+ * 生成私钥.
+ */
 EVP_PKEY *abcdk_openssl_pki_generate_pkey(int bits);
 
+/**
+ * 生成序列号.
+ */
 ASN1_INTEGER *abcdk_openssl_pki_generate_serial(int bits);
 
 /** 
@@ -21,8 +28,11 @@ ASN1_INTEGER *abcdk_openssl_pki_generate_serial(int bits);
  * 
  * @return 0 成功, -1 失败 , -2 不支持 , -3 其它错误. 
 */
-int abcdk_openssl_pki_check_cert_and_key(X509 *cert,EVP_PKEY *pri_pkey);
+int abcdk_openssl_pki_check_cert_and_pkey(X509 *cert,EVP_PKEY *pri_pkey);
 
+/**
+ * 生成证书.
+ */
 X509 *abcdk_openssl_pki_issue_cert(EVP_PKEY *pkey, ASN1_INTEGER *serial, const char *cn, const char *org, int ca_or_not, abcdk_option_t *opt,
                                    X509 *issuer_cert, EVP_PKEY *issuer_pkey);
 
