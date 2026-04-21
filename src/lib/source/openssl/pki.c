@@ -45,6 +45,37 @@ EVP_PKEY *abcdk_openssl_pki_generate_pkey(int bits)
 #endif // #ifndef HAVE_OPENSSL
 }
 
+abcdk_object_t *abcdk_openssl_pki_export_pkey(EVP_PKEY *pkey, int pubkey, uint8_t *passwd, int passwd_len)
+{
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
+    return NULL;
+#else // #ifndef HAVE_OPENSSL
+    BIO *bp;
+    long data_l;
+    void *data_p;
+    abcdk_object_t *obj = NULL;
+    int chk;
+
+    assert(pkey != NULL);
+
+    bp = BIO_new(BIO_s_mem());
+    if(!bp)
+        return NULL;
+
+    if(pubkey)
+        chk = PEM_write_bio_PUBKEY(bp, pkey);
+    else 
+        chk = PEM_write_bio_PrivateKey(bp, pkey, EVP_aes_256_cbc(), passwd, passwd_len, NULL, NULL);
+
+    data_l = BIO_get_mem_data(bp, &data_p);
+    obj = abcdk_object_copyfrom(data_p,data_l);        
+    BIO_free(bp);
+
+    return (obj);
+#endif // #ifndef HAVE_OPENSSL
+}
+
 ASN1_INTEGER *abcdk_openssl_pki_generate_serial(int bits)
 {
 #ifndef HAVE_OPENSSL
@@ -70,6 +101,36 @@ ASN1_INTEGER *abcdk_openssl_pki_generate_serial(int bits)
     abcdk_openssl_bn_free(&bn);
 
     return serial;
+#endif // #ifndef HAVE_OPENSSL
+}
+
+abcdk_object_t *abcdk_openssl_pki_string_serial(ASN1_INTEGER *ai, int hex_or_dec)
+{
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
+    return NULL;
+#else  // #ifndef HAVE_OPENSSL
+    BIGNUM *bn = NULL;
+    char *str = NULL;
+    abcdk_object_t *obj_str = NULL;
+
+    assert(ai != NULL);
+
+    bn = ASN1_INTEGER_to_BN(ai, NULL);
+    if (!bn)
+        return NULL;
+
+    str = (hex_or_dec ? BN_bn2hex(bn) : BN_bn2dec(bn));
+    if (!str)
+    {
+        BN_free(bn);
+        return NULL;
+    }
+
+    obj_str = abcdk_object_copyfrom(str, strlen(str));
+    OPENSSL_free(str);
+
+    return obj_str;
 #endif // #ifndef HAVE_OPENSSL
 }
 
@@ -125,8 +186,8 @@ int abcdk_openssl_pki_check_cert_and_pkey(X509 *cert, EVP_PKEY *pri_pkey)
 #endif // #ifndef HAVE_OPENSSL
 }
 
-X509 *abcdk_openssl_pki_issue_cert(EVP_PKEY *pkey, ASN1_INTEGER *serial, const char *cn, const char *org, int ca_or_not, abcdk_option_t *opt,
-                                   X509 *issuer_cert, EVP_PKEY *issuer_pkey)
+X509 *abcdk_openssl_pki_generate_cert(EVP_PKEY *pkey, ASN1_INTEGER *serial, const char *name_cn, const char *name_o, abcdk_option_t *opt,
+                                      X509 *issuer_cert, EVP_PKEY *issuer_pkey)
 {
 #ifndef HAVE_OPENSSL
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
@@ -135,9 +196,10 @@ X509 *abcdk_openssl_pki_issue_cert(EVP_PKEY *pkey, ASN1_INTEGER *serial, const c
     X509 *cert = NULL;
     int chk;
 
-    assert(serial != NULL && cn != NULL && org != NULL && opt != NULL);
+    assert(serial != NULL && name_cn != NULL && name_o != NULL && opt != NULL);
+    assert(*name_cn != '\0' && *name_o != '\0');
     assert((issuer_cert != NULL && issuer_pkey != NULL) || (issuer_cert == NULL && issuer_pkey == NULL));
-    assert(*cn != '\0' && *org != '\0');
+    
 
     cert = X509_new();
     if (!cert)
@@ -146,15 +208,19 @@ X509 *abcdk_openssl_pki_issue_cert(EVP_PKEY *pkey, ASN1_INTEGER *serial, const c
     if (issuer_cert != NULL && issuer_pkey != NULL)
     {
         chk = abcdk_openssl_pki_check_cert_and_pkey(issuer_cert, issuer_pkey);
-        assert(chk != 0);
+        assert(chk == 0);
     }
 
+    int ca_or_not = abcdk_option_get_long(opt, "--ca", 0, 0);//Certificate Authority 
     long version = abcdk_option_get_long(opt, "--version", 0, 2);
     long not_before_days = abcdk_option_get_long(opt, "--not-before-days", 0, 0);
     long not_after_days = abcdk_option_get_long(opt, "--not-before-days", 0, 30);
     long pathlen = abcdk_option_get_long(opt, "--pathlen", 0, 0);
-    const char *san = abcdk_option_get(opt, "--san", 0, "DNS:localhost,DNS:localhost4,DNS:localhost6,IP:127.0.0.1,IP:::1");           // subject-alt-name
+    const char *name_c = abcdk_option_get(opt, "--name-c", 0, NULL); 
+    const char *name_co = abcdk_option_get(opt, "--name-co", 0, NULL); 
+    const char *san = abcdk_option_get(opt, "--san", 0, "DNS:localhost,DNS:localhost4,DNS:localhost6,IP:127.0.0.1,IP:::1");// subject-alt-name
     const char *sigalg = abcdk_option_get(opt, "--sigalg", 0, "sha384"); // signature-algorithm
+    const char *crl = abcdk_option_get(opt, "--crl",0, NULL);
 
     X509_set_version(cert, version);
     X509_set_serialNumber(cert, serial);
@@ -164,24 +230,26 @@ X509 *abcdk_openssl_pki_issue_cert(EVP_PKEY *pkey, ASN1_INTEGER *serial, const c
 
     X509_set_pubkey(cert, pkey);
 
-    if (issuer_cert)
-    {
-        X509_set_issuer_name(cert, X509_get_subject_name(issuer_cert));
-    }
-    else
-    {
-        X509_NAME *name = X509_get_subject_name(cert);
-        X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, (unsigned char *)cn, -1, -1, 0);
-        X509_NAME_add_entry_by_txt(name, "O", MBSTRING_ASC, (unsigned char *)org, -1, -1, 0);
+    X509_NAME *name = X509_get_subject_name(cert);
 
+    X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, (unsigned char *)name_cn, -1, -1, 0);
+    X509_NAME_add_entry_by_txt(name, "O", MBSTRING_ASC, (unsigned char *)name_o, -1, -1, 0);
+
+    if (name_c)
+        X509_NAME_add_entry_by_txt(name, "C", MBSTRING_ASC, (unsigned char *)name_c, -1, -1, 0);
+    if (name_co)
+        X509_NAME_add_entry_by_txt(name, "CO", MBSTRING_ASC, (unsigned char *)name_co, -1, -1, 0);
+
+    if (issuer_cert)
+        X509_set_issuer_name(cert, X509_get_subject_name(issuer_cert));
+    else
         X509_set_issuer_name(cert, name);
-    }
 
     if (ca_or_not)
     {
-        if(pathlen>0)
+        if (pathlen > 0)
             _abcdk_openssl_pki_add_ext(cert, NID_basic_constraints, "critical,CA:TRUE,pathlen:%d", pathlen);
-        else 
+        else
             _abcdk_openssl_pki_add_ext(cert, NID_basic_constraints, "critical,CA:TRUE");
 
         _abcdk_openssl_pki_add_ext(cert, NID_key_usage, "critical,keyCertSign,cRLSign");
@@ -198,11 +266,17 @@ X509 *abcdk_openssl_pki_issue_cert(EVP_PKEY *pkey, ASN1_INTEGER *serial, const c
         }
     }
 
+    if(crl != NULL && issuer_cert != NULL && issuer_pkey != NULL)
+    {
+        _abcdk_openssl_pki_add_ext(cert, NID_crl_distribution_points, crl);
+    }
+
+
     // SKI
     _abcdk_openssl_pki_add_ext(cert, NID_subject_key_identifier, "hash");
 
     // AKI
-    if (ca_or_not && issuer_pkey)
+    if (issuer_pkey)
         _abcdk_openssl_pki_add_ext(cert, NID_authority_key_identifier, "keyid:always,issuer:always");
     else
         _abcdk_openssl_pki_add_ext(cert, NID_authority_key_identifier, "keyid:always");
@@ -227,5 +301,33 @@ X509 *abcdk_openssl_pki_issue_cert(EVP_PKEY *pkey, ASN1_INTEGER *serial, const c
 
     return cert;
 
+#endif // #ifndef HAVE_OPENSSL
+}
+
+abcdk_object_t *abcdk_openssl_pki_export_cert(X509 *cert)
+{
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
+    return NULL;
+#else // #ifndef HAVE_OPENSSL
+    BIO *bp;
+    long data_l;
+    void *data_p;
+    abcdk_object_t *obj = NULL;
+    int chk;
+
+    assert(cert != NULL);
+
+    bp = BIO_new(BIO_s_mem());
+    if(!bp)
+        return NULL;
+
+    chk = PEM_write_bio_X509(bp, cert);
+
+    data_l = BIO_get_mem_data(bp, &data_p);
+    obj = abcdk_object_copyfrom(data_p,data_l);        
+    BIO_free(bp);
+
+    return (obj);
 #endif // #ifndef HAVE_OPENSSL
 }

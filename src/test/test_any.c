@@ -22,26 +22,40 @@
 
 int abcdk_test_any(abcdk_option_t *args)
 {
-#if 1
+#if 0
     EVP_PKEY *pkey = abcdk_openssl_pki_generate_pkey(4096);
     assert(pkey != NULL);
+
+    abcdk_object_t *pkey_txt = abcdk_openssl_pki_export_pkey(pkey,0,"1234",4);
+
+    abcdk_trace_printf(LOG_DEBUG,"key:\n%s\n",pkey_txt->pstrs[0]);
+
+    abcdk_object_unref(&pkey_txt);
 
     ASN1_INTEGER *serial = abcdk_openssl_pki_generate_serial(120);
     assert(serial != NULL);
 
+    abcdk_object_t *serial_hex = abcdk_openssl_pki_string_serial(serial,1);
+    abcdk_object_t *serial_dec = abcdk_openssl_pki_string_serial(serial,0);
+
+    abcdk_trace_printf(LOG_DEBUG,"serial_hex:%s\nserial_dec:%s\n",serial_hex->pstrs[0],serial_dec->pstrs[0]);
+
+    abcdk_object_unref(&serial_hex);
+    abcdk_object_unref(&serial_dec);
+
     abcdk_option_t *opt = abcdk_option_alloc("--");
 
+    abcdk_option_set(opt,"--ca","1");
     abcdk_option_set(opt,"--pathlen","-1");
     
-    X509 * root_ca =  abcdk_openssl_pki_issue_cert(pkey,serial,"haha","hehe",1,opt,NULL,NULL);
+    X509 * root_ca =  abcdk_openssl_pki_generate_cert(pkey,serial,"haha","hehe",opt,NULL,NULL);
 
-    FILE *fp = fopen("/tmp/my_root_ca.pem", "w");
-    if (fp)
-    {
-        PEM_write_X509(fp, root_ca);
-        fclose(fp);
-    }
+    abcdk_object_t *root_ca_str =abcdk_openssl_pki_export_cert(root_ca);
 
+    abcdk_trace_printf(LOG_DEBUG,"%s\n",root_ca_str->pstrs[0]);
+
+    abcdk_object_unref(&root_ca_str);
+   
     X509_free(root_ca);
     abcdk_option_free(&opt);
 

@@ -48,17 +48,6 @@ void abcdk_openssl_evp_cipher_ctx_free(EVP_CIPHER_CTX **cipher);
 */
 EVP_PKEY *abcdk_openssl_evp_pkey_load(const char *file,int pubkey, abcdk_object_t **passwd);
 
-/**
- * 导出密钥.
- * 
- * @note 仅支持PEM格式.
- * 
- * @param [in] pkey 密钥.
- * @param [in] pubkey 是否为公钥.!0 是, 0 否.
- * @param [in] passwd 密钥的密码地址, NULL(0) 忽略.
- * @param [in] passwd_len 密钥的密码长度, <= 0 忽略.
- */
-abcdk_object_t *abcdk_openssl_evp_pkey_export(EVP_PKEY *pkey, int pubkey, uint8_t *passwd, int passwd_len);
 
 /******************************************************************************************************/
 

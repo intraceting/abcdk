@@ -19,9 +19,26 @@ __BEGIN_DECLS
 EVP_PKEY *abcdk_openssl_pki_generate_pkey(int bits);
 
 /**
+ * 导出密钥.
+ * 
+ * @note 仅支持PEM格式.
+ * 
+ * @param [in] pkey 密钥.
+ * @param [in] pubkey 是否为公钥.!0 是, 0 否.
+ * @param [in] passwd 密钥的密码地址, NULL(0) 忽略.
+ * @param [in] passwd_len 密钥的密码长度, <= 0 忽略.
+ */
+abcdk_object_t *abcdk_openssl_pki_export_pkey(EVP_PKEY *pkey, int pubkey, uint8_t *passwd, int passwd_len);
+
+/**
  * 生成序列号.
  */
 ASN1_INTEGER *abcdk_openssl_pki_generate_serial(int bits);
+
+/**
+ * 字符串化序列号.
+ */
+abcdk_object_t *abcdk_openssl_pki_string_serial(ASN1_INTEGER *ai, int hex_or_dec);
 
 /** 
  * 检查证书和私钥是否匹配.
@@ -33,8 +50,15 @@ int abcdk_openssl_pki_check_cert_and_pkey(X509 *cert,EVP_PKEY *pri_pkey);
 /**
  * 生成证书.
  */
-X509 *abcdk_openssl_pki_issue_cert(EVP_PKEY *pkey, ASN1_INTEGER *serial, const char *cn, const char *org, int ca_or_not, abcdk_option_t *opt,
-                                   X509 *issuer_cert, EVP_PKEY *issuer_pkey);
+X509 *abcdk_openssl_pki_generate_cert(EVP_PKEY *pkey, ASN1_INTEGER *serial, const char *name_cn, const char *name_o, abcdk_option_t *opt,
+                                      X509 *issuer_cert, EVP_PKEY *issuer_pkey);
+
+/**
+ * 导出证书.
+ * 
+ * @note 仅支持PEM格式.
+*/
+abcdk_object_t *abcdk_openssl_pki_export_cert(X509 *cert);
 
 __END_DECLS
 

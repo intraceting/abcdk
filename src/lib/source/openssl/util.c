@@ -260,37 +260,6 @@ EVP_PKEY *abcdk_openssl_evp_pkey_load(const char *file, int pubkey, abcdk_object
 
 }
 
-abcdk_object_t *abcdk_openssl_evp_pkey_export(EVP_PKEY *pkey, int pubkey, uint8_t *passwd, int passwd_len)
-{
-#ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
-    return NULL;
-#else // #ifndef HAVE_OPENSSL
-    BIO *bp;
-    long data_l;
-    void *data_p;
-    abcdk_object_t *obj = NULL;
-    int chk;
-
-    assert(pkey != NULL);
-
-    bp = BIO_new(BIO_s_mem());
-    if(bp)
-        return NULL;
-
-    if(pubkey)
-        chk = PEM_write_bio_PUBKEY(bp, pkey);
-    else 
-        chk = PEM_write_bio_PrivateKey(bp, pkey, EVP_aes_256_cbc(), passwd, passwd_len, NULL, NULL);
-
-    data_l = BIO_get_mem_data(bp, &data_p);
-    obj = abcdk_object_copyfrom(data_p,data_l);        
-    BIO_free(bp);
-
-    return (obj);
-
-#endif // #ifndef HAVE_OPENSSL
-}
 
 /******************************************************************************************************/
 
