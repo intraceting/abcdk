@@ -430,7 +430,7 @@ int abcdk_openssl_pki_update_crl(X509_CRL *crl, abcdk_option_t *opt, X509 *issue
     long next_update_days = abcdk_option_get_long(opt, "--next-update-days", 0, 30);
     const char *sigalg = abcdk_option_get(opt, "--sigalg", 0, "sha384"); // signature-algorithm
 
-#if 1
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
     ASN1_TIME *last = ASN1_TIME_new();
     ASN1_TIME *next = ASN1_TIME_new();
 
@@ -442,10 +442,10 @@ int abcdk_openssl_pki_update_crl(X509_CRL *crl, abcdk_option_t *opt, X509 *issue
 
     ASN1_TIME_free(last);
     ASN1_TIME_free(next);
-#else 
+#else //#if OPENSSL_VERSION_NUMBER >= 0x10100000L
     X509_gmtime_adj(X509_CRL_get_lastUpdate(crl), last_update_days * 24 * 3600);
     X509_gmtime_adj(X509_CRL_get_nextUpdate(crl), next_update_days * 24 * 3600);
-#endif 
+#endif //#if OPENSSL_VERSION_NUMBER >= 0x10100000L
 
     // 排序.
     X509_CRL_sort(crl);
