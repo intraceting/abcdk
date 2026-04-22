@@ -13,9 +13,9 @@
 __BEGIN_DECLS
 
 
-/**
- * 生成私钥.
- */
+
+
+/** 生成私钥.*/
 EVP_PKEY *abcdk_openssl_pki_generate_pkey(int bits);
 
 /**
@@ -30,26 +30,14 @@ EVP_PKEY *abcdk_openssl_pki_generate_pkey(int bits);
  */
 abcdk_object_t *abcdk_openssl_pki_export_pkey(EVP_PKEY *pkey, int pubkey, uint8_t *passwd, int passwd_len);
 
-/**
- * 生成序列号.
- */
+/** 生成序列号. */
 ASN1_INTEGER *abcdk_openssl_pki_generate_serial(int bits);
 
-/**
- * 字符串化序列号.
- */
+/** 字符串化序列号.*/
 abcdk_object_t *abcdk_openssl_pki_string_serial(ASN1_INTEGER *ai, int hex_or_dec);
 
-/** 
- * 检查证书和私钥是否匹配.
- * 
- * @return 0 成功, -1 失败 , -2 不支持 , -3 其它错误. 
-*/
-int abcdk_openssl_pki_check_cert_and_pkey(X509 *cert,EVP_PKEY *pri_pkey);
 
-/**
- * 生成证书.
- */
+/** 生成证书.*/
 X509 *abcdk_openssl_pki_generate_cert(EVP_PKEY *pkey, ASN1_INTEGER *serial, const char *name_cn, const char *name_o, abcdk_option_t *opt,
                                       X509 *issuer_cert, EVP_PKEY *issuer_pkey);
 
@@ -59,6 +47,34 @@ X509 *abcdk_openssl_pki_generate_cert(EVP_PKEY *pkey, ASN1_INTEGER *serial, cons
  * @note 仅支持PEM格式.
 */
 abcdk_object_t *abcdk_openssl_pki_export_cert(X509 *cert);
+
+/**
+ * 证书吊销检查.
+ * 
+ * @return 0 未吊销, !0 已吊销.
+ */
+int abcdk_openssl_pki_cert_is_revoked(X509_CRL *crl, X509 *cert);
+
+/** 
+ * 吊销证书.
+ * 
+ * @return 0 成功, -1 失败, -2 重复吊销.
+*/
+int abcdk_openssl_pki_revoke_cert(X509_CRL **crl, X509 *cert, int reason_code, X509 *issuer_cert, EVP_PKEY *issuer_pkey);
+
+/**
+ * 更新吊销列表.
+ * 
+ * @return 0 成功, -1 失败.
+ */
+int abcdk_openssl_pki_update_crl(X509_CRL *crl, abcdk_option_t *opt, X509 *issuer_cert, EVP_PKEY *issuer_pkey);
+
+/**
+ * 导出吊销列表.
+ * 
+ * @note 仅支持PEM格式.
+*/
+abcdk_object_t *abcdk_openssl_pki_export_crl(X509_CRL *crl);
 
 __END_DECLS
 

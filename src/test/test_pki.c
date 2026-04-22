@@ -43,6 +43,21 @@ static void _make_cert(EVP_PKEY **pkey, X509 **cert, const char *cn, const char 
     abcdk_object_unref(&cert_txt);
 }
 
+static void _save_crl(X509_CRL *crl,const char *file, X509 *issuer_cert, EVP_PKEY *issuer_pkey)
+{
+    abcdk_option_t *opt = abcdk_option_alloc("--");
+
+    abcdk_option_fset(opt, "--last-update-days", "%d", 0);
+    abcdk_option_fset(opt, "--next-update-days", "%d", 90);
+
+    abcdk_openssl_pki_update_crl(crl,opt,issuer_cert,issuer_pkey);
+    abcdk_option_free(&opt);
+
+    abcdk_object_t *crl_txt = abcdk_openssl_pki_export_crl(crl);
+    abcdk_dump(file, crl_txt->pstrs[0], crl_txt->sizes[0]);
+    abcdk_object_unref(&crl_txt);
+}
+
 int abcdk_test_pki(abcdk_option_t *args)
 {
     EVP_PKEY *root_key = NULL;
@@ -64,6 +79,32 @@ int abcdk_test_pki(abcdk_option_t *args)
     X509 *leaf2_cert = NULL;
 
     _make_cert(&leaf2_key,&leaf2_cert,"dada2","dada2",0,int_cert,int_key);
+
+    EVP_PKEY *leaf3_key = NULL;
+    X509 *leaf3_cert = NULL;
+
+    _make_cert(&leaf3_key,&leaf3_cert,"dada3","dada3",0,int_cert,int_key);
+
+    X509_CRL *crl = NULL;
+
+ ///   abcdk_openssl_pki_revoke_cert(&crl,leaf3_cert,CRL_REASON_KEY_COMPROMISE,root_cert,root_key);
+    int chk = abcdk_openssl_pki_revoke_cert(&crl,leaf3_cert,CRL_REASON_KEY_COMPROMISE,int_cert,int_key);
+    assert(chk == 0);
+    chk = abcdk_openssl_pki_revoke_cert(&crl,leaf3_cert,CRL_REASON_KEY_COMPROMISE,int_cert,int_key);
+    assert(chk == -2);
+
+    _save_crl(crl,"/tmp/crl-01.pem",int_cert,int_key);
+
+  //  abcdk_openssl_pki_revoke_cert(&crl,leaf2_cert,CRL_REASON_KEY_COMPROMISE,root_cert,root_key);
+
+     chk = abcdk_openssl_pki_revoke_cert(&crl,leaf2_cert,CRL_REASON_KEY_COMPROMISE,int_cert,int_key);
+     assert(chk == 0);
+     chk = abcdk_openssl_pki_revoke_cert(&crl,leaf2_cert,CRL_REASON_KEY_COMPROMISE,int_cert,int_key);
+     assert(chk == -2);
+
+    _save_crl(crl,"/tmp/crl-02.pem",int_cert,int_key);
+
+    abcdk_openssl_x509_CRL_free(&crl);
 
 
     X509_free(root_cert);

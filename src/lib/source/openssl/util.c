@@ -642,6 +642,24 @@ int abcdk_openssl_hmac_init(HMAC_CTX *ctx, const void *key, int len, int type)
 
 /******************************************************************************************************/
 
+void abcdk_openssl_x509_CRL_free(X509_CRL **crl)
+{
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
+    return;
+#else //#ifndef HAVE_OPENSSL
+    X509_CRL *crl_p;
+
+    if(!crl || !*crl)
+        return;
+
+    crl_p = *crl;
+    *crl = NULL;
+
+    X509_CRL_free(crl_p);
+#endif //#ifndef HAVE_OPENSSL 
+}
+
 void abcdk_openssl_x509_free(X509 **x509)
 {
 #ifndef HAVE_OPENSSL

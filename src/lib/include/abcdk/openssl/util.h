@@ -153,6 +153,8 @@ int abcdk_openssl_hmac_init(HMAC_CTX *ctx,const void *key, int len,int type);
 
 /******************************************************************************************************/
 
+/**释放CRL. */
+void abcdk_openssl_x509_CRL_free(X509_CRL **crl);
 
 /**释放. */
 void abcdk_openssl_x509_free(X509 **x509);
