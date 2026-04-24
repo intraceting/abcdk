@@ -22,7 +22,18 @@
 
 int abcdk_test_any(abcdk_option_t *args)
 {
-#if 0
+#if 1
+#ifdef HAVE_OPENSSL
+
+    unsigned char key[32];
+    const char *password = __DATE__;
+    const char *salt = __TIME__; 
+    int iter = 100000;
+
+    PKCS5_PBKDF2_HMAC(password, strlen(password), salt, strlen((char *)salt), iter, EVP_sha256(), 32, key);
+
+#endif //#ifdef HAVE_OPENSSL
+#elif 0
     EVP_PKEY *pkey = abcdk_openssl_pki_generate_pkey(4096);
     assert(pkey != NULL);
 
