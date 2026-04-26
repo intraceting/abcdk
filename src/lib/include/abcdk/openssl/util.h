@@ -298,6 +298,11 @@ int abcdk_openssl_ssl_get_alpn_selected(SSL *ssl,char buf[256]);
 
 /************************************************************************************************************************/
 
+int abcdk_openssl_password_generate(const void *pass, int pass_len, const void *salt, int salt_len, int iter, void *key, int key_len);
+
+
+/************************************************************************************************************************/
+
 __END_DECLS
 
 #endif //ABCDK_OPENSSL_UTIL_H

@@ -88,11 +88,11 @@ static int _abcdk_openssl_cipher_aes256gcm_init(abcdk_openssl_cipher_t *ctx, con
 {
     int chk;
 
-    ctx->evp_key = abcdk_object_alloc2(32);
+    ABCDK_TRACE_ASSERT(key_len == 32,ABCDK_GETTEXT("AES-256-GCM密钥长度需要32字节."));
+
+    ctx->evp_key = abcdk_object_copyfrom(key,key_len);
     if (!ctx->evp_key)
         return -1;
-
-    abcdk_sha256_once(key, key_len, ctx->evp_key->pptrs[0]);
 
     ctx->evp_ctx = EVP_CIPHER_CTX_new();
     if (!ctx->evp_ctx)
@@ -226,7 +226,9 @@ static int _abcdk_openssl_cipher_aes256cbc_init(abcdk_openssl_cipher_t *ctx, con
 {
     int chk;
 
-    ctx->evp_key = abcdk_object_alloc2(32);
+    ABCDK_TRACE_ASSERT(key_len == 32,ABCDK_GETTEXT("AES-256-CBC密钥长度需要32字节."));
+
+    ctx->evp_key = abcdk_object_copyfrom(key,key_len);
     if (!ctx->evp_key)
         return -1;
 
@@ -444,27 +446,6 @@ ERR:
 #endif //#ifndef HAVE_OPENSSL
 }
 
-abcdk_openssl_cipher_t *abcdk_openssl_cipher_create_from_file(int scheme, const char *key_file)
-{
-#ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具."));
-    return NULL;
-#else //#ifndef HAVE_OPENSSL
-    abcdk_object_t *key;
-    abcdk_openssl_cipher_t *ctx;
-
-    assert(key_file != NULL);
-
-    key = abcdk_mmap_filename(key_file, 0, 0, 0, 0);
-    if (!key)
-        return NULL;
-
-    ctx = abcdk_openssl_cipher_create(scheme, key->pptrs[0], key->sizes[0]);
-    abcdk_object_unref(&key);
-
-    return ctx;
-#endif //#ifdef HAVE_OPENSSL
-}
 
 abcdk_object_t *abcdk_openssl_cipher_update(abcdk_openssl_cipher_t *ctx, const uint8_t *in, int in_len, int enc)
 {

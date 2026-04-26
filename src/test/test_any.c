@@ -30,7 +30,20 @@ int abcdk_test_any(abcdk_option_t *args)
     const char *salt = __TIME__; 
     int iter = 100000;
 
-    PKCS5_PBKDF2_HMAC(password, strlen(password), salt, strlen((char *)salt), iter, EVP_sha256(), 32, key);
+    for (int i = 0; i < 100; i++)
+    {
+        uint64_t dot = abcdk_time_systime(9);
+
+        int chk = PKCS5_PBKDF2_HMAC(password, strlen(password), salt, strlen((char *)salt), iter, EVP_sha256(), 32, key);
+
+        uint64_t step = abcdk_clock(dot, &dot);
+
+        abcdk_trace_printf(LOG_INFO,"step:%llu",step);
+
+        iter *= 10;
+
+
+    }
 
 #endif //#ifdef HAVE_OPENSSL
 #elif 0
