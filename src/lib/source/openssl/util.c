@@ -1364,8 +1364,99 @@ int abcdk_openssl_ssl_get_alpn_selected(SSL *ssl,char buf[256])
 /******************************************************************************************************/
 int abcdk_openssl_password_generate(const void *pass, int pass_len, const void *salt, int salt_len, int iter, void *key, int key_len)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
+    return -1;
+#else //#ifndef HAVE_OPENSSL
+    int chk;
+
+    assert(pass != NULL && pass_len > 0 && salt != NULL && salt_len > 0 && key != NULL && key_len);
+
+    chk = PKCS5_PBKDF2_HMAC(pass, pass_len, salt, salt_len, iter, EVP_sha384(), key_len, key);
+    if(chk == 1)
+        return key_len;
     
+    return -1;
+#endif //#ifndef HAVE_OPENSSL
 }
 
+abcdk_object_t *abcdk_openssl_password_generate2(const void *pass, int pass_len, const void *salt, int salt_len, int iter, int key_len)
+{
+    abcdk_object_t *key;
+    int chk;
+
+    assert(pass != NULL && pass_len > 0 && salt != NULL && salt_len > 0 && key_len);
+
+    key = abcdk_object_alloc2(key_len);
+    if (!key)
+        return NULL;
+
+    chk = abcdk_openssl_password_generate(pass, pass_len, salt, salt_len, iter, key->pptrs[0], key->sizes[0]);
+    if (chk <= 0)
+    {
+        abcdk_object_unref(&key);
+        return NULL;
+    }
+
+    return key;
+}
+
+int abcdk_openssl_password_derive(const void *master_key, int master_len, const void *info, int info_len, void *slave_key, int slave_len)
+{
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
+    return -1;
+#else  // #ifndef HAVE_OPENSSL
+    EVP_PKEY_CTX *pkey_ctx;
+    size_t out_key_len;
+    int chk;
+
+    assert(master_key != NULL && master_len > 0 && info != NULL && info_len > 0 && slave_key != NULL && slave_len > 0);
+
+    pkey_ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_HKDF, NULL);
+    if (!pkey_ctx)
+        return -1;
+
+    EVP_PKEY_derive_init(pkey_ctx);
+
+    EVP_PKEY_CTX_set_hkdf_md(pkey_ctx, EVP_sha384());
+    EVP_PKEY_CTX_set1_hkdf_key(pkey_ctx, master_key, master_len);
+    EVP_PKEY_CTX_add1_hkdf_info(pkey_ctx, (uint8_t *)info, info_len);
+
+    out_key_len = slave_len;
+    chk = EVP_PKEY_derive(pkey_ctx, slave_key, &out_key_len);
+    if (chk <= 0)
+    {
+        EVP_PKEY_CTX_free(pkey_ctx);
+        return -1;
+    }
+
+    EVP_PKEY_CTX_free(pkey_ctx);
+    return out_key_len;
+#endif // #ifndef HAVE_OPENSSL
+}
+
+abcdk_object_t *abcdk_openssl_password_derive2(const void *master_key, int master_len, const void *info, int info_len, int slave_len)
+{
+    abcdk_object_t *key;
+    int chk;
+
+    assert(master_key != NULL && master_len > 0 && info != NULL && info_len > 0 && slave_len > 0);
+
+    key = abcdk_object_alloc2(slave_len);
+    if (!key)
+        return NULL;
+
+    chk = abcdk_openssl_password_derive(master_key, master_len, info, info_len, key->pptrs[0], key->sizes[0]);
+    if (chk <= 0)
+    {
+        abcdk_object_unref(&key);
+        return NULL;
+    }
+
+    key->sizes[0] = chk; // real length.
+
+    return key;
+}
 
 /************************************************************************************************************************/

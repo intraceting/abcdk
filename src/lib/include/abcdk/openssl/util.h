@@ -298,9 +298,25 @@ int abcdk_openssl_ssl_get_alpn_selected(SSL *ssl,char buf[256]);
 
 /************************************************************************************************************************/
 
+/**
+ * 密码转密钥.
+ * 
+ * @return > 0 密钥长度, <= 0 失败.
+*/
 int abcdk_openssl_password_generate(const void *pass, int pass_len, const void *salt, int salt_len, int iter, void *key, int key_len);
 
+/** 密码转密钥. */
+abcdk_object_t *abcdk_openssl_password_generate2(const void *pass, int pass_len, const void *salt, int salt_len, int iter, int key_len);
 
+/**
+ * 密钥派生子密钥.
+ * 
+ * @return > 0 子密钥长度, <= 0 失败.
+ */
+int abcdk_openssl_password_derive(const void *master_key, int master_len, const void *info,int info_len, void *slave_key, int slave_len);
+
+/** 密钥派生子密钥.*/
+abcdk_object_t *abcdk_openssl_password_derive2(const void *master_key, int master_len, const void *info,int info_len, int slave_len);
 /************************************************************************************************************************/
 
 __END_DECLS

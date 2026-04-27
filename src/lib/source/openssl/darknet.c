@@ -23,9 +23,10 @@
 /**简单的安全套接字.*/
 struct _abcdk_openssl_darknet
 {
-    /*密钥环境.*/
-    RSA *rsa_send_ctx;
-    RSA *rsa_recv_ctx;
+    /*主密钥环境.*/
+    abcdk_openssl_cipher_t *cipher_ctx;
+
+    /*通讯密钥环境.*/
     EVP_CIPHER_CTX *evp_send_ctx;
     EVP_CIPHER_CTX *evp_recv_ctx;
 
@@ -91,8 +92,7 @@ void abcdk_openssl_darknet_destroy(abcdk_openssl_darknet_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-    abcdk_openssl_rsa_free(&ctx_p->rsa_send_ctx);
-    abcdk_openssl_rsa_free(&ctx_p->rsa_recv_ctx);
+    abcdk_openssl_cipher_destroy(&ctx_p->cipher_ctx);
     abcdk_openssl_evp_cipher_ctx_free(&ctx_p->evp_recv_ctx);
     abcdk_openssl_evp_cipher_ctx_free(&ctx_p->evp_send_ctx);
     abcdk_tree_free(&ctx_p->send_queue);

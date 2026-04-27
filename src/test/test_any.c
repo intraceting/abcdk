@@ -25,25 +25,24 @@ int abcdk_test_any(abcdk_option_t *args)
 #if 1
 #ifdef HAVE_OPENSSL
 
-    unsigned char key[32];
     const char *password = __DATE__;
     const char *salt = __TIME__; 
-    int iter = 100000;
+    int iter = 1000000;
 
-    for (int i = 0; i < 100; i++)
-    {
-        uint64_t dot = abcdk_time_systime(9);
+    abcdk_object_t *key = abcdk_openssl_password_generate2(password, strlen(password), salt, strlen((char *)salt), iter, 32);
+    assert(key != NULL && key->sizes[0] == 32);
 
-        int chk = PKCS5_PBKDF2_HMAC(password, strlen(password), salt, strlen((char *)salt), iter, EVP_sha256(), 32, key);
+    abcdk_object_t *key2 = abcdk_openssl_password_derive2(key->pptrs[0], key->sizes[0], __FUNCTION__, 4, 32);
+    assert(key2 != NULL && key2->sizes[0] == 32);
 
-        uint64_t step = abcdk_clock(dot, &dot);
+    abcdk_object_t *key3 = abcdk_openssl_password_derive2(key->pptrs[0], key->sizes[0], __FUNCTION__, 4, 32);
+    assert(key3 != NULL && key3->sizes[0] == 32);
 
-        abcdk_trace_printf(LOG_INFO,"step:%llu",step);
+    assert(memcmp(key2->pptrs[0],key3->pptrs[0],32) == 0);
 
-        iter *= 10;
-
-
-    }
+    abcdk_object_unref(&key);
+    abcdk_object_unref(&key2);
+    abcdk_object_unref(&key3);
 
 #endif //#ifdef HAVE_OPENSSL
 #elif 0
