@@ -108,7 +108,7 @@ void abcdk_openssl_darknet_destroy(abcdk_openssl_darknet_t **ctx)
 
 #ifdef HAVE_OPENSSL
 
-size_t _abcdk_openssl_darknet_hdr_size(RSA *rsa_ctx,int payload)
+size_t _abcdk_openssl_darknet_hdr_size(abcdk_openssl_cipher_t *cipher_ctx,int payload)
 {
     abcdk_object_t *src,*dst;
     size_t chk = 0;
@@ -117,7 +117,7 @@ size_t _abcdk_openssl_darknet_hdr_size(RSA *rsa_ctx,int payload)
     if(!src)
         goto END;
 
-    dst = abcdk_openssl_rsa_update(rsa_ctx,src->pptrs[0],src->sizes[0],1);
+    dst = abcdk_openssl_cipher_update(cipher_ctx,src->pptrs[0],src->sizes[0],1);
     if(!src)
         goto END;
 
@@ -133,7 +133,7 @@ END:
 }
 #endif //#ifdef HAVE_OPENSSL
 
-abcdk_openssl_darknet_t *abcdk_openssl_darknet_create(RSA *rsa_ctx, int use_pubkey)
+abcdk_openssl_darknet_t *abcdk_openssl_darknet_create(const uint8_t *key, size_t key_len)
 {
 #ifndef HAVE_OPENSSL
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具."));
@@ -142,24 +142,14 @@ abcdk_openssl_darknet_t *abcdk_openssl_darknet_create(RSA *rsa_ctx, int use_pubk
     abcdk_openssl_darknet_t *ctx;
     int chk;
 
-    assert(rsa_ctx != NULL);
+    assert(key != NULL && key_len > 0);
 
     ctx = (abcdk_openssl_darknet_t *)abcdk_heap_alloc(sizeof(abcdk_openssl_darknet_t));
     if (!ctx)
         return NULL;
 
-    if(abcdk_openssl_rsa_is_prikey(rsa_ctx) && !use_pubkey)
-    {
-        ctx->rsa_send_ctx = RSAPrivateKey_dup(rsa_ctx);
-        ctx->rsa_recv_ctx = RSAPrivateKey_dup(rsa_ctx);
-    }
-    else
-    {
-        ctx->rsa_send_ctx = RSAPublicKey_dup(rsa_ctx);
-        ctx->rsa_recv_ctx = RSAPublicKey_dup(rsa_ctx);
-    }
-    
-    if (!ctx->rsa_send_ctx || !ctx->rsa_recv_ctx)
+    ctx->cipher_ctx = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM,key,key_len);
+    if (!ctx->cipher_ctx)
         goto ERR;
 
     ctx->evp_send_ctx = EVP_CIPHER_CTX_new();
@@ -181,7 +171,7 @@ abcdk_openssl_darknet_t *abcdk_openssl_darknet_create(RSA *rsa_ctx, int use_pubk
         goto ERR;
 
     /*计算头部长度.*/
-    ctx->hdr_len = _abcdk_openssl_darknet_hdr_size(rsa_ctx, 1 + 32 + 16 + 79);
+    ctx->hdr_len = _abcdk_openssl_darknet_hdr_size(ctx->cipher_ctx, 1 + 32 + 16 + 79);
 
     ctx->recv_hdr = abcdk_object_alloc2(ctx->hdr_len);
     if (!ctx->recv_hdr)
@@ -202,31 +192,6 @@ ERR:
 
     abcdk_openssl_darknet_destroy(&ctx);
     return NULL;
-#endif //#ifndef HAVE_OPENSSL
-}
-
-abcdk_openssl_darknet_t *abcdk_openssl_darknet_create_from_file(const char *rsa_file,int pubkey)
-{
-#ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具."));
-    return NULL;
-#else //#ifndef HAVE_OPENSSL
-    abcdk_openssl_darknet_t *ctx;
-    RSA *rsa_ctx;
-
-    assert(rsa_file != NULL);
-
-    rsa_ctx = abcdk_openssl_rsa_load(rsa_file, pubkey, NULL);
-    if(!rsa_ctx)
-        return NULL;
-
-    ctx = abcdk_openssl_darknet_create(rsa_ctx, pubkey);
-    abcdk_openssl_rsa_free(&rsa_ctx);
-
-    if (!ctx)
-        return NULL;
-
-    return ctx;
 #endif //#ifndef HAVE_OPENSSL
 }
 
@@ -294,7 +259,7 @@ int abcdk_openssl_darknet_get_fd(abcdk_openssl_darknet_t *ctx, int flag)
 static int _abcdk_openssl_darknet_write_init(abcdk_openssl_darknet_t *ctx)
 {
     char hdr[128] = {0};
-    int ver = 1;
+    int ver = 2;
     int chk;
 
     /*生成随机密钥和向量.*/
@@ -307,7 +272,7 @@ static int _abcdk_openssl_darknet_write_init(abcdk_openssl_darknet_t *ctx)
     memcpy(hdr + 1 + 32, ctx->evp_send_iv, 16);
 
     /*用RSA加密头部.*/
-    ctx->send_hdr = abcdk_openssl_rsa_update(ctx->rsa_send_ctx, hdr, 128, 1);
+    ctx->send_hdr = abcdk_openssl_cipher_update(ctx->cipher_ctx, hdr, 128, 1);
     if (!ctx->send_hdr)
         return -1;
 
@@ -433,8 +398,8 @@ static int _abcdk_openssl_darknet_read_init(abcdk_openssl_darknet_t *ctx)
     int ver;
     int chk;
 
-    /*用RSA解密头部.*/
-    hdr = abcdk_openssl_rsa_update(ctx->rsa_recv_ctx,ctx->recv_hdr->pptrs[0],ctx->recv_hdr->sizes[0],0);
+    /*用主密钥解密头部.*/
+    hdr = abcdk_openssl_cipher_update(ctx->cipher_ctx,ctx->recv_hdr->pptrs[0],ctx->recv_hdr->sizes[0],0);
     if(!hdr)
         return -1;
 
@@ -446,8 +411,8 @@ static int _abcdk_openssl_darknet_read_init(abcdk_openssl_darknet_t *ctx)
     /*释放.*/
     abcdk_object_unref(&hdr);
 
-    /*仅支持1版本.*/
-    if (ver != 1)
+    /*仅支持2版本.*/
+    if (ver != 2)
         return -2;
 
     chk = EVP_CipherInit_ex(ctx->evp_recv_ctx, EVP_aes_256_ctr(), NULL, ctx->evp_recv_key, ctx->evp_recv_iv, 0);

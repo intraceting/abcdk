@@ -88,8 +88,6 @@ static int _abcdk_openssl_cipher_aes256gcm_init(abcdk_openssl_cipher_t *ctx, con
 {
     int chk;
 
-    ABCDK_TRACE_ASSERT(key_len == 32,ABCDK_GETTEXT("AES-256-GCM密钥长度需要32字节."));
-
     ctx->evp_key = abcdk_openssl_password_derive2(key, key_len, "aes256gcm", 9, 32);
     if (!ctx->evp_key)
         return -1;
@@ -225,8 +223,6 @@ ERR:
 static int _abcdk_openssl_cipher_aes256cbc_init(abcdk_openssl_cipher_t *ctx, const uint8_t *key, size_t key_len)
 {
     int chk;
-
-    ABCDK_TRACE_ASSERT(key_len == 32,ABCDK_GETTEXT("AES-256-CBC密钥长度需要32字节."));
 
     ctx->evp_key = abcdk_openssl_password_derive2(key, key_len, "aes256cbc", 9, 32);
     if (!ctx->evp_key)
@@ -445,7 +441,6 @@ ERR:
     return NULL;
 #endif //#ifndef HAVE_OPENSSL
 }
-
 
 abcdk_object_t *abcdk_openssl_cipher_update(abcdk_openssl_cipher_t *ctx, const uint8_t *in, int in_len, int enc)
 {

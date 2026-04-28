@@ -32,7 +32,7 @@ namespace abcdk
 
             abcdk_trace_printf(LOG_DEBUG, "%s, chk = %d", __FUNCTION__, chk);
 
-            if (chk != 1)
+            if (chk != QMessageBox::StandardButton::Ok)
                 return;
 
             m_edit_exec->setText(m_info->m_exec.c_str());

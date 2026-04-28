@@ -24,7 +24,7 @@ typedef struct _abcdk_openssl_BIO
 #define ABCDK_OPENSSL_BIO_DARKNET 1
 
     /*Darknet环境.*/
-    abcdk_openssl_darknet_t *dkt_ctx;
+    abcdk_openssl_darknet_t *darknet_ctx;
 
 } abcdk_openssl_BIO_t;
 
@@ -197,7 +197,7 @@ static int _abcdk_openssl_BIO_read_cb(BIO *bio_ctx, char *buf, int len)
     ERR_clear_error(); /*清除历史错误记录, 非常重要.*/
     BIO_clear_retry_flags(bio_ctx); 
 
-    rlen = abcdk_openssl_darknet_read(bio_p->dkt_ctx, buf, len);
+    rlen = abcdk_openssl_darknet_read(bio_p->darknet_ctx, buf, len);
     if (rlen < 0)
     {
         BIO_set_retry_read(bio_ctx); /*设置重试标志, 非常重要.*/
@@ -227,7 +227,7 @@ static int _abcdk_openssl_BIO_write_cb(BIO *bio_ctx, const char *buf, int len)
     ERR_clear_error(); /*清除历史错误记录, 非常重要.*/
     BIO_clear_retry_flags(bio_ctx);
     
-    slen = abcdk_openssl_darknet_write(bio_p->dkt_ctx, buf, len);
+    slen = abcdk_openssl_darknet_write(bio_p->darknet_ctx, buf, len);
     if (slen < 0)
     {
         BIO_set_retry_write(bio_ctx); /*设置重试标志, 非常重要.*/
@@ -257,7 +257,7 @@ static long _abcdk_openssl_BIO_ctrl_cb(BIO *bio_ctx, int cmd, long num, void *pt
         int fd = ABCDK_PTR2I32(ptr, 0);
         if (fd >= 0)
         {
-            abcdk_openssl_darknet_set_fd(bio_p->dkt_ctx, fd, 0);
+            abcdk_openssl_darknet_set_fd(bio_p->darknet_ctx, fd, 0);
             chk = 1;
         }
         else
@@ -268,7 +268,7 @@ static long _abcdk_openssl_BIO_ctrl_cb(BIO *bio_ctx, int cmd, long num, void *pt
     break;
     case BIO_C_GET_FD:
     {
-        ABCDK_PTR2I32(ptr, 0) = abcdk_openssl_darknet_get_fd(bio_p->dkt_ctx, 0);
+        ABCDK_PTR2I32(ptr, 0) = abcdk_openssl_darknet_get_fd(bio_p->darknet_ctx, 0);
         chk = 1;
     }
     break;
@@ -313,7 +313,7 @@ static int _abcdk_openssl_BIO_destroy_cb(BIO *bio_ctx)
     if(bio_p->type != ABCDK_OPENSSL_BIO_DARKNET)
         return 0;
 
-    abcdk_openssl_darknet_destroy(&bio_p->dkt_ctx);
+    abcdk_openssl_darknet_destroy(&bio_p->darknet_ctx);
     _abcdk_openssl_BIO_meth_free(bio_p->method_ctx);
     abcdk_heap_free(bio_p);
 
@@ -340,7 +340,7 @@ void abcdk_openssl_BIO_destroy(BIO **bio_ctx)
 #endif //#ifndef HAVE_OPENSSL
 }
 
-BIO *abcdk_openssl_BIO_s_Darknet(RSA *rsa_ctx, int use_pubkey)
+BIO *abcdk_openssl_BIO_s_Darknet(const uint8_t *key, size_t key_len)
 {
 #ifndef HAVE_OPENSSL
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
@@ -349,17 +349,17 @@ BIO *abcdk_openssl_BIO_s_Darknet(RSA *rsa_ctx, int use_pubkey)
     abcdk_openssl_BIO_t *bio_p;
     BIO *openssl_bio_p;
 
-    assert(rsa_ctx != NULL);
+    assert(key != NULL && key_len > 0);
     
     bio_p = (abcdk_openssl_BIO_t*)abcdk_heap_alloc(sizeof(abcdk_openssl_BIO_t));
     if (!bio_p)
         goto ERR;
 
     bio_p->type = ABCDK_OPENSSL_BIO_DARKNET;
-    bio_p->dkt_ctx = abcdk_openssl_darknet_create(rsa_ctx,use_pubkey);
+    bio_p->darknet_ctx = abcdk_openssl_darknet_create(key,key_len);
     bio_p->method_ctx = _abcdk_openssl_BIO_meth_new(BIO_TYPE_FD,"Darknet BIO");
 
-    if (!bio_p->dkt_ctx || !bio_p->method_ctx)
+    if (!bio_p->darknet_ctx || !bio_p->method_ctx)
         goto ERR;
     
     _abcdk_openssl_BIO_meth_set_write(bio_p->method_ctx,_abcdk_openssl_BIO_write_cb);
@@ -387,7 +387,7 @@ ERR:
 
     if(bio_p)
     {
-        abcdk_openssl_darknet_destroy(&bio_p->dkt_ctx);
+        abcdk_openssl_darknet_destroy(&bio_p->darknet_ctx);
         _abcdk_openssl_BIO_meth_free(bio_p->method_ctx);
         abcdk_heap_free(bio_p);
     }
@@ -395,30 +395,3 @@ ERR:
     return NULL;
 #endif //#ifndef HAVE_OPENSSL
 }
-
-BIO *abcdk_openssl_BIO_s_Darknet_form_file(const char *rsa_file, int pubkey)
-{
-#ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
-    return NULL;
-#else //#ifndef HAVE_OPENSSL
-    BIO *bio_ctx;
-    RSA *rsa_ctx;
-
-    assert(rsa_file != NULL);
-    
-    rsa_ctx = abcdk_openssl_rsa_load(rsa_file, pubkey, NULL);
-    if(!rsa_ctx)
-        return NULL;
-
-    bio_ctx = abcdk_openssl_BIO_s_Darknet(rsa_ctx, pubkey);
-    abcdk_openssl_rsa_free(&rsa_ctx);
-
-    if (!bio_ctx)
-        return NULL;
-
-    return bio_ctx;
-#endif //#ifndef HAVE_OPENSSL
-}
-
-

@@ -22,7 +22,7 @@
 
 int abcdk_test_any(abcdk_option_t *args)
 {
-#if 1
+#if 0
 #ifdef HAVE_OPENSSL
 
     const char *password = __DATE__;
@@ -1591,16 +1591,15 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_openssl_rsa_free(&rsa_ctx);
 
 #endif //HAVE_OPENSSL
-#elif 0
+#elif 1
 
 #ifdef HAVE_OPENSSL
 
-    RSA *rsa_ctx = abcdk_openssl_rsa_create(2048, RSA_F4);
+    char pass[32] = {0};
+    RAND_bytes(pass,32);
 
-    int use_pubkey = rand()%2;
-
-    abcdk_openssl_darknet_t *a_p = abcdk_openssl_darknet_create(rsa_ctx,use_pubkey);
-    abcdk_openssl_darknet_t *b_p = abcdk_openssl_darknet_create(rsa_ctx,!use_pubkey);
+    abcdk_openssl_darknet_t *a_p = abcdk_openssl_darknet_create(pass,32);
+    abcdk_openssl_darknet_t *b_p = abcdk_openssl_darknet_create(pass,32);
 
     int pipefd[2] = {-1,-1};
 
@@ -1614,14 +1613,15 @@ int abcdk_test_any(abcdk_option_t *args)
 
     RAND_bytes(send_buf,100);
 
-    abcdk_openssl_darknet_write(b_p,send_buf,100);
-    abcdk_openssl_darknet_read(a_p,recv_buf,100);
+    abcdk_openssl_darknet_write(b_p,send_buf,30);
+    abcdk_openssl_darknet_write(b_p,send_buf+30,70);
+    abcdk_openssl_darknet_read(a_p,recv_buf,10);
+    abcdk_openssl_darknet_read(a_p,recv_buf+10,90);
 
     assert(memcmp(send_buf,recv_buf,100) ==0);
     
     abcdk_openssl_darknet_destroy(&a_p);
     abcdk_openssl_darknet_destroy(&b_p);
-    abcdk_openssl_rsa_free(&rsa_ctx);
 
 #endif //HAVE_OPENSSL
 #elif 0

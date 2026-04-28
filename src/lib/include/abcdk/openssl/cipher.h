@@ -33,7 +33,6 @@ void abcdk_openssl_cipher_destroy(abcdk_openssl_cipher_t **ctx);
 /**创建.*/
 abcdk_openssl_cipher_t *abcdk_openssl_cipher_create(int scheme, const uint8_t *key, size_t key_len);
 
-
 /**
  * 执行.
  * 

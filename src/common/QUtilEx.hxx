@@ -1,8 +1,8 @@
 /*
  * This file is part of ABCDK.
- * 
+ *
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
- * 
+ *
  */
 #ifndef ABCDK_COMMON_QUTILEX_HXX
 #define ABCDK_COMMON_QUTILEX_HXX
@@ -31,7 +31,7 @@ namespace abcdk
                     return buffer;
                 }
 
-                file.read((char*)buffer.data(), buffer.size());
+                file.read((char *)buffer.data(), buffer.size());
                 return buffer;
             }
 
@@ -50,13 +50,13 @@ namespace abcdk
                 return loadStyleSheet((QString)file.c_str());
             }
 
-            static inline void drawText(QImage &image, int x, int y, const QString &text,
+            static inline void drawText(QPainter &painter, int w, int h,
+                                        const QString &text, int x, int y,
                                         const QColor &fontColor = Qt::white,
                                         int fontPixelSize = 16,
                                         int fontWeight = QFont::Medium,
                                         const QString &fontFamily = "Arial")
             {
-                QPainter painter(&image);
                 painter.setRenderHint(QPainter::Antialiasing);
                 painter.setRenderHint(QPainter::TextAntialiasing);
                 painter.setRenderHint(QPainter::SmoothPixmapTransform);
@@ -73,10 +73,10 @@ namespace abcdk
                 int textHeight = metrics.height();               // 计算行高
 
                 if (x < 0)
-                    x = image.size().width() / 2 - textWidth / 2; // x方向居中左上角.
+                    x = w / 2 - textWidth / 2; // x方向居中左上角.
 
                 if (y < 0)
-                    y = image.size().height() / 2 - textHeight / 2; // y方向居中左上角.
+                    y = h / 2 - textHeight / 2; // y方向居中左上角.
 
                 QRect rect(x, y, textWidth, textHeight);
                 painter.drawText(rect, Qt::AlignCenter, text);
@@ -87,7 +87,7 @@ namespace abcdk
                 return QDateTime::currentDateTime().toString(format);
             }
 
-            static inline QIcon getIcon(const QString &file,int w = 256, int h = 256)
+            static inline QIcon getIcon(const QString &file, int w = 256, int h = 256)
             {
                 QPixmap tmp = QPixmap(file);
                 if (tmp.isNull())

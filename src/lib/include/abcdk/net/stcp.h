@@ -30,11 +30,11 @@ typedef enum _abcdk_stcp_constant
     ABCDK_STCP_SSL_SCHEME_PKI = 1,
 #define ABCDK_STCP_SSL_SCHEME_PKI   ABCDK_STCP_SSL_SCHEME_PKI
 
-    /**RSA(Rivest-Shamir-Adleman).*/
-    ABCDK_STCP_SSL_SCHEME_RSA = 2,
-#define ABCDK_STCP_SSL_SCHEME_RSA   ABCDK_STCP_SSL_SCHEME_RSA
+    /**DNW(Dark Network).*/
+    ABCDK_STCP_SSL_SCHEME_DNW = 2,
+#define ABCDK_STCP_SSL_SCHEME_DNW   ABCDK_STCP_SSL_SCHEME_DNW
 
-    /**PKI is based on RSA.*/
+    /**PKI is based on DNW.*/
     ABCDK_STCP_SSL_SCHEME_PKIS = 3,
 #define ABCDK_STCP_SSL_SCHEME_PKIS   ABCDK_STCP_SSL_SCHEME_PKIS
 
@@ -115,10 +115,10 @@ typedef struct _abcdk_stcp_config
     */
     int pki_chk_crl;
 
-    /**证书.*/
+    /**PKI证书.*/
     X509 *pki_use_cert;
 
-    /**私钥.*/
+    /**PKI私钥.*/
     EVP_PKEY *pki_use_key;
 
     /** 
@@ -133,12 +133,8 @@ typedef struct _abcdk_stcp_config
     /**算法列表.*/
     const char *pki_cipher_list;
 
-    /**
-     * RSA密钥.
-     * 
-     * @note 服务端不支持公钥.
-    */
-    RSA *rsa_use_key;
+    /**DNW密钥.*/
+    abcdk_object_t *dnw_use_key;
 
     /**绑定地址.*/
     abcdk_sockaddr_t bind_addr;

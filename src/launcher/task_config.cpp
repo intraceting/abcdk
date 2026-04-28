@@ -106,7 +106,7 @@ namespace abcdk
                 return;
             }
 
-            done(1);
+            done(QMessageBox::StandardButton::Ok);
         }
 
         void task_config::deInit()

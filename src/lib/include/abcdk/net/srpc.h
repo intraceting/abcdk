@@ -52,14 +52,14 @@ typedef struct _abcdk_srpc_config
     */
     int pki_chk_crl;
 
-    /**证书.*/
+    /**PKI证书.*/
     X509 *pki_use_cert;
 
-    /**私钥.*/
+    /**PKI私钥.*/
     EVP_PKEY *pki_use_key;
 
-    /**RSA密钥.*/
-    RSA *rsa_use_key;
+    /**DNW密钥.*/
+    abcdk_object_t *dnw_use_key;
     
     /**绑定地址.*/
     abcdk_sockaddr_t bind_addr;

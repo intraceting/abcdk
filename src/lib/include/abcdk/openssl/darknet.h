@@ -24,15 +24,8 @@ void abcdk_openssl_darknet_destroy(abcdk_openssl_darknet_t **ctx);
 /**
  * 创建.
  *
- * @note 内部会复制RSA环境, 不会影响外部的使用.
- *
- * @param [in] use_pubkey 使用公钥.!0 是, 0 否.
- *
  */
-abcdk_openssl_darknet_t *abcdk_openssl_darknet_create(RSA *rsa_ctx, int use_pubkey);
-
-/**创建.*/
-abcdk_openssl_darknet_t *abcdk_openssl_darknet_create_from_file(const char *rsa_file, int pubkey);
+abcdk_openssl_darknet_t *abcdk_openssl_darknet_create(const uint8_t *key, size_t key_len);
 
 /**
  * 设置关联句柄.

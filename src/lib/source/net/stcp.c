@@ -387,7 +387,7 @@ ssize_t abcdk_stcp_recv(abcdk_stcp_node_t *node, void *buf, size_t size)
     {
         if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
             rsize = SSL_read(node->openssl_ssl, ABCDK_PTR2PTR(void, buf, rsize_all), size - rsize_all);
-        else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_RSA)
+        else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_DNW)
             rsize = BIO_read(node->openssl_bio, ABCDK_PTR2PTR(void, buf, rsize_all), size - rsize_all);
         else
             rsize = read(node->fd, ABCDK_PTR2PTR(void, buf, rsize_all), size - rsize_all);
@@ -432,7 +432,7 @@ ssize_t abcdk_stcp_send(abcdk_stcp_node_t *node, void *buf, size_t size)
     {
         if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
             wsize = SSL_write(node->openssl_ssl, ABCDK_PTR2PTR(void, buf, wsize_all), size - wsize_all);
-        else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_RSA)
+        else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_DNW)
             wsize = BIO_write(node->openssl_bio, ABCDK_PTR2PTR(void, buf, wsize_all), size - wsize_all);
         else
             wsize = write(node->fd, ABCDK_PTR2PTR(void, buf, wsize_all), size - wsize_all);
@@ -684,13 +684,13 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
     }
 #ifdef HEADER_SSL_H
     else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI ||
-             node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_RSA ||
+             node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_DNW ||
              node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
     {
-        if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_RSA || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
+        if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_DNW || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
         {
             if (!node->openssl_bio)
-                node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.rsa_use_key, node->flag == ABCDK_STCP_FLAG_CLIENT);
+                node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.dnw_use_key->pptrs[0],node->cfg.dnw_use_key->sizes[0]);
             else
                 return -16;
 
@@ -765,7 +765,7 @@ void _abcdk_stcp_handshake(abcdk_stcp_node_t *node)
 
             if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
                 node->status = ABCDK_STCP_STATUS_SYNC_SSL;
-            else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_RSA)
+            else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_DNW)
                 node->status = ABCDK_STCP_STATUS_STABLE;
             else
                 node->status = ABCDK_STCP_STATUS_STABLE;
@@ -989,12 +989,12 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node)
     }
 #ifdef HEADER_SSL_H
     else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI ||
-             node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_RSA ||
+             node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_DNW ||
              node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
     {
-        if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_RSA || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
+        if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_DNW || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
         {
-            node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.rsa_use_key, node->flag == ABCDK_STCP_FLAG_CLIENT);
+            node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.dnw_use_key->pptrs[0],node->cfg.dnw_use_key->sizes[0]);
             if (!node->openssl_bio)
             {
                 abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("创建RSA(%d)环境失败."), node->cfg.ssl_scheme);

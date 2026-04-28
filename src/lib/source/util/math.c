@@ -42,3 +42,19 @@ void abcdk_math_normalize_l2(float *data, int len)
         data[i] = data[i] / norm;
     }
 }
+
+uint64_t abcdk_math_ticker_pos(uint64_t t, uint64_t min, uint64_t max)
+{
+    uint64_t l = max - min;
+    uint64_t k = (t / l);
+    uint64_t offset = (t % l);
+
+    if (k % 2 == 0)
+    {
+        return min + offset;
+    }
+    else
+    {
+        return max - offset;
+    }
+}
