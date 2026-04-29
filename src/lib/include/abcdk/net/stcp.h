@@ -30,11 +30,11 @@ typedef enum _abcdk_stcp_constant
     ABCDK_STCP_SSL_SCHEME_PKI = 1,
 #define ABCDK_STCP_SSL_SCHEME_PKI   ABCDK_STCP_SSL_SCHEME_PKI
 
-    /**DNW(Dark Network).*/
-    ABCDK_STCP_SSL_SCHEME_DNW = 2,
-#define ABCDK_STCP_SSL_SCHEME_DNW   ABCDK_STCP_SSL_SCHEME_DNW
+    /**PSK(Pre-Shared Key).*/
+    ABCDK_STCP_SSL_SCHEME_PSK = 2,
+#define ABCDK_STCP_SSL_SCHEME_PSK   ABCDK_STCP_SSL_SCHEME_PSK
 
-    /**PKI is based on DNW.*/
+    /**PKI is based on PSK.*/
     ABCDK_STCP_SSL_SCHEME_PKIS = 3,
 #define ABCDK_STCP_SSL_SCHEME_PKIS   ABCDK_STCP_SSL_SCHEME_PKIS
 
@@ -133,8 +133,8 @@ typedef struct _abcdk_stcp_config
     /**算法列表.*/
     const char *pki_cipher_list;
 
-    /**DNW密钥.*/
-    abcdk_object_t *dnw_use_key;
+    /**PSK密钥.*/
+    abcdk_object_t *psk_use_key;
 
     /**绑定地址.*/
     abcdk_sockaddr_t bind_addr;

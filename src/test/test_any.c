@@ -45,7 +45,7 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_object_unref(&key3);
 
 #endif //#ifdef HAVE_OPENSSL
-#elif 0
+#elif 1
     EVP_PKEY *pkey = abcdk_openssl_pki_generate_pkey(4096);
     assert(pkey != NULL);
 
@@ -1591,7 +1591,7 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_openssl_rsa_free(&rsa_ctx);
 
 #endif //HAVE_OPENSSL
-#elif 1
+#elif 0
 
 #ifdef HAVE_OPENSSL
 
