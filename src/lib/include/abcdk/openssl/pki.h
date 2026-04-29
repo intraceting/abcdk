@@ -17,7 +17,10 @@ __BEGIN_DECLS
 void abcdk_openssl_pki_destroy_key(EVP_PKEY **key);
 
 /** 生成私钥.*/
-EVP_PKEY *abcdk_openssl_pki_generate_key(int bits);
+EVP_PKEY *abcdk_openssl_pki_generate_key_from_rsa(int bits);
+
+/** 生成私钥.*/
+EVP_PKEY *abcdk_openssl_pki_generate_key_from_ec(int nid);
 
 /**
  * 导出密钥.
@@ -25,11 +28,10 @@ EVP_PKEY *abcdk_openssl_pki_generate_key(int bits);
  * @note 仅支持PEM格式.
  * 
  * @param [in] pkey 密钥.
- * @param [in] pubkey 是否为公钥.!0 是, 0 否.
  * @param [in] passwd 密钥的密码地址, NULL(0) 忽略.
  * @param [in] passwd_len 密钥的密码长度, <= 0 忽略.
  */
-abcdk_object_t *abcdk_openssl_pki_export_key(EVP_PKEY *key, int pubkey, uint8_t *passwd, int passwd_len);
+abcdk_object_t *abcdk_openssl_pki_export_key(EVP_PKEY *key, uint8_t *passwd, int passwd_len);
 
 /** 销毁序列号.*/
 void abcdk_openssl_pki_destroy_serial(ASN1_INTEGER **serial);
@@ -53,6 +55,28 @@ X509 *abcdk_openssl_pki_generate_cert(EVP_PKEY *key, ASN1_INTEGER *serial, const
  * @note 仅支持PEM格式.
 */
 abcdk_object_t *abcdk_openssl_pki_export_cert(X509 *cert);
+
+/**
+ * 导入证书.
+ * 
+ * @note 仅支持PEM格式.
+*/
+X509 *abcdk_openssl_pki_import_cert(const char *data, size_t size);
+
+/**
+ * 导入证书.
+ * 
+ * @note 仅支持PEM格式.
+*/
+X509 *abcdk_openssl_pki_import_cert_from_file(const char *file);
+
+
+/**
+ * 导入证书.
+ * 
+ * @note 仅支持PEM格式.
+*/
+X509 *abcdk_openssl_pki_import_cert_from_fd(FILE *fp);
 
 /** 销毁吊销列表.*/
 void abcdk_openssl_pki_destroy_crl(X509_CRL **crl);

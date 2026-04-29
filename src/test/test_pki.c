@@ -13,7 +13,9 @@
 
 static void _make_cert(EVP_PKEY **pkey, X509 **cert, const char *cn, const char *org, int ca_or_not, X509 *issuer_cert, EVP_PKEY *issuer_pkey)
 {
-    *pkey = abcdk_openssl_pki_generate_key(4096);
+    int key_from = rand()%2;
+
+    *pkey = (key_from)?abcdk_openssl_pki_generate_key_from_rsa(2048):abcdk_openssl_pki_generate_key_from_ec(NID_X9_62_prime256v1);
 
     ASN1_INTEGER *serial = abcdk_openssl_pki_generate_serial(120);
     assert(serial != NULL);
@@ -34,7 +36,7 @@ static void _make_cert(EVP_PKEY **pkey, X509 **cert, const char *cn, const char 
     sprintf(pkey_file, "/tmp/%s-%s.prikey.pem", cn, org);
     sprintf(cert_file, "/tmp/%s-%s.cert.pem", cn, org);
 
-    abcdk_object_t *pkey_txt = abcdk_openssl_pki_export_key(*pkey, 0, "1234", 4);
+    abcdk_object_t *pkey_txt = abcdk_openssl_pki_export_key(*pkey, "1234", 4);
     abcdk_dump(pkey_file, pkey_txt->pstrs[0], pkey_txt->sizes[0]);
     abcdk_object_unref(&pkey_txt);
 
