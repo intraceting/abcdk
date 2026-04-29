@@ -45,11 +45,11 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_object_unref(&key3);
 
 #endif //#ifdef HAVE_OPENSSL
-#elif 1
-    EVP_PKEY *pkey = abcdk_openssl_pki_generate_pkey(4096);
+#elif 0
+    EVP_PKEY *pkey = abcdk_openssl_pki_generate_key(4096);
     assert(pkey != NULL);
 
-    abcdk_object_t *pkey_txt = abcdk_openssl_pki_export_pkey(pkey,0,"1234",4);
+    abcdk_object_t *pkey_txt = abcdk_openssl_pki_export_key(pkey,0,"1234",4);
 
     abcdk_trace_printf(LOG_DEBUG,"key:\n%s\n",pkey_txt->pstrs[0]);
 
@@ -79,16 +79,16 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_object_unref(&root_ca_str);
    
-    X509_free(root_ca);
+    abcdk_openssl_pki_destroy_cert(&root_ca);
     abcdk_option_free(&opt);
 
-    abcdk_openssl_ai_free(&serial);
-    abcdk_openssl_evp_pkey_free(&pkey);
+    abcdk_openssl_pki_destroy_serial(&serial);
+    abcdk_openssl_pki_destroy_key(&pkey);
 #elif 0
 
     EVP_PKEY *pkey = abcdk_openssl_pki_generate_pkey(4096);
     assert(pkey != NULL);
-    abcdk_openssl_evp_pkey_free(&pkey);
+    abcdk_openssl_pki_destroy_key(&pkey);
 
     ASN1_INTEGER *serial = abcdk_openssl_pki_generate_serial(120);
     assert(serial != NULL);

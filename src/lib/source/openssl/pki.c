@@ -18,8 +18,26 @@
 #include "abcdk/openssl/util.h"
 
 
+void abcdk_openssl_pki_destroy_key(EVP_PKEY **key)
+{
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
+    return ;
+#else //#ifndef HAVE_OPENSSL
+    EVP_PKEY *key_p;
 
-EVP_PKEY *abcdk_openssl_pki_generate_pkey(int bits)
+    if(!key || !*key)
+        return;
+
+    key_p = *key;
+    *key = NULL;
+
+    EVP_PKEY_free(key_p);
+#endif //#ifndef HAVE_OPENSSL
+}
+
+
+EVP_PKEY *abcdk_openssl_pki_generate_key(int bits)
 {
 #ifndef HAVE_OPENSSL
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
@@ -47,7 +65,25 @@ EVP_PKEY *abcdk_openssl_pki_generate_pkey(int bits)
 #endif // #ifndef HAVE_OPENSSL
 }
 
-abcdk_object_t *abcdk_openssl_pki_export_pkey(EVP_PKEY *pkey, int pubkey, uint8_t *passwd, int passwd_len)
+void abcdk_openssl_pki_destroy_serial(ASN1_INTEGER **serial)
+{
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
+    return ;
+#else //#ifndef HAVE_OPENSSL 
+    ASN1_INTEGER *serial_p;
+
+    if(!serial || !*serial)
+        return;
+
+    serial_p = *serial;
+    *serial = NULL;
+
+    ASN1_INTEGER_free(serial_p);
+#endif //#ifndef HAVE_OPENSSL
+}
+
+abcdk_object_t *abcdk_openssl_pki_export_key(EVP_PKEY *key, int pubkey, uint8_t *passwd, int passwd_len)
 {
 #ifndef HAVE_OPENSSL
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
@@ -59,16 +95,16 @@ abcdk_object_t *abcdk_openssl_pki_export_pkey(EVP_PKEY *pkey, int pubkey, uint8_
     abcdk_object_t *obj = NULL;
     int chk;
 
-    assert(pkey != NULL);
+    assert(key != NULL);
 
     bp = BIO_new(BIO_s_mem());
     if(!bp)
         return NULL;
 
     if(pubkey)
-        chk = PEM_write_bio_PUBKEY(bp, pkey);
+        chk = PEM_write_bio_PUBKEY(bp, key);
     else 
-        chk = PEM_write_bio_PrivateKey(bp, pkey, EVP_aes_256_cbc(), passwd, passwd_len, NULL, NULL);
+        chk = PEM_write_bio_PrivateKey(bp, key, EVP_aes_256_cbc(), passwd, passwd_len, NULL, NULL);
 
     data_l = BIO_get_mem_data(bp, &data_p);
     obj = abcdk_object_copyfrom(data_p,data_l);        
@@ -123,17 +159,34 @@ abcdk_object_t *abcdk_openssl_pki_string_serial(ASN1_INTEGER *ai, int hex_or_dec
         return NULL;
 
     str = (hex_or_dec ? BN_bn2hex(bn) : BN_bn2dec(bn));
+    BN_free(bn);//free.
+
     if (!str)
-    {
-        BN_free(bn);
         return NULL;
-    }
 
     obj_str = abcdk_object_copyfrom(str, strlen(str));
     OPENSSL_free(str);
 
     return obj_str;
 #endif // #ifndef HAVE_OPENSSL
+}
+
+void abcdk_openssl_pki_destroy_cert(X509 **cert)
+{
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
+    return ;
+#else //#ifndef HAVE_OPENSSL 
+    X509 *cert_p;
+
+    if(!cert || !*cert)
+        return;
+
+    cert_p = *cert;
+    *cert = NULL;
+
+    X509_free(cert_p);
+#endif //#ifndef HAVE_OPENSSL   
 }
 
 #ifdef HAVE_OPENSSL
@@ -163,7 +216,7 @@ static int _abcdk_openssl_pki_add_ext(X509 *cert, int nid, const char *value, ..
 
 
 X509 *abcdk_openssl_pki_generate_cert(EVP_PKEY *pkey, ASN1_INTEGER *serial, const char *name_cn, const char *name_o, abcdk_option_t *opt,
-                                      X509 *issuer_cert, EVP_PKEY *issuer_pkey)
+                                      X509 *issuer_cert, EVP_PKEY *issuer_key)
 {
 #ifndef HAVE_OPENSSL
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
@@ -174,16 +227,16 @@ X509 *abcdk_openssl_pki_generate_cert(EVP_PKEY *pkey, ASN1_INTEGER *serial, cons
 
     assert(serial != NULL && name_cn != NULL && name_o != NULL && opt != NULL);
     assert(*name_cn != '\0' && *name_o != '\0');
-    assert((issuer_cert != NULL && issuer_pkey != NULL) || (issuer_cert == NULL && issuer_pkey == NULL));
+    assert((issuer_cert != NULL && issuer_key != NULL) || (issuer_cert == NULL && issuer_key == NULL));
     
 
     cert = X509_new();
     if (!cert)
         return NULL;
 
-    if (issuer_cert != NULL && issuer_pkey != NULL)
+    if (issuer_cert != NULL && issuer_key != NULL)
     {
-        chk = X509_check_private_key(issuer_cert, issuer_pkey);
+        chk = X509_check_private_key(issuer_cert, issuer_key);
         ABCDK_TRACE_ASSERT(chk == 1,ABCDK_GETTEXT("签发者的证书与私钥不匹配."));
     }
 
@@ -242,7 +295,7 @@ X509 *abcdk_openssl_pki_generate_cert(EVP_PKEY *pkey, ASN1_INTEGER *serial, cons
         }
     }
 
-    if(crl != NULL && issuer_cert != NULL && issuer_pkey != NULL)
+    if(crl != NULL && issuer_cert != NULL && issuer_key != NULL)
     {
         _abcdk_openssl_pki_add_ext(cert, NID_crl_distribution_points, crl);
     }
@@ -252,22 +305,22 @@ X509 *abcdk_openssl_pki_generate_cert(EVP_PKEY *pkey, ASN1_INTEGER *serial, cons
     _abcdk_openssl_pki_add_ext(cert, NID_subject_key_identifier, "hash");
 
     // AKI
-    if (issuer_pkey)
+    if (issuer_key)
         _abcdk_openssl_pki_add_ext(cert, NID_authority_key_identifier, "keyid:always,issuer:always");
     else
         _abcdk_openssl_pki_add_ext(cert, NID_authority_key_identifier, "keyid:always");
 
     // 签名.
     if (abcdk_strcmp(sigalg, "sha384", 0) == 0)
-        chk = X509_sign(cert, (issuer_pkey ? issuer_pkey : pkey), EVP_sha384());
+        chk = X509_sign(cert, (issuer_key ? issuer_key : pkey), EVP_sha384());
     else if (abcdk_strcmp(sigalg, "sha512", 0) == 0)
-        chk = X509_sign(cert, (issuer_pkey ? issuer_pkey : pkey), EVP_sha512());
+        chk = X509_sign(cert, (issuer_key ? issuer_key : pkey), EVP_sha512());
 #ifndef OPENSSL_NO_SM3
     else if (abcdk_strcmp(sigalg, "sm3", 0) == 0)
-        chk = X509_sign(cert, (issuer_pkey ? issuer_pkey : pkey), EVP_sm3());
+        chk = X509_sign(cert, (issuer_key ? issuer_key : pkey), EVP_sm3());
 #endif // # ifndef OPENSSL_NO_SM3
     else
-        chk = X509_sign(cert, (issuer_pkey ? issuer_pkey : pkey), EVP_sha256());
+        chk = X509_sign(cert, (issuer_key ? issuer_key : pkey), EVP_sha256());
 
     if (chk <= 0) // 签名长度(字节).
     {
@@ -308,6 +361,24 @@ abcdk_object_t *abcdk_openssl_pki_export_cert(X509 *cert)
 #endif // #ifndef HAVE_OPENSSL
 }
 
+void abcdk_openssl_pki_destroy_crl(X509_CRL **crl)
+{
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
+    return;
+#else //#ifndef HAVE_OPENSSL
+    X509_CRL *crl_p;
+
+    if(!crl || !*crl)
+        return;
+
+    crl_p = *crl;
+    *crl = NULL;
+
+    X509_CRL_free(crl_p);
+#endif //#ifndef HAVE_OPENSSL 
+}
+
 int abcdk_openssl_pki_cert_is_revoked(X509_CRL *crl, X509 *cert)
 {
     X509_NAME *cert_issuer = X509_get_issuer_name(cert);
@@ -335,7 +406,7 @@ int abcdk_openssl_pki_cert_is_revoked(X509_CRL *crl, X509 *cert)
     return 0;
 }
 
-int abcdk_openssl_pki_revoke_cert(X509_CRL **crl, X509 *cert, int reason_code, X509 *issuer_cert, EVP_PKEY *issuer_pkey)
+int abcdk_openssl_pki_revoke_cert(X509_CRL **crl, X509 *cert, int reason_code, X509 *issuer_cert, EVP_PKEY *issuer_key)
 {
 #ifndef HAVE_OPENSSL
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
@@ -344,11 +415,11 @@ int abcdk_openssl_pki_revoke_cert(X509_CRL **crl, X509 *cert, int reason_code, X
     X509_CRL *crl_p; 
     int chk;
 
-    assert(crl != NULL && issuer_cert != NULL && issuer_pkey != NULL);
+    assert(crl != NULL && issuer_cert != NULL && issuer_key != NULL);
 
     crl_p = *crl;
 
-    chk = X509_check_private_key(issuer_cert, issuer_pkey);
+    chk = X509_check_private_key(issuer_cert, issuer_key);
     ABCDK_TRACE_ASSERT(chk == 1,ABCDK_GETTEXT("签发者的证书与私钥不匹配."));
 
     if (!crl_p)
@@ -390,15 +461,18 @@ int abcdk_openssl_pki_revoke_cert(X509_CRL **crl, X509 *cert, int reason_code, X
 
     ASN1_TIME *rev_tm = ASN1_TIME_new();
     ASN1_TIME_set(rev_tm, time(NULL));
+    ASN1_TIME_free(rev_tm);//free.
 
     X509_REVOKED_set_revocationDate(rev, rev_tm);//add time.
 
     ASN1_ENUMERATED *rev_reason = ASN1_ENUMERATED_new();
     ASN1_ENUMERATED_set(rev_reason, reason_code);
-
+    
     X509_EXTENSION *rev_ext = X509_EXTENSION_create_by_NID(NULL, NID_crl_reason, 0, (ASN1_OCTET_STRING *)rev_reason);
+    ASN1_ENUMERATED_free(rev_reason);//free.
 
     X509_REVOKED_add_ext(rev, rev_ext, -1);// add reason
+    X509_EXTENSION_free(rev_ext);//free.
 
     X509_CRL_add0_revoked(crl_p, rev);
 
@@ -407,7 +481,7 @@ int abcdk_openssl_pki_revoke_cert(X509_CRL **crl, X509 *cert, int reason_code, X
 #endif // #ifndef HAVE_OPENSSL   
 }
 
-int abcdk_openssl_pki_update_crl(X509_CRL *crl, abcdk_option_t *opt, X509 *issuer_cert, EVP_PKEY *issuer_pkey)
+int abcdk_openssl_pki_update_crl(X509_CRL *crl, abcdk_option_t *opt, X509 *issuer_cert, EVP_PKEY *issuer_key)
 {
 #ifndef HAVE_OPENSSL
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
@@ -415,9 +489,9 @@ int abcdk_openssl_pki_update_crl(X509_CRL *crl, abcdk_option_t *opt, X509 *issue
 #else // #ifndef HAVE_OPENSSL
     int chk;
 
-    assert(crl != NULL && opt != NULL && issuer_cert != NULL && issuer_pkey != NULL);
+    assert(crl != NULL && opt != NULL && issuer_cert != NULL && issuer_key != NULL);
 
-    chk = X509_check_private_key(issuer_cert, issuer_pkey);
+    chk = X509_check_private_key(issuer_cert, issuer_key);
     ABCDK_TRACE_ASSERT(chk == 1,ABCDK_GETTEXT("签发者的证书与私钥不匹配."));
 
     X509_NAME *issuer_subject = X509_get_subject_name(issuer_cert);
@@ -452,15 +526,15 @@ int abcdk_openssl_pki_update_crl(X509_CRL *crl, abcdk_option_t *opt, X509 *issue
     
     // 签名.
     if (abcdk_strcmp(sigalg, "sha384", 0) == 0)
-        chk = X509_CRL_sign(crl, issuer_pkey, EVP_sha384());
+        chk = X509_CRL_sign(crl, issuer_key, EVP_sha384());
     else if (abcdk_strcmp(sigalg, "sha512", 0) == 0)
-        chk = X509_CRL_sign(crl, issuer_pkey, EVP_sha512());
+        chk = X509_CRL_sign(crl, issuer_key, EVP_sha512());
 #ifndef OPENSSL_NO_SM3
     else if (abcdk_strcmp(sigalg, "sm3", 0) == 0)
-        chk = X509_CRL_sign(crl, issuer_pkey, EVP_sm3());
+        chk = X509_CRL_sign(crl, issuer_key, EVP_sm3());
 #endif // # ifndef OPENSSL_NO_SM3
     else
-        chk = X509_CRL_sign(crl, issuer_pkey, EVP_sha256());
+        chk = X509_CRL_sign(crl, issuer_key, EVP_sha256());
 
     if (chk <= 0) // 签名长度(字节).
         return -1;
