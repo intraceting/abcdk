@@ -138,14 +138,14 @@ EVP_PKEY *abcdk_openssl_pki_generate_key_to_public(EVP_PKEY *key)
 
     /*检查是否存在私钥数据.*/
     prikey_chk = abcdk_openssl_pki_private_key_was(key);
-    if(!prikey_chk)
+    if (!prikey_chk)
         return NULL;
 
     pubder_len = i2d_PUBKEY(key, &pubder_buf);
     if (pubder_len <= 0)
         return NULL;
 
-    pubder_buf_ptr = pubder_buf;//复制指针, 因为下面的函数会修改传入的指针.
+    pubder_buf_ptr = pubder_buf; // 复制指针, 因为下面的函数会修改传入的指针.
     pubkey = d2i_PUBKEY(NULL, &pubder_buf_ptr, pubder_len);
     abcdk_openssl_free((void **)&pubder_buf); // free.
 
@@ -153,7 +153,21 @@ EVP_PKEY *abcdk_openssl_pki_generate_key_to_public(EVP_PKEY *key)
 #endif // #ifndef HAVE_OPENSSL
 }
 
-abcdk_object_t *abcdk_openssl_pki_export_key(EVP_PKEY *key, uint8_t *passwd, int passwd_len)
+typedef struct _abcdk_openssl_pki_pem_password_ctx
+{
+    void *opaque;
+    abcdk_get_password_cb get_password_cb;
+} abcdk_openssl_pki_pem_password_ctx_t;
+
+static int _abcdk_openssl_pki_pem_password_cb(char *buf, int size, int rwflag, void *userdata)
+{
+    abcdk_openssl_pki_pem_password_ctx_t *ctx = (abcdk_openssl_pki_pem_password_ctx_t *)userdata;
+    int chk;
+
+    return ctx->get_password_cb(buf, size, rwflag == 1, ctx->opaque);
+}
+
+abcdk_object_t *abcdk_openssl_pki_export_key(EVP_PKEY *key, abcdk_get_password_cb get_password_cb, void *opaque)
 {
 #ifndef HAVE_OPENSSL
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
@@ -176,15 +190,105 @@ abcdk_object_t *abcdk_openssl_pki_export_key(EVP_PKEY *key, uint8_t *passwd, int
         return NULL;
 
     if (prikey_chk)
-        chk = PEM_write_bio_PrivateKey(bp, key, EVP_aes_256_cbc(), passwd, passwd_len, NULL, NULL);
+    {
+        if (get_password_cb)
+        {
+            abcdk_openssl_pki_pem_password_ctx_t ctx = {opaque, get_password_cb};
+            chk = PEM_write_bio_PrivateKey(bp, key, EVP_aes_256_cbc(), NULL, 0, _abcdk_openssl_pki_pem_password_cb, &ctx);
+        }
+        else if(opaque)
+        {
+            chk = PEM_write_bio_PrivateKey(bp, key, EVP_aes_256_cbc(), NULL, 0, NULL, opaque);
+        }
+        else 
+        {
+            chk = PEM_write_bio_PrivateKey(bp, key, EVP_aes_256_cbc(), NULL, 0, NULL, NULL);
+        }
+    }
     else
+    {
         chk = PEM_write_bio_PUBKEY(bp, key);
+    }
 
     data_l = BIO_get_mem_data(bp, &data_p);
     obj = abcdk_object_copyfrom(data_p, data_l);
     BIO_free(bp);
 
     return (obj);
+#endif // #ifndef HAVE_OPENSSL
+}
+
+EVP_PKEY *abcdk_openssl_pki_import_key(const char *data, size_t size, int pri_or_pub, abcdk_get_password_cb get_password_cb, void *opaque)
+{
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
+    return;
+#else  // #ifndef HAVE_OPENSSL
+    EVP_PKEY *key = NULL;
+    FILE *fp;
+
+    assert(data != NULL && size > 0);
+
+    fp = fmemopen((void *)data, size, "r");
+    if (!fp)
+        return NULL;
+
+    key = abcdk_openssl_pki_import_key_from_fp(fp, pri_or_pub, get_password_cb, opaque);
+    fclose(fp);
+
+    return key;
+#endif // #ifndef HAVE_OPENSSL
+}
+
+EVP_PKEY *abcdk_openssl_pki_import_key_from_file(const char *file, int pri_or_pub, abcdk_get_password_cb get_password_cb, void *opaque)
+{
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
+    return;
+#else  // #ifndef HAVE_OPENSSL
+    EVP_PKEY *key = NULL;
+    FILE *fp;
+
+    assert(file != NULL);
+
+    fp = fopen(file, "r");
+    if (!fp)
+        return NULL;
+
+    key = abcdk_openssl_pki_import_key_from_fp(fp, pri_or_pub, get_password_cb, opaque);
+    fclose(fp);
+
+    return key;
+#endif // #ifndef HAVE_OPENSSL
+}
+
+EVP_PKEY *abcdk_openssl_pki_import_key_from_fp(FILE *fp, int pri_or_pub, abcdk_get_password_cb get_password_cb, void *opaque)
+{
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
+    return;
+#else  // #ifndef HAVE_OPENSSL
+    EVP_PKEY *key = NULL;
+
+    assert(fp != NULL);
+
+    if (get_password_cb)
+    {
+        abcdk_openssl_pki_pem_password_ctx_t ctx = {opaque, get_password_cb};
+        if (pri_or_pub)
+            key = PEM_read_PrivateKey(fp, NULL, _abcdk_openssl_pki_pem_password_cb, &ctx);
+        else
+            key = PEM_read_PUBKEY(fp, NULL, _abcdk_openssl_pki_pem_password_cb, &ctx);
+    }
+    else
+    {
+        if (pri_or_pub)
+            key = PEM_read_PrivateKey(fp, NULL, NULL, opaque);
+        else
+            key = PEM_read_PUBKEY(fp, NULL, NULL, opaque);
+    }
+
+    return key;
 #endif // #ifndef HAVE_OPENSSL
 }
 
@@ -466,7 +570,7 @@ X509 *abcdk_openssl_pki_import_cert(const char *data, size_t size)
     if (!fp)
         return NULL;
 
-    cert = abcdk_openssl_pki_import_cert_from_fd(fp);
+    cert = abcdk_openssl_pki_import_cert_from_fp(fp);
     fclose(fp);
 
     return cert;
@@ -488,14 +592,14 @@ X509 *abcdk_openssl_pki_import_cert_from_file(const char *file)
     if (!fp)
         return NULL;
 
-    cert = abcdk_openssl_pki_import_cert_from_fd(fp);
+    cert = abcdk_openssl_pki_import_cert_from_fp(fp);
     fclose(fp);
 
     return cert;
 #endif // #ifndef HAVE_OPENSSL
 }
 
-X509 *abcdk_openssl_pki_import_cert_from_fd(FILE *fp)
+X509 *abcdk_openssl_pki_import_cert_from_fp(FILE *fp)
 {
 #ifndef HAVE_OPENSSL
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
@@ -718,5 +822,114 @@ abcdk_object_t *abcdk_openssl_pki_export_crl(X509_CRL *crl)
     BIO_free(bp);
 
     return (obj);
+#endif // #ifndef HAVE_OPENSSL
+}
+
+X509_CRL *abcdk_openssl_pki_import_crl(const char *data, size_t size)
+{
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
+    return NULL;
+#else  // #ifndef HAVE_OPENSSL
+    X509_CRL *ctx = NULL;
+    FILE *fp = NULL;
+
+    assert(data != NULL && size > 0);
+
+    fp = fmemopen((void *)data, size, "r");
+    if (!fp)
+        return NULL;
+
+    ctx = abcdk_openssl_pki_import_crl_from_fp(fp);
+    fclose(fp);
+
+    return ctx;
+#endif // #ifndef HAVE_OPENSSL
+}
+
+X509_CRL *abcdk_openssl_pki_import_crl_from_file(const char *file)
+{
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
+    return NULL;
+#else  // #ifndef HAVE_OPENSSL
+    X509_CRL *ctx = NULL;
+    FILE *fp = NULL;
+
+    assert(file != NULL);
+
+    fp = fopen(file, "r");
+    if (!fp)
+        return NULL;
+
+    ctx = abcdk_openssl_pki_import_crl_from_fp(fp);
+    fclose(fp);
+
+    return ctx;
+#endif // #ifndef HAVE_OPENSSL
+}
+
+X509_CRL *abcdk_openssl_pki_import_crl_from_fp(FILE *fp)
+{
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
+    return NULL;
+#else  // #ifndef HAVE_OPENSSL
+    X509_CRL *ctx = NULL;
+
+    assert(fp != NULL);
+
+    ctx = PEM_read_X509_CRL(fp, NULL, NULL, NULL);
+
+    return ctx;
+#endif // #ifndef HAVE_OPENSSL
+}
+
+STACK_OF(X509) * abcdk_openssl_pki_import_cert_chain(const char *data, size_t size)
+{
+}
+
+STACK_OF(X509) * abcdk_openssl_pki_import_cert_chain_from_file(const char *file)
+{
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
+    return NULL;
+#else  // #ifndef HAVE_OPENSSL
+    STACK_OF(X509) * cert_chain;
+    FILE *fp;
+
+    assert(file != NULL);
+
+    fp = fopen(file, "r");
+    if (!fp)
+        return NULL;
+
+    cert_chain = abcdk_openssl_pki_import_cert_chain_from_fp(fp);
+    fclose(fp);
+
+    return cert_chain;
+#endif // #ifndef HAVE_OPENSSL
+}
+
+STACK_OF(X509) * abcdk_openssl_pki_import_cert_chain_from_fp(FILE *fp)
+{
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
+    return NULL;
+#else  // #ifndef HAVE_OPENSSL
+    STACK_OF(X509) * cert_chain;
+    X509 *cert = NULL;
+
+    assert(fp != NULL);
+
+    cert_chain = sk_X509_new_null();
+    if (!cert_chain)
+        return NULL;
+
+    /*循环读取所以证书.*/
+    while (cert = PEM_read_X509(fp, NULL, NULL, NULL))
+        sk_X509_push(cert_chain, cert);
+
+    return cert_chain;
 #endif // #ifndef HAVE_OPENSSL
 }

@@ -22,6 +22,7 @@
 #include "openssl/x509.h"
 #include "openssl/x509v3.h"
 #include "openssl/x509_vfy.h"
+#include <openssl/pkcs12.h>
 
 #if !defined(OPENSSL_NO_SHA) && (!defined(OPENSSL_NO_SHA0) || !defined(OPENSSL_NO_SHA1))
 #include "openssl/sha.h"
@@ -59,6 +60,7 @@ typedef struct x509_store_ctx_st X509_STORE_CTX;
 typedef struct x509_store_st X509_STORE;
 typedef struct rsa_st RSA;
 typedef struct hmac_ctx_st HMAC_CTX;
+typedef struct PKCS12_st PKCS12;
 #define SSL_read(f,b,s) 0
 #define SSL_write(f,b,s) 0
 #define BIO_read(f,b,s) 0

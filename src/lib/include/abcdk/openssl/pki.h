@@ -8,6 +8,7 @@
 #define ABCDK_OPENSSL_PKI_H
 
 #include "abcdk/util/option.h"
+#include "abcdk/util/getpass.h"
 #include "abcdk/openssl/openssl.h"
 
 __BEGIN_DECLS
@@ -38,10 +39,33 @@ EVP_PKEY *abcdk_openssl_pki_generate_key_to_public(EVP_PKEY *key);
  * @note 仅支持PEM格式.
  * 
  * @param [in] pkey 密钥.
- * @param [in] passwd 密钥的密码地址, NULL(0) 忽略.
- * @param [in] passwd_len 密钥的密码长度, <= 0 忽略.
+ * @param [in] get_passwrd_cb 密钥回调函数, NULL(0) 忽略.
+ * @param [in] opaque 密钥回调函数环境指针.
  */
-abcdk_object_t *abcdk_openssl_pki_export_key(EVP_PKEY *key, uint8_t *passwd, int passwd_len);
+abcdk_object_t *abcdk_openssl_pki_export_key(EVP_PKEY *key, abcdk_get_password_cb get_password_cb, void *opaque);
+
+
+/**
+ * 导入密钥.
+ * 
+ * @note 仅支持PEM格式.
+*/
+EVP_PKEY *abcdk_openssl_pki_import_key(const char *data, size_t size, int pri_or_pub, abcdk_get_password_cb get_password_cb, void *opaque);
+
+/**
+ * 导入密钥.
+ * 
+ * @note 仅支持PEM格式.
+*/
+EVP_PKEY *abcdk_openssl_pki_import_key_from_file(const char *file, int pri_or_pub,abcdk_get_password_cb get_password_cb, void *opaque);
+
+/**
+ * 导入密钥.
+ * 
+ * @note 仅支持PEM格式.
+*/
+EVP_PKEY *abcdk_openssl_pki_import_key_from_fp(FILE *fp, int pri_or_pub,abcdk_get_password_cb get_password_cb, void *opaque);
+
 
 /** 销毁序列号.*/
 void abcdk_openssl_pki_destroy_serial(ASN1_INTEGER **serial);
@@ -80,13 +104,13 @@ X509 *abcdk_openssl_pki_import_cert(const char *data, size_t size);
 */
 X509 *abcdk_openssl_pki_import_cert_from_file(const char *file);
 
-
 /**
  * 导入证书.
  * 
  * @note 仅支持PEM格式.
 */
-X509 *abcdk_openssl_pki_import_cert_from_fd(FILE *fp);
+X509 *abcdk_openssl_pki_import_cert_from_fp(FILE *fp);
+
 
 /** 销毁吊销列表.*/
 void abcdk_openssl_pki_destroy_crl(X509_CRL **crl);
@@ -118,6 +142,50 @@ int abcdk_openssl_pki_update_crl(X509_CRL *crl, abcdk_option_t *opt, X509 *issue
  * @note 仅支持PEM格式.
 */
 abcdk_object_t *abcdk_openssl_pki_export_crl(X509_CRL *crl);
+
+/**
+ * 导入吊销列表.
+ * 
+ * @note 仅支持PEM格式.
+*/
+X509_CRL *abcdk_openssl_pki_import_crl(const char *data, size_t size);
+
+/**
+ * 导入吊销列表.
+ * 
+ * @note 仅支持PEM格式.
+*/
+X509_CRL *abcdk_openssl_pki_import_crl_from_file(const char *file);
+
+
+/**
+ * 导入吊销列表.
+ * 
+ * @note 仅支持PEM格式.
+*/
+X509_CRL *abcdk_openssl_pki_import_crl_from_fp(FILE *fp);
+
+
+/**
+ * 加载证书链.
+ * 
+ * @note 仅支持PEM格式.
+*/
+STACK_OF(X509) *abcdk_openssl_pki_import_cert_chain(const char *data, size_t size);
+
+/**
+ * 加载证书链.
+ * 
+ * @note 仅支持PEM格式.
+*/
+STACK_OF(X509) *abcdk_openssl_pki_import_cert_chain_from_file(const char *file);
+
+/**
+ * 加载证书链.
+ * 
+ * @note 仅支持PEM格式.
+*/
+STACK_OF(X509) *abcdk_openssl_pki_import_cert_chain_from_fp(FILE *fp);
 
 __END_DECLS
 

@@ -40,13 +40,14 @@ static void _make_cert(EVP_PKEY **pkey, X509 **cert, const char *cn, const char 
     sprintf(pubkey_file, "/tmp/%s-%s.pubkey.pem", cn, org);
     sprintf(cert_file, "/tmp/%s-%s.cert.pem", cn, org);
 
-    abcdk_object_t *prikey_txt = abcdk_openssl_pki_export_key(*pkey, "1234", 4);
+    //abcdk_object_t *prikey_txt = abcdk_openssl_pki_export_key(*pkey, NULL, "1234");
+    abcdk_object_t *prikey_txt = abcdk_openssl_pki_export_key(*pkey, abcdk_get_password , pirkey_file);
     abcdk_dump(pirkey_file, prikey_txt->pstrs[0], prikey_txt->sizes[0]);
     abcdk_object_unref(&prikey_txt);
 
     EVP_PKEY *pubkey = abcdk_openssl_pki_generate_key_to_public(*pkey);
 
-    abcdk_object_t *pubkey_txt = abcdk_openssl_pki_export_key(pubkey, "1234", 4);
+    abcdk_object_t *pubkey_txt = abcdk_openssl_pki_export_key(pubkey, NULL, NULL);
     abcdk_dump(pubkey_file, pubkey_txt->pstrs[0], pubkey_txt->sizes[0]);
     abcdk_object_unref(&pubkey_txt);
 
