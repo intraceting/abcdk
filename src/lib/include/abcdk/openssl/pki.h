@@ -22,6 +22,16 @@ EVP_PKEY *abcdk_openssl_pki_generate_key_from_rsa(int bits);
 /** 生成私钥.*/
 EVP_PKEY *abcdk_openssl_pki_generate_key_from_ec(int nid);
 
+/** 
+ * 是否私钥.
+ * 
+ * @return !0 是, 0 否.
+*/
+int abcdk_openssl_pki_private_key_was(EVP_PKEY *key);
+
+/** 私钥提取公钥.*/
+EVP_PKEY *abcdk_openssl_pki_generate_key_to_public(EVP_PKEY *key);
+
 /**
  * 导出密钥.
  * 

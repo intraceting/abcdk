@@ -103,6 +103,56 @@ ERR:
 #endif // #ifndef HAVE_OPENSSL
 }
 
+int abcdk_openssl_pki_private_key_was(EVP_PKEY *key)
+{
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
+    return NULL;
+#else  // #ifndef HAVE_OPENSSL
+    uint8_t *prikey_buf = NULL;
+    int prikey_len = 0;
+
+    assert(key != NULL);
+
+    /*检查是否存在私钥数据.*/
+    prikey_len = i2d_PrivateKey(key, &prikey_buf);
+    abcdk_openssl_free((void **)&prikey_buf); // free.
+
+    return (prikey_len > 0 ? 1 : 0);
+#endif // #ifndef HAVE_OPENSSL
+}
+
+EVP_PKEY *abcdk_openssl_pki_generate_key_to_public(EVP_PKEY *key)
+{
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OPENSSL工具."));
+    return NULL;
+#else  // #ifndef HAVE_OPENSSL
+    int prikey_chk = 0;
+    uint8_t *pubder_buf = NULL;
+    const uint8_t *pubder_buf_ptr = NULL;
+    int pubder_len = 0;
+    EVP_PKEY *pubkey = NULL;
+
+    assert(key != NULL);
+
+    /*检查是否存在私钥数据.*/
+    prikey_chk = abcdk_openssl_pki_private_key_was(key);
+    if(!prikey_chk)
+        return NULL;
+
+    pubder_len = i2d_PUBKEY(key, &pubder_buf);
+    if (pubder_len <= 0)
+        return NULL;
+
+    pubder_buf_ptr = pubder_buf;//复制指针, 因为下面的函数会修改传入的指针.
+    pubkey = d2i_PUBKEY(NULL, &pubder_buf_ptr, pubder_len);
+    abcdk_openssl_free((void **)&pubder_buf); // free.
+
+    return pubkey;
+#endif // #ifndef HAVE_OPENSSL
+}
+
 abcdk_object_t *abcdk_openssl_pki_export_key(EVP_PKEY *key, uint8_t *passwd, int passwd_len)
 {
 #ifndef HAVE_OPENSSL
@@ -113,21 +163,19 @@ abcdk_object_t *abcdk_openssl_pki_export_key(EVP_PKEY *key, uint8_t *passwd, int
     long data_l;
     void *data_p;
     abcdk_object_t *obj = NULL;
-    size_t prikey_len = 0;
+    int prikey_chk = 0;
     int chk;
 
     assert(key != NULL);
 
     /*检查是否存在私钥数据.*/
-    chk = EVP_PKEY_get_raw_private_key(key, NULL, &prikey_len);
-    if (chk != 1)
-        return NULL;
+    prikey_chk = abcdk_openssl_pki_private_key_was(key);
 
     bp = BIO_new(BIO_s_mem());
     if (!bp)
         return NULL;
 
-    if (prikey_len > 0)
+    if (prikey_chk)
         chk = PEM_write_bio_PrivateKey(bp, key, EVP_aes_256_cbc(), passwd, passwd_len, NULL, NULL);
     else
         chk = PEM_write_bio_PUBKEY(bp, key);
